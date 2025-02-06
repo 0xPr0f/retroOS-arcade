@@ -1,0 +1,91 @@
+<svg width='240' height='240' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'><rect width='24' height='24' stroke='none' fill='#000000' opacity='0'/>
+
+<g transform="matrix(0.42 0 0 0.42 12 12)" >
+<g style="" >
+<g transform="matrix(1 0 0 1 0 0)" >
+<path style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(202,210,217); fill-rule: nonzero; opacity: 1;" transform=" translate(-24, -24)" d="M 6 6 L 42 6 L 42 42 L 6 42 L 6 6 z" stroke-linecap="round" />
+</g>
+<g transform="matrix(1 0 0 1 0 0)" >
+<linearGradient id="SVGID_i4RoXd2kr1ALG_BnnNKRHa_1" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1 0 0 1 -24 -24)" x1="6" y1="24" x2="42" y2="24">
+<stop offset="0%" style="stop-color:rgb(137,145,152);stop-opacity: 1"/>
+<stop offset="100%" style="stop-color:rgb(120,126,133);stop-opacity: 1"/>
+</linearGradient>
+<polygon style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: url(#SVGID_i4RoXd2kr1ALG_BnnNKRHa_1); fill-rule: nonzero; opacity: 1;" points="18,-1 1,-1 1,-18 -1,-18 -1,-1 -18,-1 -18,1 -1,1 -1,18 1,18 1,1 18,1 " />
+</g>
+<g transform="matrix(1 0 0 1 9.5 9.5)" >
+<linearGradient id="SVGID_i4RoXd2kr1ALG_BnnNKRHb_2" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1 0 0 1 -33.5 -33.5)" x1="34.494" y1="22.268" x2="27.042" y2="42.743">
+<stop offset="0%" style="stop-color:rgb(252,252,252);stop-opacity: 1"/>
+<stop offset="49.5%" style="stop-color:rgb(244,244,244);stop-opacity: 1"/>
+<stop offset="94.6%" style="stop-color:rgb(232,232,232);stop-opacity: 1"/>
+</linearGradient>
+<polygon style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: url(#SVGID_i4RoXd2kr1ALG_BnnNKRHb_2); fill-rule: nonzero; opacity: 1;" points="-8.5,-8.5 -8.5,8.5 -6.5,6.5 -6.5,-6.5 6.5,-6.5 8.5,-8.5 " />
+</g>
+<g transform="matrix(1 0 0 1 9.5 9.5)" >
+<linearGradient id="SVGID_i4RoXd2kr1ALG_BnnNKRHc_3" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1 0 0 1 -33.5 -33.5)" x1="25" y1="33.5" x2="42" y2="33.5">
+<stop offset="0%" style="stop-color:rgb(137,145,152);stop-opacity: 1"/>
+<stop offset="100%" style="stop-color:rgb(120,126,133);stop-opacity: 1"/>
+</linearGradient>
+<polygon style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: url(#SVGID_i4RoXd2kr1ALG_BnnNKRHc_3); fill-rule: nonzero; opacity: 1;" points="8.5,8.5 8.5,-8.5 6.5,-6.5 6.5,6.5 -6.5,6.5 -8.5,8.5 " />
+</g>
+<g transform="matrix(1 0 0 1 -9.5 -9.5)" >
+<linearGradient id="SVGID_i4RoXd2kr1ALG_BnnNKRHd_4" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1 0 0 1 0 0)" x1="9.055" y1="11.098" x2="19.945" y2="17.902">
+<stop offset="0%" style="stop-color:rgb(76,76,76);stop-opacity: 1"/>
+<stop offset="100%" style="stop-color:rgb(52,52,52);stop-opacity: 1"/>
+</linearGradient>
+<path style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: url(#SVGID_i4RoXd2kr1ALG_BnnNKRHd_4); fill-rule: nonzero; opacity: 1;" transform=" translate(-14.5, -14.5)" d="M 21 15.5 L 21 13.5 L 18.88 13.5 C 18.766 13 18.567 12.534 18.302 12.113 L 19.704 10.711 L 18.29 9.297 L 16.887999999999998 10.699 C 16.466 10.433 16 10.234 15.5 10.12 L 15.5 8 L 13.5 8 L 13.5 10.120000000000001 C 13 10.234000000000002 12.534 10.433000000000002 12.113 10.698 L 10.711 9.296000000000001 L 9.297 10.71 L 10.699 12.112 C 10.433 12.534 10.234 13 10.12 13.5 L 8 13.5 L 8 15.5 L 10.120000000000001 15.5 C 10.234000000000002 16 10.433000000000002 16.466 10.698 16.887 L 9.296000000000001 18.289 L 10.71 19.703000000000003 L 12.112 18.301000000000002 C 12.534 18.567 13 18.766 13.5 18.88 L 13.5 21 L 15.5 21 L 15.5 18.88 C 16 18.766 16.466 18.567 16.887 18.302 L 18.289 19.704 L 19.703000000000003 18.29 L 18.301000000000002 16.887999999999998 C 18.567 16.466 18.766 16 18.88 15.5 L 21 15.5 z" stroke-linecap="round" />
+</g>
+<g transform="matrix(1 0 0 1 -11 -11)" >
+<linearGradient id="SVGID_i4RoXd2kr1ALG_BnnNKRHe_5" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1 0 0 1 -13 -13)" x1="12" y1="13" x2="14" y2="13">
+<stop offset="0%" style="stop-color:rgb(252,252,252);stop-opacity: 1"/>
+<stop offset="49.5%" style="stop-color:rgb(244,244,244);stop-opacity: 1"/>
+<stop offset="94.6%" style="stop-color:rgb(232,232,232);stop-opacity: 1"/>
+</linearGradient>
+<circle style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: url(#SVGID_i4RoXd2kr1ALG_BnnNKRHe_5); fill-rule: nonzero; opacity: 1;" cx="0" cy="0" r="1" />
+</g>
+<g transform="matrix(1 0 0 1 11 10)" >
+<rect style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 1;" x="-1" y="-4" rx="0" ry="0" width="2" height="8" />
+</g>
+<g transform="matrix(1 0 0 1 9 8)" >
+<polygon style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,23,68); fill-rule: nonzero; opacity: 1;" points="3,3 -3,0 3,-3 " />
+</g>
+<g transform="matrix(1 0 0 1 -9 9)" >
+<polygon style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 0.05;" points="-9,-9 -9,-8 8,-8 8,9 9,9 9,-9 " />
+</g>
+<g transform="matrix(1 0 0 1 -9.25 9.25)" >
+<polygon style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 0.07;" points="-8.75,-8.75 -8.75,-8.25 8.25,-8.25 8.25,8.75 8.75,8.75 8.75,-8.75 " />
+</g>
+<g transform="matrix(1 0 0 1 9 9)" >
+<polygon style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 0.05;" points="-9,9 -8,9 -8,-8 9,-8 9,-9 -9,-9 " />
+</g>
+<g transform="matrix(1 0 0 1 9.25 9.25)" >
+<polygon style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 0.07;" points="-8.75,8.75 -8.25,8.75 -8.25,-8.25 8.75,-8.25 8.75,-8.75 -8.75,-8.75 " />
+</g>
+<g transform="matrix(1 0 0 1 9 -9)" >
+<polygon style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 0.05;" points="9,9 9,8 -8,8 -8,-9 -9,-9 -9,9 " />
+</g>
+<g transform="matrix(1 0 0 1 9.25 -9.25)" >
+<polygon style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 0.07;" points="8.75,8.75 8.75,8.25 -8.25,8.25 -8.25,-8.75 -8.75,-8.75 -8.75,8.75 " />
+</g>
+<g transform="matrix(1 0 0 1 -9 -9)" >
+<polygon style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 0.05;" points="9,-9 8,-9 8,8 -9,8 -9,9 9,9 " />
+</g>
+<g transform="matrix(1 0 0 1 -9.25 -9.25)" >
+<polygon style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 0.07;" points="8.75,-8.75 8.25,-8.75 8.25,8.25 -8.75,8.25 -8.75,8.75 8.75,8.75 " />
+</g>
+<g transform="matrix(1 0 0 1 9.03 -9.49)" >
+<linearGradient id="SVGID_i4RoXd2kr1ALG_BnnNKRHf_6" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1 0 0 1 0 0)" x1="31.422" y1="7.03" x2="36.92" y2="22.135">
+<stop offset="0%" style="stop-color:rgb(4,113,199);stop-opacity: 1"/>
+<stop offset="100%" style="stop-color:rgb(9,104,181);stop-opacity: 1"/>
+</linearGradient>
+<path style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: url(#SVGID_i4RoXd2kr1ALG_BnnNKRHf_6); fill-rule: nonzero; opacity: 1;" transform=" translate(-33.03, -14.51)" d="M 35.3 9.146 L 35.3 19.883000000000003 L 32.992999999999995 19.883000000000003 L 32.992999999999995 11.753000000000002 C 32.864999999999995 11.865000000000002 32.715999999999994 11.972000000000001 32.541999999999994 12.071000000000002 C 32.36899999999999 12.172000000000002 32.184999999999995 12.261000000000001 31.988999999999994 12.342000000000002 C 31.793999999999993 12.422000000000002 31.590999999999994 12.491000000000001 31.381999999999994 12.547000000000002 C 31.170999999999996 12.603000000000002 30.963999999999995 12.643000000000002 30.758999999999993 12.668000000000003 L 30.758999999999993 10.720000000000002 C 31.359999999999992 10.544000000000002 31.925999999999995 10.320000000000002 32.45799999999999 10.046000000000003 C 32.98999999999999 9.772000000000004 33.47099999999999 9.472000000000003 33.90099999999999 9.145000000000003 L 35.3 9.145000000000003 z" stroke-linecap="round" />
+</g>
+<g transform="matrix(1 0 0 1 -9.51 9.54)" >
+<linearGradient id="SVGID_i4RoXd2kr1ALG_BnnNKRHg_7" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1 0 0 1 0 0)" x1="7.258" y1="22.061" x2="19.575" y2="43.396">
+<stop offset="0%" style="stop-color:rgb(33,173,100);stop-opacity: 1"/>
+<stop offset="100%" style="stop-color:rgb(8,130,66);stop-opacity: 1"/>
+</linearGradient>
+<path style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: url(#SVGID_i4RoXd2kr1ALG_BnnNKRHg_7); fill-rule: nonzero; opacity: 1;" transform=" translate(-14.49, -33.54)" d="M 13.528 36.965 L 17.981 36.965 L 17.981 38.884 L 10.993000000000002 38.884 L 10.993000000000002 38.093 C 10.993000000000002 37.556000000000004 11.084000000000001 37.073 11.264000000000003 36.647000000000006 C 11.445000000000002 36.21900000000001 11.671000000000003 35.836000000000006 11.946000000000003 35.49700000000001 C 12.218000000000004 35.15800000000001 12.518000000000002 34.857000000000006 12.842000000000004 34.59700000000001 C 13.167000000000003 34.33500000000001 13.476000000000004 34.10000000000001 13.769000000000004 33.89000000000001 C 14.077000000000004 33.67000000000001 14.346000000000004 33.46000000000001 14.579000000000004 33.260000000000005 C 14.810000000000004 33.06 15.006000000000004 32.861000000000004 15.165000000000004 32.663000000000004 C 15.323000000000004 32.465 15.441000000000004 32.265 15.520000000000005 32.062000000000005 C 15.597000000000005 31.859000000000005 15.637000000000006 31.643000000000004 15.637000000000006 31.414000000000005 C 15.637000000000006 30.965000000000003 15.509000000000006 30.625000000000004 15.256000000000006 30.395000000000007 C 15.001000000000005 30.166000000000007 14.613000000000005 30.051000000000005 14.091000000000005 30.051000000000005 C 13.188000000000004 30.051000000000005 12.323000000000004 30.409000000000006 11.498000000000005 31.127000000000006 L 11.498000000000005 29.091000000000005 C 12.411000000000005 28.500000000000004 13.441000000000004 28.205000000000005 14.589000000000006 28.205000000000005 C 15.121000000000006 28.205000000000005 15.599000000000006 28.274000000000004 16.021000000000004 28.414000000000005 C 16.444000000000003 28.553000000000004 16.801000000000005 28.752000000000006 17.094000000000005 29.011000000000006 C 17.387000000000004 29.270000000000007 17.611000000000004 29.583000000000006 17.764000000000006 29.952000000000005 C 17.918000000000006 30.320000000000004 17.994000000000007 30.731000000000005 17.994000000000007 31.185000000000006 C 17.994000000000007 31.668000000000006 17.920000000000005 32.098000000000006 17.771000000000008 32.474000000000004 C 17.622000000000007 32.85 17.424000000000007 33.19200000000001 17.177000000000007 33.499 C 16.931000000000008 33.807 16.646000000000008 34.089000000000006 16.323000000000008 34.346000000000004 C 16.00100000000001 34.602000000000004 15.667000000000007 34.85 15.320000000000007 35.089000000000006 C 15.086000000000007 35.255 14.860000000000007 35.42000000000001 14.642000000000007 35.583000000000006 C 14.425000000000006 35.74700000000001 14.233000000000006 35.90800000000001 14.067000000000007 36.066 C 13.901000000000007 36.225 13.769000000000007 36.379000000000005 13.672000000000008 36.531000000000006 C 13.576 36.684 13.528 36.828 13.528 36.965 z" stroke-linecap="round" />
+</g>
+</g>
+</g>
+</svg>
