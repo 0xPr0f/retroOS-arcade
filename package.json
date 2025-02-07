@@ -17,6 +17,7 @@
   "dependencies": {
     "@ethereumjs/rlp": "^5.0.2",
     "@ethereumjs/tx": "^5.4.0",
+    "@ethersproject/strings": "^5.7.0",
     "@getpara/evm-wallet-connectors": "^1.0.0",
     "@getpara/react-sdk": "^1.0.0",
     "@getpara/server-sdk": "^1.0.0",
@@ -35,6 +36,7 @@
     "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",
     "ethereumjs-util": "^7.1.5",
+    "ethers": "^6.13.5",
     "framer-motion": "^12.0.6",
     "lucide-react": "^0.473.0",
     "mongodb": "^6.13.0",

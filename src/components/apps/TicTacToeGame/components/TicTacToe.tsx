@@ -7,6 +7,7 @@ import {
   Tabs,
   Button2,
 } from '@/components/pc/drives/UI/UI_Components.v1'
+import TicTacToeMP from './onchain/Toe'
 
 const TicTacToe = () => {
   const [board, setBoard] = useState(Array(9).fill(null))
@@ -94,49 +95,32 @@ const TicTacToe = () => {
           </TabsTrigger>
           <TabsTrigger value="multiplayer">Multiplayer</TabsTrigger>
         </TabsList>
-
-        <div className="text-2xl my-3 text-center">
-          {winner
-            ? winner === 'Draw'
-              ? 'Draw!'
-              : `Winner: ${winner}`
-            : `Next Player: ${xIsNext ? 'X' : 'O'}`}
-        </div>
-        <div className="flex border justify-center border-red-500">
-          {renderBoard()}
-        </div>
-        <div className="flex justify-center">
-          {winner && (
-            <Button
-              onClick={resetGame}
-              className="mt-2 w-1/2 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md transition duration-200"
-            >
-              Reset Game
-            </Button>
-          )}
-        </div>
-
-        {mode === 'multiplayer' && (
-          <div className="mt-2 flex flex-col space-y-2">
-            <Button2
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md transition duration-200"
-              variant="outline"
-            >
-              Enter Lobby
-            </Button2>
-            <div className="flex space-x-2">
-              <StyledInput
-                placeholder="Enter Player Address"
-                value={playerAddress}
-                onChange={(e: any) => setPlayerAddress(e.target.value)}
-              />
-              <Button2
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md transition duration-200"
-                variant="outline"
-              >
-                Connect
-              </Button2>
+        {mode === 'local' ? (
+          <div>
+            <div className="text-2xl my-3 text-center">
+              {winner
+                ? winner === 'Draw'
+                  ? 'Draw!'
+                  : `Winner: ${winner}`
+                : `Next Player: ${xIsNext ? 'X' : 'O'}`}
             </div>
+            <div className="flex border justify-center border-red-500">
+              {renderBoard()}
+            </div>
+            <div className="flex justify-center">
+              {winner && (
+                <Button
+                  onClick={resetGame}
+                  className="mt-2 w-1/2 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md transition duration-200"
+                >
+                  Reset Game
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-2 flex flex-col space-y-2">
+            <TicTacToeMP />
           </div>
         )}
       </Tabs>

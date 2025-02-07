@@ -126,6 +126,7 @@ interface StyledInputProps {
   value: string
   onChange: (value: string) => void
   type?: 'text' | 'password' | 'email' | 'number'
+  disabled?: boolean
 }
 
 const StyledInput: React.FC<StyledInputProps> = ({
@@ -134,6 +135,7 @@ const StyledInput: React.FC<StyledInputProps> = ({
   value,
   onChange,
   type = 'text',
+  disabled = false,
 }) => {
   return (
     <div className="bg-gray-800/60 backdrop-blur-sm rounded-lg w-64 shadow-lg border border-white/10">

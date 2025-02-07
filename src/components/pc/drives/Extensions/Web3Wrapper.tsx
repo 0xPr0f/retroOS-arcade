@@ -33,7 +33,9 @@ export const config: CreateConfigParameters = {
   chains: [sepolia, mainnet],
   connectors: [connector, injected()],
   transports: {
-    [sepolia.id]: http(),
+    [sepolia.id]: http(
+      'https://sepolia.infura.io/v3/5843244e30ef4b68b2a0cede1813a327'
+    ),
     [mainnet.id]: http(),
   },
 }
