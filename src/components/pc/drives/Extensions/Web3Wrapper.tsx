@@ -16,6 +16,8 @@ import PcDesktop from '../..'
 import { injected } from 'wagmi/connectors'
 import { PregenProvider } from '../Storage&Hooks/PregenSession'
 import para from '../Authentication/para'
+import { Toaster } from 'react-hot-toast'
+import { NotificationContainer } from './ToastNotifs'
 
 const connector = paraConnector({
   para: para,
@@ -35,11 +37,11 @@ export const config: CreateConfigParameters = {
   connectors: [connector, injected()],
   transports: {
     [sepolia.id]: http(
-      'https://sepolia.infura.io/v3/5843244e30ef4b68b2a0cede1813a327'
+      `https://sepolia.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_KEY}`
     ),
     [mainnet.id]: http(),
     [baseSepolia.id]: webSocket(
-      'wss://base-sepolia.blastapi.io/d138087c-d516-4ec6-aa78-40131317cb19'
+      `wss://base-sepolia.blastapi.io/${process.env.NEXT_PUBLIC_BLAST_API_KEY}`
     ),
   },
 }

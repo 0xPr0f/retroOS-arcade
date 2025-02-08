@@ -5,6 +5,7 @@ import {
   useWaitForTransactionReceipt,
   useReadContract,
   useWatchContractEvent,
+  useChainId,
 } from 'wagmi'
 import { Button, Button2 } from '@/components/pc/drives/UI/UI_Components.v1'
 import { GameStatus, TransactionState } from './types'
@@ -21,15 +22,25 @@ import { Check, Copy } from 'lucide-react'
 import { cn } from '@/components/library/utils'
 import { usePregenTransaction } from '@/components/pc/drives/Storage&Hooks/PregenInteractions'
 import { usePregenSession } from '@/components/pc/drives/Storage&Hooks/PregenSession'
+import {
+  NotificationContainer,
+  showErrorToast,
+} from '@/components/pc/drives/Extensions/ToastNotifs'
+import toast from 'react-hot-toast'
 
 const TicTacToeMP = () => {
   const { address: playerAddress } = useAccount()
+
   const { isConnected } = useAccount()
+  const chainId = useChainId()
   const { isLoginPregenSession, pregenAddress } = usePregenSession()
+
   const [gameId, setGameId] = useState<string | null>(null)
   const [board, setBoard] = useState<number[]>(Array(9).fill(0))
   const [gameStatus, setGameStatus] = useState<GameStatus>(GameStatus.WAITING)
   const [queuePosition, setQueuePosition] = useState<number>(0)
+  const [isOnChain, setIsOnChain] = useState<boolean>(false)
+  const availableChainIds = ['84532']
   const [copied, setCopied] = useState<{
     gameId: boolean
     opponent: boolean
@@ -315,6 +326,10 @@ const TicTacToeMP = () => {
   }, [playerQueuePosition])
 
   const handleMove = async (position: number) => {
+    if (!isOnChain) {
+      showErrorToast('This app is not available on this chain', 'Invalid chain')
+      return
+    }
     if (!gameId || !gameState?.[1]) return
     updateTransactionState('makeMove', { status: 'loading' })
     try {
@@ -347,6 +362,10 @@ const TicTacToeMP = () => {
   }
 
   const handleJoinQueue = async () => {
+    if (!isOnChain) {
+      showErrorToast('This app is not available on this chain', 'Invalid chain')
+      return
+    }
     if (isConnected) {
       await writeJoinQueue({
         address: CONTRACT_ADDRESS,
@@ -365,6 +384,10 @@ const TicTacToeMP = () => {
   }
 
   const handleLeaveQueue = async () => {
+    if (!isOnChain) {
+      showErrorToast('This app is not available on this chain', 'Invalid chain')
+      return
+    }
     if (isConnected) {
       await writeLeaveQueue({
         address: CONTRACT_ADDRESS,
@@ -383,6 +406,10 @@ const TicTacToeMP = () => {
   }
 
   const handleExitMatch = async () => {
+    if (!isOnChain) {
+      showErrorToast('This app is not available on this chain', 'Invalid chain')
+      return
+    }
     if (isConnected) {
       await writeExitMatch({
         address: CONTRACT_ADDRESS,
@@ -399,6 +426,14 @@ const TicTacToeMP = () => {
       })
     }
   }
+
+  useEffect(() => {
+    const isChainUnavailable = !availableChainIds.some(
+      (chain) => Number(chain) === chainId
+    )
+    console.log(!isChainUnavailable)
+    setIsOnChain(!isChainUnavailable)
+  }, [chainId])
 
   const renderBoard = () => (
     <div className="grid grid-cols-3 gap-2 w-64 h-64">
@@ -519,13 +554,14 @@ const TicTacToeMP = () => {
 
   return (
     <div className="flex flex-col items-center">
+      <NotificationContainer />
       <div className="mt-1 mb-1">
         {!gameId ? (
           <div className="flex flex-col mt-2 gap-2 items-center">
             <Button
               onClick={handleJoinQueue}
               className={cn(
-                'w-full text-white py-2 mb-0 rounded-sm transition duration-200',
+                'w-full text-white py-2 mb-0 mt-2 rounded-sm transition duration-200',
                 `${
                   (isConnected ? isJoiningQueue : isJoiningQueuePregen) ||
                   isWaitingForJoinQueue

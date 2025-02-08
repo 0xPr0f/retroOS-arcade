@@ -46,6 +46,7 @@
     "radix-ui": "^1.1.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.5.1",
     "react-use": "^17.6.0",
     "smplr": "^0.16.1",
     "soundfont-player": "^0.12.0",

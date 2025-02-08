@@ -27,6 +27,7 @@ import {
 
 export const PublicClientInteractionsList = (account: any, chainId: number) => {
   const infuraKey = process.env.NEXT_PUBLIC_INFURA_KEY
+  const blastAPIKey = process.env.NEXT_PUBLIC_BLAST_API_KEY
   switch (chainId) {
     case 1: {
       return {
@@ -46,13 +47,13 @@ export const PublicClientInteractionsList = (account: any, chainId: number) => {
       return {
         account: account,
         chain: baseSepolia,
-        transport: http(`https://base-sepolia.infura.io/v3/${infuraKey}`),
+        transport: http(`https://base-sepolia.blastapi.io/${blastAPIKey}`),
       }
     default: {
       return {
         account: account,
         chain: baseSepolia,
-        transport: http(`https://base-sepolia.infura.io/v3/${infuraKey}`),
+        transport: http(`https://base-sepolia.blastapi.io/${blastAPIKey}`),
       }
     }
   }
