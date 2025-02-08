@@ -14,7 +14,7 @@ import { LearnMoreView, LearnMoreViewPregen } from './LearnMore'
 import { useLocalStorage, useSessionStorage } from 'react-use'
 
 import axios from 'axios'
-import { usePregenSession } from '../../Storage/PregenSession'
+import { usePregenSession } from '../../Storage&Hooks/PregenSession'
 
 const customTheme = {
   background: 'linear-gradient(to left, #dc2626, #2563eb)',

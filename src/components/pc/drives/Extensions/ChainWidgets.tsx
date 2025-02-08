@@ -40,9 +40,6 @@ const ChainWidget = () => {
     }
   }, [])
   const [activeNetwork, setActiveNetwork] = useState(chainId)
-  useEffect(() => {
-    console.log(activeNetwork)
-  }, [activeNetwork])
 
   return (
     <div className="relative" ref={widgetRef}>

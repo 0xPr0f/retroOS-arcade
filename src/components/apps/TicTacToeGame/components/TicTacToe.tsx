@@ -60,7 +60,7 @@ const TicTacToe = () => {
   }
 
   const renderBoard = () => (
-    <div className="grid border border-red-500 grid-cols-3 gap-2 w-64 h-64">
+    <div className="grid grid-cols-3 gap-2 w-64 h-64">
       {board.map((square, index) => (
         <div
           key={index}
@@ -96,7 +96,7 @@ const TicTacToe = () => {
           <TabsTrigger value="multiplayer">Multiplayer</TabsTrigger>
         </TabsList>
         {mode === 'local' ? (
-          <div>
+          <div className="mt-5">
             <div className="text-2xl my-3 text-center">
               {winner
                 ? winner === 'Draw'
@@ -104,9 +104,7 @@ const TicTacToe = () => {
                   : `Winner: ${winner}`
                 : `Next Player: ${xIsNext ? 'X' : 'O'}`}
             </div>
-            <div className="flex border justify-center border-red-500">
-              {renderBoard()}
-            </div>
+            <div className="flex justify-center">{renderBoard()}</div>
             <div className="flex justify-center">
               {winner && (
                 <Button

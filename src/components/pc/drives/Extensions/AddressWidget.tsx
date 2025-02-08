@@ -12,7 +12,7 @@ import {
   useSwitchChain,
 } from 'wagmi'
 import { copyToClipboard, shortenText } from './utils'
-import { usePregenSession } from '../Storage/PregenSession'
+import { usePregenSession } from '../Storage&Hooks/PregenSession'
 
 const AddressWidget = () => {
   const [time, setTime] = useState(new Date())

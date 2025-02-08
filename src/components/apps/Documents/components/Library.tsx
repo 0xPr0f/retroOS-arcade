@@ -14,7 +14,7 @@ import { Button, Switch } from '@/components/pc/drives/UI/UI_Components.v1'
 import { useLocalStorage } from 'react-use'
 
 import Icon from '@/components/pc/drives/Icon'
-import StorageUserApps from '@/components/pc/drives/Storage'
+import StorageUserApps from '@/components/pc/drives/Storage&Hooks'
 import apps from '@/components/apps/appDrawer'
 
 const InstalledAppsPanel = () => {

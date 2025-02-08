@@ -11,7 +11,7 @@ import {
   sendTransaction,
   PrepareTransactionRequestParameters,
 } from '@wagmi/core'
-import { mainnet, sepolia } from '@wagmi/core/chains'
+import { baseSepolia, mainnet, sepolia } from '@wagmi/core/chains'
 import {
   createParaAccount,
   createParaViemClient,
@@ -42,11 +42,17 @@ export const PublicClientInteractionsList = (account: any, chainId: number) => {
         chain: sepolia,
         transport: http(`https://sepolia.infura.io/v3/${infuraKey}`),
       }
+    case 84532:
+      return {
+        account: account,
+        chain: baseSepolia,
+        transport: http(`https://base-sepolia.infura.io/v3/${infuraKey}`),
+      }
     default: {
       return {
         account: account,
-        chain: mainnet,
-        transport: http(`https://mainnet.infura.io/v3/${infuraKey}`),
+        chain: baseSepolia,
+        transport: http(`https://base-sepolia.infura.io/v3/${infuraKey}`),
       }
     }
   }

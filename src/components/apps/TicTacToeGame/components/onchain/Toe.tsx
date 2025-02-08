@@ -6,20 +6,41 @@ import {
   useReadContract,
   useWatchContractEvent,
 } from 'wagmi'
-import { Button2 } from '@/components/pc/drives/UI/UI_Components.v1'
+import { Button, Button2 } from '@/components/pc/drives/UI/UI_Components.v1'
 import { GameStatus, TransactionState } from './types'
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from './abidetails'
-import { lightBlue } from '@/components/pc/drives/Extensions/colors'
+import {
+  defaultBlueBG,
+  lightBlue,
+} from '@/components/pc/drives/Extensions/colors'
+import {
+  copyToClipboard,
+  shortenText,
+} from '@/components/pc/drives/Extensions/utils'
+import { Check, Copy } from 'lucide-react'
+import { cn } from '@/components/library/utils'
+import { usePregenTransaction } from '@/components/pc/drives/Storage&Hooks/PregenInteractions'
+import { usePregenSession } from '@/components/pc/drives/Storage&Hooks/PregenSession'
 
 const TicTacToeMP = () => {
-  const { address } = useAccount()
+  const { address: playerAddress } = useAccount()
+  const { isConnected } = useAccount()
+  const { isLoginPregenSession, pregenAddress } = usePregenSession()
   const [gameId, setGameId] = useState<string | null>(null)
   const [board, setBoard] = useState<number[]>(Array(9).fill(0))
   const [gameStatus, setGameStatus] = useState<GameStatus>(GameStatus.WAITING)
   const [queuePosition, setQueuePosition] = useState<number>(0)
+  const [copied, setCopied] = useState<{
+    gameId: boolean
+    opponent: boolean
+  }>({
+    gameId: false,
+    opponent: false,
+  })
   const [transactions, setTransactions] = useState<
     Record<string, TransactionState>
   >({})
+  const [leftGame, setLeftGame] = useState<boolean>(false)
 
   // Helper: update transaction state globally
   const updateTransactionState = (
@@ -34,7 +55,11 @@ const TicTacToeMP = () => {
       },
     }))
   }
-
+  const address = isConnected
+    ? playerAddress?.toLowerCase()
+    : isLoginPregenSession
+    ? pregenAddress?.toLowerCase()
+    : undefined
   // Read queue position
   const { data: playerQueuePosition, refetch: refetchQueuePosition } =
     useReadContract({
@@ -44,7 +69,7 @@ const TicTacToeMP = () => {
       args: address ? [address] : undefined,
       query: {
         enabled: !!address && !gameId,
-        refetchInterval: 4000, // Poll more frequently when in queue
+        refetchInterval: 5000,
       },
     })
 
@@ -56,7 +81,7 @@ const TicTacToeMP = () => {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address,
-      refetchInterval: 4000, // Poll more frequently
+      refetchInterval: 5000,
     },
   })
 
@@ -74,9 +99,68 @@ const TicTacToeMP = () => {
       onSuccess: (txHash: any) => {
         updateTransactionState('joinQueue', { status: 'success' })
         refetchQueuePosition()
-        refetchCurrentGame() // Refetch current game after joining queue
+        refetchCurrentGame()
       },
     },
+  })
+
+  // Pregen Join Queue Contract Write
+  const {
+    writeContract: writeJoinQueuePregen,
+    data: joinQueueDataPregen,
+    isPending: isJoiningQueuePregen,
+  } = usePregenTransaction({
+    mutation: {
+      onError: (error: any) => {
+        updateTransactionState('joinQueue', { status: 'error', error })
+      },
+      onSuccess: (txHash: any) => {
+        updateTransactionState('joinQueue', { status: 'success' })
+        refetchQueuePosition()
+        refetchCurrentGame()
+      },
+    },
+  })
+
+  // Exit match Contract Write
+  const {
+    writeContract: writeExitMatch,
+    data: exitMatchData,
+    isPending: isExitingMatch,
+  } = useWriteContract({
+    mutation: {
+      onError: (error: any) => {
+        updateTransactionState('leaveGame', { status: 'error', error })
+      },
+      onSuccess: (txHash: any) => {
+        updateTransactionState('leaveGame', { status: 'success' })
+        setLeftGame(true)
+        setGameStatus(GameStatus.FINISHED)
+      },
+    },
+  })
+
+  // Pregen Exit match Contract Write
+  const {
+    writeContract: writeExitMatchPregen,
+    data: exitMatchDataPregen,
+    isPending: isExitingMatchPregen,
+  } = usePregenTransaction({
+    mutation: {
+      onError: (error: any) => {
+        updateTransactionState('leaveGame', { status: 'error', error })
+      },
+      onSuccess: (txHash: any) => {
+        updateTransactionState('leaveGame', { status: 'success' })
+        setLeftGame(true)
+        setGameStatus(GameStatus.FINISHED)
+      },
+    },
+  })
+
+  // Wait for exitMatch transaction
+  const { isLoading: isWaitingForExitMatch } = useWaitForTransactionReceipt({
+    hash: isConnected ? exitMatchData : exitMatchDataPregen,
   })
 
   // Leave Queue Contract Write
@@ -97,14 +181,32 @@ const TicTacToeMP = () => {
     },
   })
 
+  // Pregen Leave Queue Contract Write
+  const {
+    writeContract: writeLeaveQueuePregen,
+    data: leaveQueueDataPregen,
+    isPending: isLeavingQueuePregen,
+  } = usePregenTransaction({
+    mutation: {
+      onError: (error: any) => {
+        updateTransactionState('leaveQueue', { status: 'error', error })
+      },
+      onSuccess: (txHash: any) => {
+        updateTransactionState('leaveQueue', { status: 'success' })
+        refetchQueuePosition()
+        refetchCurrentGame()
+      },
+    },
+  })
+
   // Wait for joinQueue transaction
   const { isLoading: isWaitingForJoinQueue } = useWaitForTransactionReceipt({
-    hash: joinQueueData,
+    hash: isConnected ? joinQueueData : joinQueueDataPregen,
   })
 
   // Wait for leaveQueue transaction
   const { isLoading: isWaitingForLeaveQueue } = useWaitForTransactionReceipt({
-    hash: leaveQueueData,
+    hash: isConnected ? leaveQueueData : leaveQueueDataPregen,
   })
 
   // Read Game State
@@ -115,7 +217,7 @@ const TicTacToeMP = () => {
     args: gameId ? [gameId.toString()] : undefined,
     query: {
       enabled: !!gameId,
-      refetchInterval: 4000, // Poll more frequently during game
+      refetchInterval: 3000,
     },
   })
 
@@ -136,37 +238,43 @@ const TicTacToeMP = () => {
     },
   })
 
-  // Wait for move transaction
-  const { isLoading: isWaitingForMove } = useWaitForTransactionReceipt({
-    hash: moveData,
+  // Pregen Make Move Contract Write
+  const {
+    writeContract: writeMakeMovePregen,
+    data: moveDataPregen,
+    isPending: isMakingMovePregen,
+  } = usePregenTransaction({
+    mutation: {
+      onError: (error: any) => {
+        updateTransactionState('makeMove', { status: 'error', error })
+      },
+      onSuccess: (txHash: any) => {
+        updateTransactionState('makeMove', { status: 'success' })
+        refetchGameState()
+      },
+    },
   })
 
-  // Watch for both PlayersMatched and PlayerJoinedQueue events
+  // Wait for move transaction
+  const { isLoading: isWaitingForMove } = useWaitForTransactionReceipt({
+    hash: isConnected ? moveData : moveDataPregen,
+  })
+
+  // Only watch PlayersMatched event since it's needed for game initialization
   useWatchContractEvent({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     eventName: 'PlayersMatched',
     onLogs(logs: any) {
-      const [player1, player2, matchedGameId] = logs[0].args
-      console.log('Players matched:', logs)
+      const { gameId, player1, player2 } = logs[0].args
       if (player1 === address || player2 === address) {
-        setGameId(matchedGameId.toString())
+        setGameId(gameId.toString())
         setGameStatus(GameStatus.PLAYING)
         setQueuePosition(0)
+        setLeftGame(false)
         refetchGameState()
         refetchCurrentGame()
       }
-    },
-  })
-
-  useWatchContractEvent({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
-    eventName: 'PlayerJoinedQueue',
-    onLogs() {
-      // Refetch queue position when anyone joins queue
-      refetchQueuePosition()
-      refetchCurrentGame()
     },
   })
 
@@ -178,7 +286,6 @@ const TicTacToeMP = () => {
       currentGame !==
         '0x0000000000000000000000000000000000000000000000000000000000000000'
     ) {
-      console.log('Current game updated:', currentGame)
       setGameId(currentGame)
       refetchGameState()
     }
@@ -211,12 +318,21 @@ const TicTacToeMP = () => {
     if (!gameId || !gameState?.[1]) return
     updateTransactionState('makeMove', { status: 'loading' })
     try {
-      await writeMakeMove({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        functionName: 'makeMove',
-        args: [gameId.toString(), position],
-      })
+      if (isConnected) {
+        await writeMakeMove({
+          address: CONTRACT_ADDRESS,
+          abi: CONTRACT_ABI,
+          functionName: 'makeMove',
+          args: [gameId.toString(), position],
+        })
+      } else if (isLoginPregenSession) {
+        await writeMakeMovePregen({
+          address: CONTRACT_ADDRESS,
+          abi: CONTRACT_ABI,
+          functionName: 'makeMove',
+          args: [gameId.toString(), position],
+        })
+      }
     } catch (error) {
       console.error('Error making move:', error)
     }
@@ -227,6 +343,61 @@ const TicTacToeMP = () => {
     setBoard(Array(9).fill(0))
     setGameStatus(GameStatus.WAITING)
     setQueuePosition(0)
+    setLeftGame(false)
+  }
+
+  const handleJoinQueue = async () => {
+    if (isConnected) {
+      await writeJoinQueue({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: 'joinQueue',
+        args: [],
+      })
+    } else if (isLoginPregenSession) {
+      await writeJoinQueuePregen({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: 'joinQueue',
+        args: [],
+      })
+    }
+  }
+
+  const handleLeaveQueue = async () => {
+    if (isConnected) {
+      await writeLeaveQueue({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: 'leaveQueue',
+        args: [],
+      })
+    } else if (isLoginPregenSession) {
+      await writeLeaveQueuePregen({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: 'leaveQueue',
+        args: [],
+      })
+    }
+  }
+
+  const handleExitMatch = async () => {
+    if (isConnected) {
+      await writeExitMatch({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: 'leaveGame',
+        args: [],
+      })
+    } else if (isLoginPregenSession) {
+      await writeExitMatchPregen({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: 'leaveGame',
+        args: [],
+      })
+    }
   }
 
   const renderBoard = () => (
@@ -240,12 +411,14 @@ const TicTacToeMP = () => {
             onClick={() => handleMove(index)}
             disabled={
               !gameState?.[1] ||
+              gameStatus === GameStatus.FINISHED ||
               value !== 0 ||
-              isMakingMove ||
+              (isConnected ? isMakingMove : isMakingMovePregen) ||
               isWaitingForMove ||
+              //Lower case the comparison
               (gameState?.[5] // isXNext
-                ? gameState?.[0] !== address // playerX
-                : gameState?.[1] !== address) // playerO
+                ? gameState?.[0].toLowerCase() !== address // playerX
+                : gameState?.[1].toLowerCase() !== address) // playerO
             }
             className={`
               w-full h-full text-5xl font-bold
@@ -257,7 +430,8 @@ const TicTacToeMP = () => {
                   : ''
               }
               ${
-                isMakingMove || isWaitingForMove
+                (isConnected ? isMakingMove : isMakingMovePregen) ||
+                isWaitingForMove
                   ? 'opacity-50 cursor-not-allowed'
                   : ''
               }
@@ -285,17 +459,22 @@ const TicTacToeMP = () => {
         return <div className="text-yellow-500">Waiting for opponent...</div>
       case GameStatus.PLAYING:
         const isYourTurn = gameState?.[5]
-          ? gameState?.[0] === address
-          : gameState?.[1] === address
+          ? gameState?.[0].toLowerCase() === address
+          : gameState?.[1].toLowerCase() === address
         return (
-          <div className="space-y-2">
+          <div className="mt-1">
             <div
               className={`text-blue-500 ${
-                isMakingMove || isWaitingForMove ? 'animate-pulse' : ''
+                (isConnected ? isMakingMove : isMakingMovePregen) ||
+                isWaitingForMove
+                  ? 'animate-pulse'
+                  : ''
               }`}
             >
               {gameState?.[5] ? 'X' : 'O'}'s turn
-              {(isMakingMove || isWaitingForMove) && ' (Processing...)'}
+              {((isConnected ? isMakingMove : isMakingMovePregen) ||
+                isWaitingForMove) &&
+                ' (Processing...)'}
             </div>
             <div
               className={`font-bold ${
@@ -308,15 +487,26 @@ const TicTacToeMP = () => {
         )
       case GameStatus.FINISHED:
         return (
-          <div className="space-y-2">
-            <div className="text-green-500">
+          <div className="space-y-2 mt-1">
+            <div
+              className={`text-green-500 ${
+                leftGame
+                  ? 'text-red-500'
+                  : gameState?.[2].toLowerCase() === address
+                  ? 'text-green-500'
+                  : 'text-red-500'
+              }`}
+            >
               Game Over -{' '}
-              {gameState?.[2] === address ? 'You won!' : 'Opponent won!'}
+              {leftGame
+                ? 'You forfeited the game!'
+                : gameState?.[2].toLowerCase() === address
+                ? 'You won!'
+                : 'Opponent won!'}
             </div>
             <Button2
               onClick={handleResetGame}
-              className="w-full text-white py-2 rounded-md"
-              style={{ backgroundColor: lightBlue }}
+              className="w-full text-white py-2 rounded-sm bg-[#2563eb] hover:bg-[#1e4388]"
             >
               Start New Game
             </Button2>
@@ -328,72 +518,151 @@ const TicTacToeMP = () => {
   }
 
   return (
-    <div className="flex flex-col items-center overflow-auto">
-      <div className="mt-4 space-y-4">
+    <div className="flex flex-col items-center">
+      <div className="mt-1 mb-1">
         {!gameId ? (
-          <div className="space-y-2">
-            <Button2
+          <div className="flex flex-col mt-2 gap-2 items-center">
+            <Button
+              onClick={handleJoinQueue}
+              className={cn(
+                'w-full text-white py-2 mb-0 rounded-sm transition duration-200',
+                `${
+                  (isConnected ? isJoiningQueue : isJoiningQueuePregen) ||
+                  isWaitingForJoinQueue
+                    ? 'opacity-50'
+                    : ''
+                }`
+              )}
               style={{
                 backgroundColor: lightBlue,
-                transition: 'background-color 0.2s',
+                transition: 'all 0.2s',
               }}
-              onClick={() =>
-                writeJoinQueue({
-                  address: CONTRACT_ADDRESS,
-                  abi: CONTRACT_ABI,
-                  functionName: 'joinQueue',
-                  args: [],
-                })
-              }
               disabled={
-                isJoiningQueue || isWaitingForJoinQueue || queuePosition > 0
+                (isConnected ? isJoiningQueue : isJoiningQueuePregen) ||
+                isWaitingForJoinQueue ||
+                queuePosition > 0
               }
-              className={`w-full text-white py-2 mb-0 rounded-md transition duration-200 ${
-                isJoiningQueue || isWaitingForJoinQueue ? 'opacity-50' : ''
-              }`}
-              variant="outline"
+              onMouseEnter={(e) =>
+                ((e.target as HTMLButtonElement).style.backgroundColor =
+                  defaultBlueBG)
+              }
+              onMouseLeave={(e) =>
+                ((e.target as HTMLButtonElement).style.backgroundColor =
+                  lightBlue)
+              }
             >
-              {isJoiningQueue || isWaitingForJoinQueue
+              {(isConnected ? isJoiningQueue : isJoiningQueuePregen) ||
+              isWaitingForJoinQueue
                 ? 'Joining Queue...'
                 : queuePosition > 0
                 ? `In Queue - Position ${queuePosition}`
                 : 'Join Queue'}
-            </Button2>
+            </Button>
+
             {queuePosition > 0 && (
-              <Button2
-                style={{
-                  backgroundColor: '#ef4444', // Red color
-                  transition: 'background-color 0.2s',
-                }}
-                onClick={() =>
-                  writeLeaveQueue({
-                    address: CONTRACT_ADDRESS,
-                    abi: CONTRACT_ABI,
-                    functionName: 'leaveQueue',
-                    args: [],
-                  })
+              <Button
+                onClick={handleLeaveQueue}
+                disabled={
+                  (isConnected ? isLeavingQueue : isLeavingQueuePregen) ||
+                  isWaitingForLeaveQueue
                 }
-                disabled={isLeavingQueue || isWaitingForLeaveQueue}
-                className={`w-full text-white py-2 mb-0 rounded-md transition duration-200 ${
-                  isLeavingQueue || isWaitingForLeaveQueue ? 'opacity-50' : ''
+                className={`w-full text-white py-2 mb-0 rounded-sm transition-colors duration-200 bg-[#ef4444] hover:bg-red-300 ${
+                  (isConnected ? isLeavingQueue : isLeavingQueuePregen) ||
+                  isWaitingForLeaveQueue
+                    ? 'opacity-50'
+                    : ''
                 }`}
-                variant="outline"
               >
-                {isLeavingQueue || isWaitingForLeaveQueue
-                  ? 'Leaving Queue...'
-                  : 'Leave Queue'}
-              </Button2>
+                <span className="transition-all duration-200 block">
+                  {(isConnected ? isLeavingQueue : isLeavingQueuePregen) ||
+                  isWaitingForLeaveQueue
+                    ? 'Leaving Queue...'
+                    : 'Leave Queue'}
+                </span>
+              </Button>
             )}
           </div>
         ) : (
-          <div className="text-center space-y-2">
-            <p className="font-medium">Game ID: {gameId}</p>
-            <p className="text-sm text-gray-500">Your Address: {address}</p>
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 hover:bg-gray-100 rounded-sm transition-colors duration-200">
+              <span className="font-medium">
+                Game ID: {shortenText(gameId, 7, 7)}
+              </span>
+              {copied.gameId ? (
+                <Check className="w-4 h-4 text-green-500" />
+              ) : (
+                <Copy
+                  className="w-4 h-4 cursor-pointer"
+                  onClick={() => {
+                    copyToClipboard(gameId)
+
+                    setCopied((prev) => ({ ...prev, gameId: true }))
+                    setTimeout(
+                      () => setCopied((prev) => ({ ...prev, gameId: false })),
+                      2000
+                    )
+                  }}
+                />
+              )}
+            </div>
+            <div className="flex font-medium items-center justify-center gap-2 hover:bg-gray-100 rounded-sm transition-colors duration-200">
+              {gameState && (
+                <>
+                  {gameState[0]?.toLowerCase() !== address ? (
+                    <>Opponent (X): {shortenText(gameState[0], 5, 5)}</>
+                  ) : gameState[1]?.toLowerCase() !== address ? (
+                    <>Opponent (O): {shortenText(gameState[1], 5, 5)}</>
+                  ) : null}
+                  {copied.opponent ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <Copy
+                      className="w-4 h-4 cursor-pointer"
+                      onClick={() => {
+                        copyToClipboard(
+                          gameState[0].toLowerCase() !== address
+                            ? gameState[0]
+                            : gameState[1]
+                        )
+                        setCopied((prev) => ({ ...prev, opponent: true }))
+                        setTimeout(
+                          () =>
+                            setCopied((prev) => ({ ...prev, opponent: false })),
+                          2000
+                        )
+                      }}
+                    />
+                  )}
+                </>
+              )}
+            </div>
             {renderGameStatus()}
           </div>
         )}
       </div>
-      <div className="flex justify-center mt-4">{renderBoard()}</div>
+      <div className="flex justify-center mt-3">{renderBoard()}</div>
+      {gameId && gameStatus === GameStatus.PLAYING && (
+        <div>
+          <Button2
+            disabled={
+              (isConnected ? isExitingMatch : isExitingMatchPregen) ||
+              isWaitingForExitMatch
+            }
+            onClick={handleExitMatch}
+            className={`w-full mt-4 text-white py-2 rounded-sm bg-[#2563eb] hover:bg-[#1e4388] ${
+              (isConnected ? isExitingMatch : isExitingMatchPregen) ||
+              isWaitingForExitMatch
+                ? 'opacity-50'
+                : ''
+            }`}
+          >
+            {(isConnected ? isExitingMatch : isExitingMatchPregen) ||
+            isWaitingForExitMatch
+              ? 'Leaving Match...'
+              : 'Leave Match'}
+          </Button2>
+        </div>
+      )}
     </div>
   )
 }

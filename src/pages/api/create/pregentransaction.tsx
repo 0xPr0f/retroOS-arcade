@@ -12,9 +12,16 @@ export interface PrepareAndSignTransactionWithPregenWalletServerProps {
   args: any[]
   value?: string
 }
+
+interface ApiResponse {
+  success: boolean
+  data?: string // txHash
+  error?: string
+}
+
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse<ApiResponse>
 ) {
   try {
     const {
@@ -39,11 +46,18 @@ export default async function handler(
       functionName: functionName,
       args: args,
     })
-    return res.status(200).json({ success: true, data: txHash })
+
+    return res.status(200).json({
+      success: true,
+      data: txHash,
+    })
   } catch (error) {
     console.error('Transaction Error', error)
-    return res
-      .status(500)
-      .json({ success: false, error: 'Failed to fetch data' })
+    const errorMessage =
+      error instanceof Error ? error.message : 'Failed to process transaction'
+    return res.status(500).json({
+      success: false,
+      error: errorMessage,
+    })
   }
 }

@@ -1,4 +1,4 @@
-export const CONTRACT_ADDRESS = '0x5F49A72bBf20a44E07f948A60d01f43B7158f2D4'
+export const CONTRACT_ADDRESS = '0x307dceC841c00733810cC159A399c5c0C0C3E1f6'
 export const CONTRACT_ABI: any[] = [
   {
     type: 'function',
@@ -66,6 +66,13 @@ export const CONTRACT_ABI: any[] = [
   {
     type: 'function',
     name: 'joinQueue',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'leaveGame',
     inputs: [],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -232,6 +239,31 @@ export const CONTRACT_ABI: any[] = [
         type: 'uint256',
         indexed: false,
         internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'PlayerLeftGame',
+    inputs: [
+      {
+        name: 'gameId',
+        type: 'bytes32',
+        indexed: false,
+        internalType: 'bytes32',
+      },
+      {
+        name: 'player',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
+      },
+      {
+        name: 'winner',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
       },
     ],
     anonymous: false,

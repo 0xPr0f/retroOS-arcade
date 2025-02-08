@@ -3,7 +3,7 @@ import { TESTABI, testaddress } from '@/components/pc/drives/Interactions/ABI'
 import { Button2 } from '@/components/pc/drives/UI/UI_Components.v1'
 import React from 'react'
 import { useChainId } from 'wagmi'
-import { usePregenSession } from '@/components/pc/drives/Storage/PregenSession'
+import { usePregenSession } from '@/components/pc/drives/Storage&Hooks/PregenSession'
 import axios from 'axios'
 import { PrepareAndSignTransactionWithPregenWalletServerProps } from '@/pages/api/create/pregentransaction'
 
@@ -26,7 +26,7 @@ const TetrisGame = () => {
             userShare: pregenEncryptedKeyShare!,
             walletId: pregenWalletId!,
           } satisfies PrepareAndSignTransactionWithPregenWalletServerProps)
-          console.log(result)
+          console.log(result) // returns the tx hash of the transaction
         }}
       >
         Test on chain
