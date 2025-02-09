@@ -14,11 +14,7 @@ import { lightRed, lightBlue } from '../Extensions/colors'
 import Authentication from '.'
 import { useAccount } from 'wagmi'
 
-interface LoginScreenProps {
-  login: () => void
-}
-
-const LoginScreen: React.FC<LoginScreenProps> = ({ login }) => {
+const LoginScreen: React.FC = () => {
   const [isParaModalOpen, setIsParaModalOpen] = useState(false)
 
   useEffect(() => {
@@ -69,7 +65,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ login }) => {
     <div
       style={{
         backgroundImage:
-          imageBackground && imageBackground.length > 5
+          imageBackground && imageBackground.length > 20
             ? `url(${imageBackground})`
             : `linear-gradient(to left,${lightRed},${lightBlue} )`,
         backgroundSize: 'cover',
@@ -108,7 +104,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ login }) => {
           setGuestLogin={setGuestLogin}
           setParaModalOpen={setIsParaModalOpen}
           ParaModalOpen={isParaModalOpen}
-          login={login}
           pregenModal={guestLogin}
           closeGuestLogin={closeGuestLogin}
         />

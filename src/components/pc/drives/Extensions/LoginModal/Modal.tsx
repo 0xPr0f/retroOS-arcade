@@ -118,7 +118,10 @@ const WalletModal = ({
   }, [pregenModal])
 
   useEffect(() => {
-    if (generatePregenIdentifier.length < 5) {
+    if (
+      generatePregenIdentifier.length > 0 &&
+      generatePregenIdentifier.length < 5
+    ) {
       setGeneratePregenIdentifierError('Input must be at least 5 characters')
     } else {
       setGeneratePregenIdentifierError('')

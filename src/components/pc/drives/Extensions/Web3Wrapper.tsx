@@ -17,7 +17,7 @@ import { injected } from 'wagmi/connectors'
 import { PregenProvider } from '../Storage&Hooks/PregenSession'
 import para from '../Authentication/para'
 import { Toaster } from 'react-hot-toast'
-import { NotificationContainer } from './ToastNotifs'
+import { NotificationProvider } from './ToastNotifs'
 
 const connector = paraConnector({
   para: para,
@@ -64,9 +64,11 @@ const Web3Wrapper: React.FC = () => {
     <div suppressHydrationWarning>
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
-          <PregenProvider>
-            <PcDesktop />
-          </PregenProvider>
+          <NotificationProvider>
+            <PregenProvider>
+              <PcDesktop />
+            </PregenProvider>
+          </NotificationProvider>
         </QueryClientProvider>
       </WagmiProvider>
     </div>

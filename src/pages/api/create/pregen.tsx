@@ -40,7 +40,6 @@ export default async function createPregenWalletHandler(
       const host = req.headers.host
       const protocol = req.headers['x-forwarded-proto'] || 'http'
       const dbStoreUrl = `${protocol}://${host}/api/apps/drivers/db/retrieve?identifier=${identifier}`
-
       const result = await axios.get(dbStoreUrl)
       res.status(200).json({
         success: true,
@@ -80,7 +79,6 @@ export default async function createPregenWalletHandler(
     const host = req.headers.host
     const protocol = req.headers['x-forwarded-proto'] || 'http'
     const dbStoreUrl = `${protocol}://${host}/api/apps/drivers/db/create`
-
     await axios.post(dbStoreUrl, {
       identifier,
       wallet_address: wallet.address!,

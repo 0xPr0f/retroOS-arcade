@@ -16,6 +16,8 @@ import { useLocalStorage } from 'react-use'
 import Icon from '@/components/pc/drives/Icon'
 import StorageUserApps from '@/components/pc/drives/Storage&Hooks'
 import apps from '@/components/apps/appDrawer'
+import { parseAsJson } from 'nuqs'
+import useExperimentalFeatures from '@/components/pc/drives/Experiment'
 
 const InstalledAppsPanel = () => {
   // const [installedApps, setInstalledApps] = useState<App[]>([...apps])
@@ -26,9 +28,24 @@ const InstalledAppsPanel = () => {
   const [userInstalledApps, setUserInstalledApps] = useLocalStorage(
     'user_installed_apps'
   )
+  const { useSaveState } = useExperimentalFeatures()
   const Apps: userAppCustom[] = StorageUserApps().flat()
   //design choice to not have a default selected app
-  const [selectedApp, setSelectedApp] = useState<userAppCustom | null>(null)
+  const validateSelectedApp = (value: unknown): userAppCustom | null => {
+    if (!value) {
+      return null
+    }
+    return value as userAppCustom
+  }
+  const selectedAppParser = parseAsJson<userAppCustom | null>(
+    validateSelectedApp
+  )
+
+  const [selectedApp, setSelectedApp] = useSaveState<userAppCustom | null>(
+    'selectedApp',
+    selectedAppParser,
+    null
+  )
   const [userApps, setUserApps] = useState<userAppCustom[]>(() => {
     try {
       const savedApps = userInstalledApps as string
@@ -226,7 +243,7 @@ const InstalledAppsPanel = () => {
   }, [selectedApp])
   return (
     <div className="flex h-[400px] border rounded-lg shadow-lg">
-      <div className="w-1/3 border-r p-4 overflow-y-auto">
+      <div className="w-2/5 border-r p-4 overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">Installed Apps</h2>
         {userApps &&
           userApps.map((app: any) => (
@@ -248,7 +265,7 @@ const InstalledAppsPanel = () => {
       </div>
 
       {selectedApp && (
-        <div className="w-2/3 p-4 overflow-y-auto">
+        <div className="w-3/5 p-4 overflow-y-auto">
           <div className="flex flex-row mb-4 ">
             <h3 className="text-lg font-semibold mr-2">
               App Settings: {selectedApp.title}

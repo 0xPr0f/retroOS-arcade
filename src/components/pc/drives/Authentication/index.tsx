@@ -17,14 +17,12 @@ const Authentication = ({
   ParaModalOpen,
   setParaModalOpen,
   setGuestLogin,
-  login,
   pregenModal = false,
   closeGuestLogin,
 }: {
   ParaModalOpen: boolean
   setParaModalOpen: (value: boolean) => void
   setGuestLogin: (value: boolean) => void
-  login: () => void
   pregenModal?: boolean
   closeGuestLogin: () => void
 }) => {

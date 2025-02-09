@@ -1,30 +1,41 @@
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogAction,
-} from '@/components/pc/drives/UI/UI_Components.v2'
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 
 const ChainReactionGame = () => {
+  // --- Types and Constants ---
+
   const gridSize = 6
-  const initialGrid = Array(gridSize)
-    .fill(null)
-    .map(() =>
-      Array(gridSize)
-        .fill(null)
-        .map(() => ({ count: 0, player: null }))
-    )
 
-  const [grid, setGrid] = useState(initialGrid)
-  const [currentPlayer, setCurrentPlayer] = useState(0)
-  const [winner, setWinner] = useState<number | null>(null)
-  const [gameStarted, setGameStarted] = useState(false)
-  const players = ['red', 'blue']
+  interface Cell {
+    count: number
+    player: number | null
+  }
 
-  const getCriticalMass = (row: any, col: any) => {
+  // Precomputed neighbor offsets: up, down, left, right.
+  const neighborOffsets: [number, number][] = [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+  ]
+
+  // Build the initial grid using for-loops.
+  const createInitialGrid = (): Cell[][] => {
+    const grid: Cell[][] = new Array(gridSize)
+    for (let i = 0; i < gridSize; i++) {
+      grid[i] = new Array(gridSize)
+      for (let j = 0; j < gridSize; j++) {
+        grid[i][j] = { count: 0, player: null }
+      }
+    }
+    return grid
+  }
+
+  const initialGrid = createInitialGrid()
+
+  // --- Game Logic Functions ---
+
+  // Critical mass depends on the cell's position.
+  const getCriticalMass = (row: number, col: number): number => {
     if (
       (row === 0 || row === gridSize - 1) &&
       (col === 0 || col === gridSize - 1)
@@ -35,118 +46,131 @@ const ChainReactionGame = () => {
     return 4
   }
 
-  const getNeighbors = (row: any, col: any) => {
-    const neighbors = []
-    if (row > 0) neighbors.push([row - 1, col])
-    if (row < gridSize - 1) neighbors.push([row + 1, col])
-    if (col > 0) neighbors.push([row, col - 1])
-    if (col < gridSize - 1) neighbors.push([row, col + 1])
+  // Return valid neighbors using precomputed offsets.
+  const getNeighbors = (row: number, col: number): [number, number][] => {
+    const neighbors: [number, number][] = []
+    for (let i = 0; i < neighborOffsets.length; i++) {
+      const [dr, dc] = neighborOffsets[i]
+      const nr = row + dr,
+        nc = col + dc
+      if (nr >= 0 && nr < gridSize && nc >= 0 && nc < gridSize) {
+        neighbors.push([nr, nc])
+      }
+    }
     return neighbors
   }
 
-  // Enhanced win condition check
-  const checkWinner = (currentGrid: any) => {
-    if (!gameStarted) return
-
-    let player0Cells = 0
-    let player1Cells = 0
-    let totalOccupiedCells = 0
-
+  // Check if all occupied cells belong to one player.
+  // Returns 0 or 1 if one player occupies every occupied cell; otherwise, null.
+  const checkWinner = (
+    currentGrid: Cell[][],
+    gameStarted: boolean
+  ): number | null => {
+    if (!gameStarted) return null
+    let totalOccupied = 0,
+      player0Count = 0,
+      player1Count = 0
     for (let row = 0; row < gridSize; row++) {
       for (let col = 0; col < gridSize; col++) {
-        if (currentGrid[row][col].player !== null) {
-          totalOccupiedCells++
-          if (currentGrid[row][col].player === 0) {
-            player0Cells++
-          } else {
-            player1Cells++
-          }
+        const cell = currentGrid[row][col]
+        if (cell.player !== null) {
+          totalOccupied++
+          cell.player === 0 ? player0Count++ : player1Count++
         }
       }
     }
-
-    // Only check for winner if there are occupied cells
-    if (totalOccupiedCells > 0) {
-      if (player0Cells === totalOccupiedCells) {
-        setWinner(0)
-      } else if (player1Cells === totalOccupiedCells) {
-        setWinner(1)
-      }
+    if (totalOccupied > 0) {
+      if (player0Count === totalOccupied) return 0
+      if (player1Count === totalOccupied) return 1
     }
+    return null
   }
 
-  // Process chain reactions
+  // Process chain reactions using a BFS/queue approach.
+  // Only cells that reach or exceed critical mass are processed.
   const processChainReactions = (
-    newGrid: any,
-    startRow: any,
-    startCol: any
-  ) => {
-    let explosions = [[startRow, startCol]]
-    let processingComplete = false
+    grid: Cell[][],
+    startRow: number,
+    startCol: number
+  ): Cell[][] => {
+    // We use a simple array as a queue.
+    const queue: [number, number][] = [[startRow, startCol]]
 
-    while (!processingComplete) {
-      processingComplete = true
-      const newExplosions: any[] = []
-
-      for (let row = 0; row < gridSize; row++) {
-        for (let col = 0; col < gridSize; col++) {
-          const cell = newGrid[row][col]
-          if (cell.count >= getCriticalMass(row, col)) {
-            processingComplete = false
-            cell.count = 0
-            const player = cell.player
-            cell.player = null
-
-            getNeighbors(row, col).forEach(([nr, nc]) => {
-              newGrid[nr][nc].count++
-              newGrid[nr][nc].player = player
-            })
+    while (queue.length > 0) {
+      const [r, c] = queue.shift()!
+      const cell = grid[r][c]
+      const critical = getCriticalMass(r, c)
+      if (cell.count >= critical) {
+        // "Explode" this cell.
+        const player = cell.player
+        cell.count = 0
+        cell.player = null
+        // Propagate to all valid neighbors.
+        const neighbors = getNeighbors(r, c)
+        for (let i = 0; i < neighbors.length; i++) {
+          const [nr, nc] = neighbors[i]
+          const neighbor = grid[nr][nc]
+          neighbor.count++
+          neighbor.player = player
+          if (neighbor.count >= getCriticalMass(nr, nc)) {
+            queue.push([nr, nc])
           }
         }
       }
-
-      if (!processingComplete) {
-        explosions = newExplosions
-      }
     }
-
-    return newGrid
+    return grid
   }
 
-  const handleCellClick = (row: any, col: any) => {
-    if (winner || !grid[row]?.[col]) return
+  // --- React Component State and Handlers ---
+
+  // Assume these React state hooks are inside your component.
+  const [grid, setGrid] = useState<Cell[][]>(initialGrid)
+  const [currentPlayer, setCurrentPlayer] = useState<number>(0)
+  const [winner, setWinner] = useState<number | null>(null)
+  const [gameStarted, setGameStarted] = useState<boolean>(false)
+  const players = ['red', 'blue']
+
+  // Handle a cell click event.
+  const handleCellClick = (row: number, col: number) => {
+    // Ignore if a winner exists or if cell is out of bounds.
+    if (winner !== null || !grid[row]?.[col]) return
     if (!gameStarted) setGameStarted(true)
 
-    // Check if cell belongs to opponent
+    // Prevent playing on an opponent's cell.
     if (
       grid[row][col].player !== null &&
       grid[row][col].player !== currentPlayer
     )
       return
 
-    const newGrid = JSON.parse(JSON.stringify(grid))
+    // Use structuredClone (or a custom deep clone) for an efficient deep copy.
+    const newGrid = structuredClone(grid) as Cell[][] // Modern browsers only.
     newGrid[row][col].count++
     newGrid[row][col].player = currentPlayer
 
-    // Process any chain reactions
+    // Process chain reactions starting from the clicked cell.
     const finalGrid = processChainReactions(newGrid, row, col)
-
     setGrid(finalGrid)
-    checkWinner(finalGrid)
 
-    // Only change player if game hasn't been won
-    if (winner === null) {
+    // Check for a win.
+    const result = checkWinner(finalGrid, gameStarted)
+    if (result !== null) {
+      setWinner(result)
+    } else {
+      // Switch players if no win.
       setCurrentPlayer((currentPlayer + 1) % 2)
     }
   }
 
-  const getCellContent = (count: number, player: number) => {
+  // Return JSX for a cell based on its count and player.
+  const getCellContent = (
+    count: number,
+    player: number
+  ): React.ReactNode | null => {
     if (count === 0) return null
-
     const baseClass = 'absolute rounded-full transition-all duration-300'
-    const dots = []
     const color = player === 0 ? 'bg-red-500' : 'bg-blue-500'
-
+    const dots: React.ReactNode[] = []
     switch (count) {
       case 1:
         dots.push(
@@ -184,11 +208,19 @@ const ChainReactionGame = () => {
           />
         )
         break
+      default:
+        // For counts higher than 3, you might simply render a number.
+        dots.push(
+          <div
+            key="default"
+            className="absolute inset-0 flex items-center justify-center text-white font-bold text-xs"
+          >
+            {count}
+          </div>
+        )
     }
     return dots
   }
-
-  if (!grid) return null
 
   return (
     <div className="flex flex-col items-center gap-4 p-4">

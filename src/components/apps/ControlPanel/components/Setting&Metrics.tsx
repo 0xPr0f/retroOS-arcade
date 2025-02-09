@@ -360,7 +360,9 @@ const AppearanceSettings = ({
         <button
           onClick={() => setIsDarkMode(!isDarkMode)}
           className={`w-12 h-6 rounded-full transition-colors ${
-            isDarkMode ? 'bg-blue-500' : 'bg-gray-300'
+            isDarkMode
+              ? 'bg-blue-500 hover:bg-blue-700'
+              : 'bg-gray-300 hover:bg-gray-400'
           }`}
         >
           {isDarkMode ? (
@@ -383,7 +385,9 @@ const AppearanceSettings = ({
           <button
             onClick={() => fileInputRef.current?.click()}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'
+              isDarkMode
+                ? 'bg-gray-700 text-white hover:bg-gray-800'
+                : 'bg-gray-200 text-black hover:bg-gray-400'
             }`}
           >
             Choose Image
@@ -399,7 +403,9 @@ const AppearanceSettings = ({
               // window.location.reload()
             }}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'
+              isDarkMode
+                ? 'bg-gray-700 text-white hover:bg-gray-800'
+                : 'bg-gray-200 text-black hover:bg-gray-400'
             }`}
           >
             Reset
@@ -613,7 +619,7 @@ const UserInfoSettings = ({ isDarkMode }: { isDarkMode: boolean }) => {
             </div>
             <label
               className={cn(
-                ` border border-red-900 absolute bottom-0 right-0 bg-[${lightBlue}] p-2 rounded-full cursor-pointer `,
+                ` absolute bottom-0 right-0 bg-[${lightBlue}] p-2 rounded-full cursor-pointer `,
                 'hover:bg-[var(--dark-blue-cm)]'
               )}
             >

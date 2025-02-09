@@ -22,11 +22,8 @@ import { Check, Copy } from 'lucide-react'
 import { cn } from '@/components/library/utils'
 import { usePregenTransaction } from '@/components/pc/drives/Storage&Hooks/PregenInteractions'
 import { usePregenSession } from '@/components/pc/drives/Storage&Hooks/PregenSession'
-import {
-  NotificationContainer,
-  showErrorToast,
-} from '@/components/pc/drives/Extensions/ToastNotifs'
 import toast from 'react-hot-toast'
+import { useNotifications } from '@/components/pc/drives/Extensions/ToastNotifs'
 
 const TicTacToeMP = () => {
   const { address: playerAddress } = useAccount()
@@ -52,6 +49,8 @@ const TicTacToeMP = () => {
     Record<string, TransactionState>
   >({})
   const [leftGame, setLeftGame] = useState<boolean>(false)
+
+  const { addNotification } = useNotifications()
 
   // Helper: update transaction state globally
   const updateTransactionState = (
@@ -327,7 +326,6 @@ const TicTacToeMP = () => {
 
   const handleMove = async (position: number) => {
     if (!isOnChain) {
-      showErrorToast('This app is not available on this chain', 'Invalid chain')
       return
     }
     if (!gameId || !gameState?.[1]) return
@@ -363,7 +361,11 @@ const TicTacToeMP = () => {
 
   const handleJoinQueue = async () => {
     if (!isOnChain) {
-      showErrorToast('This app is not available on this chain', 'Invalid chain')
+      addNotification({
+        title: `Test $notification`,
+        message: `This is a test notification message.`,
+        type: 'success',
+      })
       return
     }
     if (isConnected) {
@@ -385,7 +387,6 @@ const TicTacToeMP = () => {
 
   const handleLeaveQueue = async () => {
     if (!isOnChain) {
-      showErrorToast('This app is not available on this chain', 'Invalid chain')
       return
     }
     if (isConnected) {
@@ -407,7 +408,11 @@ const TicTacToeMP = () => {
 
   const handleExitMatch = async () => {
     if (!isOnChain) {
-      showErrorToast('This app is not available on this chain', 'Invalid chain')
+      addNotification({
+        title: `Test $notification`,
+        message: `This is a test notification message.`,
+        type: 'success',
+      })
       return
     }
     if (isConnected) {
@@ -431,7 +436,13 @@ const TicTacToeMP = () => {
     const isChainUnavailable = !availableChainIds.some(
       (chain) => Number(chain) === chainId
     )
-    console.log(!isChainUnavailable)
+    if (isChainUnavailable) {
+      addNotification({
+        title: `Chain Unavailable`,
+        message: `This chain is not available.`,
+        type: 'error',
+      })
+    }
     setIsOnChain(!isChainUnavailable)
   }, [chainId])
 
@@ -554,7 +565,6 @@ const TicTacToeMP = () => {
 
   return (
     <div className="flex flex-col items-center">
-      <NotificationContainer />
       <div className="mt-1 mb-1">
         {!gameId ? (
           <div className="flex flex-col mt-2 gap-2 items-center">

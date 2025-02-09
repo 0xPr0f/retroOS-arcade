@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Arcade Vista',
+  title: 'RetroOS Arcade',
   description: 'Desktop like arcade experience & GUI',
 }
 

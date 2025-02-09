@@ -70,6 +70,7 @@ X-> Y
   }
   isFixedSize?: boolean
   greater?: boolean
+  isFocused?: boolean
 }
 interface ContextMenuProps {
   x: number

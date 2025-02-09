@@ -16,11 +16,22 @@ const useExperimentalFeatures = () => {
     return setExperimentalFlag(JSON.stringify(!isExperimentalFlag()))
   }
 
-  const useSaveState = (key?: string, parser?: any, defaultValue?: any) => {
+  const useSaveState = <T,>(
+    key?: string,
+    parser?: any,
+    defaultValue?: T
+  ): [T, React.Dispatch<React.SetStateAction<T>>] => {
     if (isExperimentalFlag()) {
-      return useQueryState(key!, parser)
+      return useQueryState(key!, parser) as unknown as [
+        T,
+        React.Dispatch<React.SetStateAction<T>>
+      ]
     }
-    return useState(defaultValue ?? null)
+    // If defaultValue is not provided and T is assumed to be string, fallback to an empty string.
+    // Otherwise, you may throw an error or handle it as needed.
+    const initialValue =
+      defaultValue !== undefined ? defaultValue : ('' as unknown as T)
+    return useState<T>(initialValue)
   }
 
   return {

@@ -1,4 +1,4 @@
-import StartIcon from './pcicons/start.svg'
+import StartIcon from './pcicons/pciconsshapes.svg'
 import XIcon from './pcicons/x.svg'
 import React from 'react'
 import Image from 'next/image'
