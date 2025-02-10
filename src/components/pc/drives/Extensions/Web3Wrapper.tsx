@@ -1,22 +1,21 @@
 'use client'
-import React from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import React from 'react'
 
+import { paraConnector } from '@getpara/wagmi-v2-integration'
+import { OAuthMethod } from '@getpara/web-sdk'
 import {
-  http,
   createConfig,
-  WagmiProvider,
   CreateConfigParameters,
+  http,
+  WagmiProvider,
   webSocket,
 } from 'wagmi'
 import { baseSepolia, mainnet, sepolia } from 'wagmi/chains'
-import { paraConnector } from '@getpara/wagmi-v2-integration'
-import { OAuthMethod } from '@getpara/web-sdk'
-import PcDesktop from '../..'
 import { injected } from 'wagmi/connectors'
-import { PregenProvider } from '../Storage&Hooks/PregenSession'
+import PcDesktop from '../..'
 import para from '../Authentication/para'
-import { Toaster } from 'react-hot-toast'
+import { PregenProvider } from '../Storage&Hooks/PregenSession'
 import { NotificationProvider } from './ToastNotifs'
 
 const connector = paraConnector({

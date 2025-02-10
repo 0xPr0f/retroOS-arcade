@@ -362,9 +362,10 @@ const TicTacToeMP = () => {
   const handleJoinQueue = async () => {
     if (!isOnChain) {
       addNotification({
-        title: `Test $notification`,
+        title: `Test notification`,
         message: `This is a test notification message.`,
-        type: 'success',
+        type: 'error',
+        duration: 10000,
       })
       return
     }
@@ -439,7 +440,7 @@ const TicTacToeMP = () => {
     if (isChainUnavailable) {
       addNotification({
         title: `Chain Unavailable`,
-        message: `This chain is not available.`,
+        message: `This chain is not available.,This chain is not available.,This chain is not available.`,
         type: 'error',
       })
     }

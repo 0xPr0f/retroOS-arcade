@@ -1,29 +1,13 @@
 'use server'
-import {
-  Para as ParaServer,
-  Environment,
-  SuccessfulSignatureRes,
-} from '@getpara/server-sdk'
+import { Para as ParaServer, Environment } from '@getpara/server-sdk'
 import { categorizeIdentifier } from '../Extensions/utils'
-import {
-  custom,
-  http,
-  sendTransaction,
-  PrepareTransactionRequestParameters,
-} from '@wagmi/core'
+import { http } from '@wagmi/core'
 import { baseSepolia, mainnet, sepolia } from '@wagmi/core/chains'
 import {
   createParaAccount,
   createParaViemClient,
 } from '@getpara/viem-v2-integration'
-import { RLP } from '@ethereumjs/rlp'
-import {
-  createPublicClient,
-  encodeFunctionData,
-  nonceManager,
-  parseEther,
-  parseGwei,
-} from 'viem'
+import { encodeFunctionData, parseEther } from 'viem'
 
 export const PublicClientInteractionsList = (account: any, chainId: number) => {
   const infuraKey = process.env.NEXT_PUBLIC_INFURA_KEY

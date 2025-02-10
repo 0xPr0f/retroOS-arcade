@@ -1,24 +1,18 @@
 import React, { useState } from 'react'
 
 const ChainReactionGame = () => {
-  // --- Types and Constants ---
-
   const gridSize = 6
 
   interface Cell {
     count: number
     player: number | null
   }
-
-  // Precomputed neighbor offsets: up, down, left, right.
   const neighborOffsets: [number, number][] = [
     [-1, 0],
     [1, 0],
     [0, -1],
     [0, 1],
   ]
-
-  // Build the initial grid using for-loops.
   const createInitialGrid = (): Cell[][] => {
     const grid: Cell[][] = new Array(gridSize)
     for (let i = 0; i < gridSize; i++) {
@@ -32,9 +26,6 @@ const ChainReactionGame = () => {
 
   const initialGrid = createInitialGrid()
 
-  // --- Game Logic Functions ---
-
-  // Critical mass depends on the cell's position.
   const getCriticalMass = (row: number, col: number): number => {
     if (
       (row === 0 || row === gridSize - 1) &&
@@ -46,7 +37,6 @@ const ChainReactionGame = () => {
     return 4
   }
 
-  // Return valid neighbors using precomputed offsets.
   const getNeighbors = (row: number, col: number): [number, number][] => {
     const neighbors: [number, number][] = []
     for (let i = 0; i < neighborOffsets.length; i++) {
@@ -60,8 +50,6 @@ const ChainReactionGame = () => {
     return neighbors
   }
 
-  // Check if all occupied cells belong to one player.
-  // Returns 0 or 1 if one player occupies every occupied cell; otherwise, null.
   const checkWinner = (
     currentGrid: Cell[][],
     gameStarted: boolean
@@ -86,8 +74,6 @@ const ChainReactionGame = () => {
     return null
   }
 
-  // Process chain reactions using a BFS/queue approach.
-  // Only cells that reach or exceed critical mass are processed.
   const processChainReactions = (
     grid: Cell[][],
     startRow: number,
@@ -121,48 +107,37 @@ const ChainReactionGame = () => {
     return grid
   }
 
-  // --- React Component State and Handlers ---
-
-  // Assume these React state hooks are inside your component.
   const [grid, setGrid] = useState<Cell[][]>(initialGrid)
   const [currentPlayer, setCurrentPlayer] = useState<number>(0)
   const [winner, setWinner] = useState<number | null>(null)
   const [gameStarted, setGameStarted] = useState<boolean>(false)
   const players = ['red', 'blue']
 
-  // Handle a cell click event.
   const handleCellClick = (row: number, col: number) => {
-    // Ignore if a winner exists or if cell is out of bounds.
     if (winner !== null || !grid[row]?.[col]) return
     if (!gameStarted) setGameStarted(true)
 
-    // Prevent playing on an opponent's cell.
     if (
       grid[row][col].player !== null &&
       grid[row][col].player !== currentPlayer
     )
       return
 
-    // Use structuredClone (or a custom deep clone) for an efficient deep copy.
-    const newGrid = structuredClone(grid) as Cell[][] // Modern browsers only.
+    const newGrid = structuredClone(grid) as Cell[][]
     newGrid[row][col].count++
     newGrid[row][col].player = currentPlayer
 
-    // Process chain reactions starting from the clicked cell.
     const finalGrid = processChainReactions(newGrid, row, col)
     setGrid(finalGrid)
 
-    // Check for a win.
     const result = checkWinner(finalGrid, gameStarted)
     if (result !== null) {
       setWinner(result)
     } else {
-      // Switch players if no win.
       setCurrentPlayer((currentPlayer + 1) % 2)
     }
   }
 
-  // Return JSX for a cell based on its count and player.
   const getCellContent = (
     count: number,
     player: number

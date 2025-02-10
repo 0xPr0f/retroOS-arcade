@@ -371,8 +371,8 @@ const PcDesktop: React.FC = () => {
                 </div>
 
                 {(isConnected || isLoginPregenSession) && (
-                  <div className="absolute flex pr-10 flex-row-reverse justify-start gap-4 top-0 w-full bg-gradient-to-r p-2 to-[#0a246a] from-[#2563eb] h-10">
-                    <div>
+                  <div className="absolute flex pr-8 flex-row-reverse justify-start gap-4 top-0 w-full bg-gradient-to-r p-2 to-[#0a246a] from-[#2563eb] h-10">
+                    <div className="border relative border-white w-fit">
                       <button
                         onClick={() => {
                           openNotificationPanel()
@@ -381,13 +381,13 @@ const PcDesktop: React.FC = () => {
                       >
                         <Bell size={20} />
                         {unreadCount > 0 && (
-                          <span className="absolute top-[3px] right-7 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                             {unreadCount}
                           </span>
                         )}
                       </button>
                     </div>
-                    <div className="flex w-fit justify-end items-center h-full px-2">
+                    <div className="flex border border-white  w-fit justify-end items-center h-full px-2">
                       <TimeWidget />
                     </div>
                     <div className="flex flex-row-reverse items-center justify-center">

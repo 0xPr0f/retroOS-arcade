@@ -1,25 +1,23 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  memo,
-  useRef,
-} from 'react'
+import { cn } from '@/components/library/utils'
 import {
-  X,
-  Bell,
-  Trash2,
-  Check,
-  CheckCircle2,
   AlertCircle,
   AlertTriangle,
-  Info,
+  CheckCircle2,
   Eye,
-  type LucideIcon,
+  Info,
+  Trash2,
+  X,
 } from 'lucide-react'
+import React, {
+  createContext,
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 
 // Make all theme properties optional with defaults
 interface NotificationTheme {
@@ -113,10 +111,24 @@ interface NotificationAction {
   icon?: React.ReactNode
   className?: string
 }
+type NotificationPosition =
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
+  | 'top-center'
+  | 'bottom-center'
+  | {
+      top?: number | string
+      bottom?: number | string
+      left?: number | string
+      right?: number | string
+    }
 
 interface NotificationOptions {
   icon?: React.ReactNode
   customStyle?: React.CSSProperties
+  customComponent?: React.ReactNode
   className?: string
   persistent?: boolean
   showToast?: boolean
@@ -125,7 +137,10 @@ interface NotificationOptions {
   onClick?: () => void
   onClose?: () => void
   actions?: NotificationAction[]
+  position?: NotificationPosition
 }
+
+const DEFAULT_POSITION: NotificationPosition = 'top-right'
 
 type Notification = BaseNotification & Partial<NotificationOptions>
 
@@ -239,6 +254,43 @@ class NotificationEmitter {
 const DEFAULT_STORAGE_KEY = 'notifications:storage'
 const DEFAULT_TOAST_DURATION = 5000
 const DEFAULT_TOAST_DELAY = 1500
+const NOTIFICATION_SPACING = 8 // Space between notifications in pixels
+const useNotificationPosition = (
+  index: number,
+  position: NotificationPosition,
+  onHeightChange: (index: number, height: number) => void
+) => {
+  const notificationRef = useRef(null)
+  const [height, setHeight] = useState(0)
+  const spacing = NOTIFICATION_SPACING
+
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const newHeight = entry.contentRect.height
+        setHeight(newHeight)
+        onHeightChange(index, newHeight)
+      }
+    })
+
+    if (notificationRef.current) {
+      observer.observe(notificationRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [index, onHeightChange])
+
+  const calculateOffset = (heights: number[]) => {
+    const previousHeights = heights
+      .slice(0, index)
+      .reduce((sum: number, h: number) => sum + h + spacing, 0)
+    return String(position)?.startsWith('top')
+      ? 46 + previousHeights
+      : 16 + previousHeights
+  }
+
+  return { notificationRef, height, calculateOffset }
+}
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
   undefined
@@ -335,72 +387,148 @@ const NotificationItem = memo(
     )
   }
 )
+interface NotificationGroup {
+  [key: string]: Notification[]
+}
+
+//const DEFAULT_POSITION: NotificationPosition = 'top-right'
+
+const MAX_NOTIFICATIONS = 8 // Maximum number of notifications to show at once
 
 const Toast = memo(
   ({
     notification,
     onClose,
+    index,
     theme = DEFAULT_THEME,
+    heights,
+    onHeightChange,
   }: {
     notification: Notification
     onClose: () => void
+    index: number
     theme?: NotificationTheme
+    heights?: {}
+    onHeightChange?: (index: number, height: number) => void
   }) => {
     const style = NOTIFICATION_STYLES[notification.type]
     const currentTheme =
       notification.theme === 'dark' ? theme.dark : theme.light
 
+    // Get position styles with stacking
+    const getPositionStyle = (
+      pos?: NotificationPosition
+    ): React.CSSProperties => {
+      const offset = calculateOffset(Object.values(heights!))
+
+      if (!pos || typeof pos === 'string') {
+        switch (pos || DEFAULT_POSITION) {
+          case 'top-left':
+            return { top: `${30 + offset}px`, left: '1rem' }
+          case 'top-right':
+            return { top: `${30 + offset}px`, right: '1rem' } // Adjusted to be slightly lower
+          case 'bottom-left':
+            return { bottom: `${16 + offset}px`, left: '1rem' }
+          case 'bottom-right':
+            return { bottom: `${16 + offset}px`, right: '1rem' }
+          case 'top-center':
+            return {
+              top: `${8 + offset}px`, // Adjusted to be slightly lower
+              left: '50%',
+              transform: 'translateX(-50%)',
+            }
+          case 'bottom-center':
+            return {
+              bottom: `${16 + offset}px`,
+              left: '50%',
+              transform: 'translateX(-50%)',
+            }
+        }
+      }
+      return pos as React.CSSProperties
+    }
+
+    const getAnimationClass = (pos?: NotificationPosition): string => {
+      if (!pos || typeof pos === 'string') {
+        const position = pos || DEFAULT_POSITION
+        if (position.startsWith('top')) {
+          return 'animate-slide-in-down'
+        }
+        return 'animate-slide-in-up'
+      }
+      return 'animate-fade-in'
+    }
+
+    const { notificationRef, calculateOffset } = useNotificationPosition(
+      index,
+      notification.position!,
+      onHeightChange!
+    )
+
     return (
       <div
-        className={`
-        ${style.backgroundColor} 
-        ${style.hoverBackground}
-        rounded-sm shadow-lg max-w-md w-full animate-enter
-        ${notification.className || ''}
-      `}
-        style={notification.customStyle}
+        ref={notificationRef}
+        className={cn(
+          `fixed z-50
+          ${style.backgroundColor} 
+          ${style.hoverBackground}
+          rounded-md shadow-lg w-72 max-w-xs`,
+          `${getAnimationClass(notification.position)}`,
+          `${notification.className || ''}
+          transition-all duration-300 ease-in-out
+         border border-black 
+        `
+        )}
+        style={{
+          ...notification.customStyle,
+          ...getPositionStyle(notification.position),
+        }}
         onClick={notification.onClick}
       >
-        <div className="flex p-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 text-white">
-              {notification.icon || style.icon}
-              <p className="text-sm font-medium">{notification.title}</p>
-            </div>
-            <p className="mt-1 text-sm text-white/90">{notification.message}</p>
-            {notification.actions && (
-              <div className="mt-2 flex gap-2">
-                {notification.actions.map((action, index) => (
-                  <button
-                    key={index}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      action.onClick()
-                    }}
-                    className={`
-                    flex items-center gap-1 px-2 py-1 rounded-sm 
-                    text-sm text-white/90 hover:text-white transition-colors
-                    ${action.className || ''}
-                  `}
-                  >
-                    {action.icon}
-                    {action.label}
-                  </button>
-                ))}
+        {notification.customComponent || (
+          <div className="flex gap-1 p-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 text-white">
+                {notification.icon || style.icon}
+                <p className="text-sm font-medium">{notification.title}</p>
               </div>
-            )}
+              <p className="mt-1 text-sm text-white/90">
+                {notification.message}
+              </p>
+              {notification.actions && (
+                <div className="mt-2 flex gap-2">
+                  {notification.actions.map((action, index) => (
+                    <button
+                      key={index}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        action.onClick()
+                      }}
+                      className={`
+                      flex items-center gap-1 px-2 py-1 rounded-sm 
+                      text-sm text-white/90 hover:text-white transition-colors
+                      ${action.className || ''}
+                    `}
+                    >
+                      {action.icon}
+                      {action.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onClose()
+                notification.onClose?.()
+              }}
+              className="text-white/50 hover:text-white transition-colors"
+            >
+              <X size={16} />
+            </button>
           </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onClose()
-              notification.onClose?.()
-            }}
-            className="text-white/80 hover:text-white transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
+        )}
       </div>
     )
   }
@@ -469,7 +597,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     ) => {
       const newNotification: Notification = {
         ...notification,
-        id: Date.now().toString(),
+        id: (Math.random() * Date.now()).toString(),
         timestamp: Date.now(),
         read: false,
         showToast: true,
@@ -570,7 +698,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     </NotificationContext.Provider>
   )
 }
-
+/*
 export const ToastContainer = memo(
   ({ theme = DEFAULT_THEME }: { theme?: NotificationTheme }) => {
     const [toasts, setToasts] = useState<Notification[]>([])
@@ -608,7 +736,79 @@ export const ToastContainer = memo(
     )
   }
 )
+*/
+export const ToastContainer = memo(
+  ({ theme = DEFAULT_THEME }: { theme?: NotificationTheme }) => {
+    const [toasts, setToasts] = useState<Notification[]>([])
 
+    useEffect(() => {
+      function toastListener(notification: Notification) {
+        if (notification.showToast) {
+          setToasts((prev) => {
+            // Remove oldest notification if we exceed max
+            const newToasts = [...prev]
+            if (newToasts.length >= MAX_NOTIFICATIONS) {
+              newToasts.pop() // Remove oldest
+            }
+            return [notification, ...newToasts]
+          })
+
+          if (!notification.persistent) {
+            setTimeout(() => {
+              setToasts((prev) => prev.filter((t) => t.id !== notification.id))
+            }, notification.duration || DEFAULT_TOAST_DURATION)
+          }
+        }
+      }
+
+      const unsubscribe = emitter.subscribe(toastListener)
+      return () => unsubscribe()
+    }, [])
+
+    // Group notifications by position
+    const groupedToasts = useMemo(() => {
+      return toasts.reduce((acc: NotificationGroup, toast) => {
+        const position = toast.position || DEFAULT_POSITION
+        const key = typeof position === 'string' ? position : 'custom'
+        if (!acc[key]) {
+          acc[key] = []
+        }
+        acc[key].push(toast)
+        return acc
+      }, {})
+    }, [toasts])
+
+    const [heights, setHeights] = useState({})
+
+    const handleHeightChange = (index: any, height: any) => {
+      setHeights((prev) => ({ ...prev, [index]: height }))
+    }
+
+    return (
+      <>
+        {Object.entries(groupedToasts).map(([position, groupToasts]) => (
+          <div key={position} className="notification-group">
+            {groupToasts.map((toast, index) => (
+              <Toast
+                key={toast.id}
+                notification={toast}
+                index={index}
+                heights={heights}
+                onHeightChange={handleHeightChange}
+                onClose={() =>
+                  setToasts((prev) => prev.filter((t) => t.id !== toast.id))
+                }
+                theme={theme}
+              />
+            ))}
+          </div>
+        ))}
+      </>
+    )
+  }
+)
+
+// Updated NotificationCenter with better sizing and styling
 const NotificationCenter = memo(
   ({
     isOpen,
@@ -632,46 +832,49 @@ const NotificationCenter = memo(
         {isOpen && (
           <>
             <div
-              className="fixed inset-0 bg-black/20 z-50"
+              className={cn(
+                'fixed inset-0 z-50' /*"bg-black/20 backdrop-blur-sm "*/
+              )}
               onClick={() => setIsOpen(false)}
             />
-            <div className="fixed right-4 top-16 z-50 w-full max-w-sm bg-white/10 rounded-sm shadow-xl">
-              <div className="flex items-center justify-between p-4 border-b">
+            <div className="fixed right-4 top-12 z-50 w-full max-w-xs bg-white rounded-lg shadow-xl">
+              <div className="flex items-center justify-between p-3 border-b">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-medium">Notifications</h2>
+                  <h2 className="text-base text-black font-medium">
+                    Notifications
+                  </h2>
                   {unreadCount > 0 && (
-                    <span className="px-2 py-1 text-xs font-medium bg-blue-500 text-white rounded-full">
+                    <span className="px-1.5 py-0.5 text-xs font-medium bg-blue-500 text-white rounded-full">
                       {unreadCount}
                     </span>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1">
                   <button
                     onClick={markAllAsRead}
-                    className="p-2 text-gray-700 hover:text-gray-900 transition-colors"
+                    className="p-1.5 text-gray-500 hover:text-gray-700 transition-colors rounded-md hover:bg-gray-100"
                     title="Mark all as read"
                   >
-                    <Check size={20} />
+                    <Eye size={16} />
                   </button>
-
                   <button
                     onClick={clearNotifications}
-                    className="p-2 text-gray-700 hover:text-gray-900 transition-colors"
+                    className="p-1.5 text-gray-500 hover:text-gray-700 transition-colors rounded-md hover:bg-gray-100"
                     title="Clear all"
                   >
-                    <Trash2 size={20} />
+                    <Trash2 size={16} />
                   </button>
                   <button
                     onClick={() => setIsOpen(false)}
-                    className="p-2 text-gray-700 hover:text-gray-900 transition-colors"
+                    className="p-1.5 text-gray-500 hover:text-gray-700 transition-colors rounded-md hover:bg-gray-100"
                   >
-                    <X size={20} />
+                    <X size={16} />
                   </button>
                 </div>
               </div>
               <div className="divide-y max-h-[calc(100vh-12rem)] overflow-y-auto">
                 {notifications.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500">
+                  <div className="p-4 text-center text-gray-500 text-sm">
                     No notifications
                   </div>
                 ) : (
@@ -707,11 +910,11 @@ export const useNotifications = () => {
 // Example usage and types export
 export type {
   Notification,
-  NotificationType,
   NotificationStyle,
   NotificationTheme,
+  NotificationType,
 }
 
 // Constants export
 export const STORAGE_KEY = 'notifications:storage'
-export { NOTIFICATION_STYLES, DEFAULT_THEME }
+export { DEFAULT_THEME, NOTIFICATION_STYLES }
