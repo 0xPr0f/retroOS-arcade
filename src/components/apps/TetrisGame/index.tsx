@@ -1,32 +1,44 @@
-import { PrepareRlpEncodedTx } from '@/components/pc/drives/Interactions/Prepare'
-import { TESTABI, testaddress } from '@/components/pc/drives/Interactions/ABI'
+import { useDispatchWindows, useNavbar } from '@/components/pc/drives'
 import { Button2 } from '@/components/pc/drives/UI/UI_Components.v1'
-import React from 'react'
-import { useChainId } from 'wagmi'
-import { usePregenSession } from '@/components/pc/drives/Storage&Hooks/PregenSession'
-import axios from 'axios'
-import { PrepareAndSignTransactionWithPregenWalletServerProps } from '@/pages/api/create/pregentransaction'
+import React, { useEffect } from 'react'
 
 const TetrisGame = () => {
-  const chainId = useChainId()
-  const { pregenWalletId, pregenEncryptedKeyShare } = usePregenSession()
+  const { createDispatchWindow } = useDispatchWindows()
+  const { setNavbarContent } = useNavbar()
+
+  useEffect(() => {
+    // Set custom navbar content when the window opens.
+    setNavbarContent(
+      <div className="flex items-center space-x-4">
+        <span className="text-sm font-medium">Window Open</span>
+        <button
+          className="px-2 py-1 border rounded hover:bg-gray-700"
+          onClick={() => {
+            createDispatchWindow({
+              title: 'My Window',
+              content: <div>Window Content</div>,
+              initialPosition: { x: 100, y: 50 },
+              initialSize: { width: 200, height: 200 },
+              onClose: () => console.log('Window closed'),
+            })
+          }}
+        >
+          More Info
+        </button>
+      </div>
+    )
+
+    // Clear the navbar content on unmount:
+    return () => setNavbarContent(null)
+  }, [setNavbarContent])
+
   return (
     <div>
       TetrisGame
       <Button2
         onClick={async () => {
           console.log('click')
-
-          const result = await axios.post('api/create/pregentransaction', {
-            abi: TESTABI,
-            toAddress: testaddress,
-            functionName: 'callData',
-            args: [2],
-            chainId: chainId,
-            userShare: pregenEncryptedKeyShare!,
-            walletId: pregenWalletId!,
-          } satisfies PrepareAndSignTransactionWithPregenWalletServerProps)
-          console.log(result) // returns the tx hash of the transaction
+          setNavbarContent(<div>THis is a 2 test</div>)
         }}
       >
         Test on chain

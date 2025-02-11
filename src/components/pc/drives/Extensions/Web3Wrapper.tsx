@@ -17,6 +17,8 @@ import PcDesktop from '../..'
 import para from '../Authentication/para'
 import { PregenProvider } from '../Storage&Hooks/PregenSession'
 import { NotificationProvider } from './ToastNotifs'
+import { DispatchWindowProvider } from '../UI/dispatchWindow'
+import { NavbarProvider } from '../Storage&Hooks/NavbarApi'
 
 const connector = paraConnector({
   para: para,
@@ -60,14 +62,18 @@ export const queryClient = new QueryClient()
 
 const Web3Wrapper: React.FC = () => {
   return (
-    <div suppressHydrationWarning>
+    <div>
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
-          <NotificationProvider>
-            <PregenProvider>
-              <PcDesktop />
-            </PregenProvider>
-          </NotificationProvider>
+          <DispatchWindowProvider>
+            <NotificationProvider>
+              <PregenProvider>
+                <NavbarProvider>
+                  <PcDesktop />
+                </NavbarProvider>
+              </PregenProvider>
+            </NotificationProvider>
+          </DispatchWindowProvider>
         </QueryClientProvider>
       </WagmiProvider>
     </div>

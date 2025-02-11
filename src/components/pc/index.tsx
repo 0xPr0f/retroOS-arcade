@@ -30,6 +30,7 @@ import { usePregenSession } from './drives/Storage&Hooks/PregenSession'
 import Loading from './drives/UI/Loading'
 import { Button } from './drives/UI/UI_Components.v1'
 import { useNotifications } from './drives/Extensions/ToastNotifs'
+import { useNavbar } from './drives'
 
 const WindowComponent: React.FC<WindowProps> = ({
   window,
@@ -291,12 +292,35 @@ const PcDesktop: React.FC = () => {
     [notifications]
   )
   const menuRef = useRef<HTMLDivElement>(null)
+  const desktopRef = useRef<HTMLButtonElement>(null)
 
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
     setMounted(true)
     console.log(isLoginPregenSession, 'Login pregen')
   }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        desktopRef.current &&
+        menuRef.current &&
+        !(desktopRef.current as HTMLButtonElement).contains(
+          event.target as Node
+        ) &&
+        !menuRef.current?.contains(event.target as Node)
+      ) {
+        setStartMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
+  const { navbarContent, hasNavbarContent } = useNavbar()
 
   if (!mounted) {
     // Render a static placeholder or nothing on the first render (SSR)
@@ -371,31 +395,47 @@ const PcDesktop: React.FC = () => {
                 </div>
 
                 {(isConnected || isLoginPregenSession) && (
-                  <div className="absolute flex pr-8 flex-row-reverse justify-start gap-4 top-0 w-full bg-gradient-to-r p-2 to-[#0a246a] from-[#2563eb] h-10">
-                    <div className="border relative border-white w-fit">
-                      <button
-                        onClick={() => {
-                          openNotificationPanel()
-                        }}
-                        className="rounded-full text-white  shadow-lg hover:text-gray-400"
-                      >
-                        <Bell size={20} />
-                        {unreadCount > 0 && (
-                          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                            {unreadCount}
-                          </span>
+                  <div className="absolute top-0 w-full bg-gradient-to-r to-[#0a246a] from-[#2563eb] h-10">
+                    <div className="flex h-full items-center justify-between ml-10">
+                      <div className="flex h-full items-center">
+                        {hasNavbarContent ? (
+                          <>{navbarContent}</>
+                        ) : (
+                          <div className="text-lg font-extrabold">
+                            {windows
+                              .filter((window) => window.id === activeWindow)
+                              .map((win) => win.title)}
+                          </div>
                         )}
-                      </button>
-                    </div>
-                    <div className="flex border border-white  w-fit justify-end items-center h-full px-2">
-                      <TimeWidget />
-                    </div>
-                    <div className="flex flex-row-reverse items-center justify-center">
-                      <div className="flex items-center h-full px-2">
-                        <AddressWidget />
                       </div>
-                      <div className="flex items-center h-full">
-                        <ChainWidget />
+
+                      <div className="flex pr-8 flex-row-reverse justify-start gap-4 ">
+                        <div className="border flex relative items-center border-white w-fit">
+                          <button
+                            onClick={() => {
+                              openNotificationPanel()
+                            }}
+                            className="rounded-full text-white  shadow-lg hover:text-gray-400"
+                          >
+                            <Bell size={20} />
+                            {unreadCount > 0 && (
+                              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                {unreadCount}
+                              </span>
+                            )}
+                          </button>
+                        </div>
+                        <div className="flex border border-white  w-fit justify-end items-center h-full px-2">
+                          <TimeWidget />
+                        </div>
+                        <div className="flex flex-row-reverse items-center justify-center">
+                          <div className="flex items-center h-full px-2">
+                            <AddressWidget />
+                          </div>
+                          <div className="flex items-center h-full">
+                            <ChainWidget />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -420,7 +460,7 @@ const PcDesktop: React.FC = () => {
                 <div className="absolute bottom-0 w-full bg-gradient-to-r from-[#0a246a] to-[#2563eb] h-12">
                   <div className="flex items-center h-full">
                     <button
-                      //ref={desktopRef}
+                      ref={desktopRef}
                       onClick={() => setStartMenuOpen(!startMenuOpen)}
                       className={`px-4 h-full flex items-center space-x-2 text-white hover:bg-[#3a6ea5]`}
                     >
@@ -462,7 +502,7 @@ const PcDesktop: React.FC = () => {
                   {startMenuOpen && (
                     <div
                       ref={menuRef}
-                      className=" z-[3] absolute bottom-12 left-0 w-60 bg-gradient-to-b from-[#0a246a] to-[#2563eb] rounded-t-lg shadow-xl p-4"
+                      className="z-[11] absolute bottom-12 left-0 w-60 bg-gradient-to-b from-[#0a246a] to-[#2563eb] rounded-t-lg shadow-xl p-4"
                     >
                       <div className="space-y-2">
                         {userApps

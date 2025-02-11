@@ -229,7 +229,7 @@ const PerformanceInfo = ({ isDarkMode }: { isDarkMode: boolean }) => {
 
     const networkInterval = setInterval(() => {
       checkNetworkLatency(setMetrics)
-    }, 5000) // Changed to 5s to reduce load
+    }, 5000)
 
     return () => {
       cleanup()
@@ -265,10 +265,15 @@ const PerformanceInfo = ({ isDarkMode }: { isDarkMode: boolean }) => {
             icon: <Battery />,
             title: 'Battery',
             value:
-              batteryState.isSupported && batteryState.fetched
+              batteryState.isSupported &&
+              batteryState.fetched &&
+              batteryState.dischargingTime !== Infinity
                 ? `${(batteryState.level * 100).toFixed(0)}%`
                 : 'N/A',
-            display: batteryState.isSupported && batteryState.fetched,
+            display:
+              batteryState.isSupported &&
+              batteryState.fetched &&
+              batteryState.dischargingTime !== Infinity,
           },
           {
             icon: <Network />,
@@ -298,6 +303,7 @@ const PerformanceInfo = ({ isDarkMode }: { isDarkMode: boolean }) => {
             </div>
           ))}
       </div>
+
       <NotWorking isDarkMode={isDarkMode} />
     </div>
   )
