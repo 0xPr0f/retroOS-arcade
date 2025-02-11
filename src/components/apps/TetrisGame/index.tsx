@@ -29,7 +29,10 @@ const TetrisGame = () => {
     )
 
     // Clear the navbar content on unmount:
-    return () => setNavbarContent(null)
+    return () => {
+      setNavbarContent(null)
+      return undefined // Ensure the return type is void
+    }
   }, [setNavbarContent])
 
   return (
