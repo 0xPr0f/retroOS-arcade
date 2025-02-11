@@ -198,7 +198,7 @@ export const DispatchWindowProvider: React.FC<{
           }}
         >
           <div
-            className="flex items-center justify-between px-4 py-2 bg-gray-100 rounded-t-lg cursor-move"
+            className="flex items-center justify-between px-2 py-1 bg-gray-100 rounded-t-lg"
             onMouseDown={(e) => startDragging(e, window.id, window.position)}
           >
             <h3 className="font-medium text-gray-800">{window.title}</h3>
