@@ -48,7 +48,8 @@ const DeviceInfo = ({ isDarkMode }: { isDarkMode: boolean }) => {
             isDarkMode ? 'text-black' : 'text-gray-600'
           } font-medium`}
         >
-          Designed by <span className=" font-bold font-serif">Retro Labs</span>
+          Designed by <span className=" font-bold font-serif">PHEA</span> ©{' '}
+          {new Date().getFullYear()}
         </p>
         <p className="text-sm  font-serif  text-gray-600">
           retroOS v-{process.env.NEXT_PUBLIC_RETRO_OS_VERSION}

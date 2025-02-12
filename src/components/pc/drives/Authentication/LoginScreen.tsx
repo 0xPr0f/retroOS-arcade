@@ -73,6 +73,21 @@ const LoginScreen: React.FC = () => {
       }}
       className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-red-900 to-blue-600 p-4"
     >
+      {imageBackground && imageBackground.length > 20 && (
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          disablePictureInPicture
+          className="absolute top-0 left-0 w-full h-full object-cover"
+        >
+          <source src={imageBackground} type="video/mp4" />
+          <source src={imageBackground} type="video/webm" />
+          <source src={imageBackground} type="video/ogg" />
+          <source src={imageBackground} type="video/mov" />
+        </video>
+      )}
       <div
         className={`w-full h-full max-w-md rounded-lg shadow-xl p-8 space-y-8 ${
           isParaModalOpen ? '' : 'bg-white/10 backdrop-blur-md'

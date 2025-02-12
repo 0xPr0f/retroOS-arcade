@@ -365,6 +365,9 @@ const PcDesktop: React.FC = () => {
                   className="absolute top-0 left-0 w-full h-full object-cover"
                 >
                   <source src={backgroundImage} type="video/mp4" />
+                  <source src={backgroundImage} type="video/webm" />
+                  <source src={backgroundImage} type="video/ogg" />
+                  <source src={backgroundImage} type="video/mov" />
                 </video>
               )}
 
@@ -432,7 +435,7 @@ const PcDesktop: React.FC = () => {
                       </div>
 
                       <div className="flex pr-8 flex-row-reverse justify-start gap-4 ">
-                        <div className="border flex relative items-center border-white w-fit">
+                        <div className="flex relative items-center  w-fit">
                           <button
                             onClick={() => {
                               openNotificationPanel()
@@ -447,7 +450,7 @@ const PcDesktop: React.FC = () => {
                             )}
                           </button>
                         </div>
-                        <div className="flex border border-white  w-fit justify-end items-center h-full px-2">
+                        <div className="flex w-fit justify-end items-center h-full px-2">
                           <TimeWidget />
                         </div>
                         <div className="flex flex-row-reverse items-center justify-center">
