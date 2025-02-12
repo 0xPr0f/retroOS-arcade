@@ -86,6 +86,7 @@ interface WindowProps {
   onMaximize: (id: number) => void
   isActive: boolean
   onFocus: (id: number) => void
+  onBlur: (id: number) => void
   updatePosition: (id: number, x: number, y: number) => void
   updateSize: (id: number, width: number, height: number) => void
 }

@@ -30,7 +30,12 @@ import {
   ChainReactionIcon,
 } from './appExports'
 
-const appMap: { [key: string]: React.FC } = {
+const appMap: {
+  [key: string]: React.FC<{
+    onBlur?: (id: number) => void
+    onFocus?: (id: number) => void
+  }>
+} = {
   computer: MyComputer,
   documents: Document,
   pictures: Pictures,
@@ -67,10 +72,14 @@ export const iconMap: { [key: string]: Object } = {
 export interface IconType {
   src: string
 }
-export const displayApp = (key: string) => {
+export const displayApp = (
+  key: string,
+  onBlur?: (id: number) => void,
+  onFocus?: (id: number) => void
+) => {
   const ContentComponent = appMap[key]
   return ContentComponent ? (
-    <ContentComponent />
+    <ContentComponent onBlur={onBlur} onFocus={onFocus} />
   ) : (
     <p>No content available for ID: {key}</p>
   )

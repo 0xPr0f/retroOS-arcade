@@ -2,9 +2,21 @@ import { useDispatchWindows, useNavbar } from '@/components/pc/drives'
 import { Button2 } from '@/components/pc/drives/UI/UI_Components.v1'
 import React, { useEffect } from 'react'
 
-const TetrisGame = () => {
+const TetrisGame = ({
+  onBlur,
+  onFocus,
+}: {
+  onBlur?: (id: number) => void
+  onFocus?: (id: number) => void
+}) => {
   const { createDispatchWindow } = useDispatchWindows()
   const { setNavbarContent } = useNavbar()
+
+  useEffect(() => {
+    if (onFocus) {
+      console.log('focus', 2)
+    }
+  }, [onFocus])
 
   const helpDispatchWindow = () => {
     createDispatchWindow({
@@ -83,7 +95,7 @@ const TetrisGame = () => {
         </div>
       ),
       initialPosition: { x: 100, y: 50 },
-      initialSize: { width: 300, height: 400 },
+      initialSize: { width: 220, height: 350 },
       onClose: () => console.log('Window closed'),
     })
   }

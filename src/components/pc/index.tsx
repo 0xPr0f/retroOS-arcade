@@ -39,6 +39,7 @@ const WindowComponent: React.FC<WindowProps> = ({
   onMaximize,
   isActive,
   onFocus,
+  onBlur,
   updatePosition,
   updateSize,
 }) => {
@@ -48,6 +49,7 @@ const WindowComponent: React.FC<WindowProps> = ({
   const dragStart = useRef({ x: 0, y: 0, offsetX: 0, offsetY: 0 })
 
   const handleMouseDown = (e: React.MouseEvent, type: 'drag' | 'resize') => {
+    onFocus(window.id)
     if (type === 'drag') {
       setIsDragging(true)
       dragStart.current = {
@@ -124,7 +126,7 @@ const WindowComponent: React.FC<WindowProps> = ({
       onClick={() => onFocus(window.id)}
     >
       <div
-        className="bg-gradient-to-r from-[#0a246a] to-[#2563eb] p-2 rounded-t flex items-center justify-between cursor-move"
+        className="bg-gradient-to-r from-[#0a246a] to-[#2563eb] p-2 rounded-t flex items-center justify-between"
         onMouseDown={(e) => handleMouseDown(e, 'drag')}
       >
         <div className="flex items-center space-x-2 text-white">
@@ -163,11 +165,11 @@ const WindowComponent: React.FC<WindowProps> = ({
         </div>
       </div>
       <div className="h-[calc(100%-2.5rem)] text-black bg-white">
-        {displayApp(window.key!)}
+        {displayApp(window.key!, onBlur, onFocus)}
       </div>
       {!window.isFixedSize && (
         <div
-          className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+          className="absolute bottom-0 right-0 w-4 h-4"
           onMouseDown={(e) => handleMouseDown(e, 'resize')}
         />
       )}
@@ -320,7 +322,14 @@ const PcDesktop: React.FC = () => {
     }
   }, [])
 
-  const { navbarContent, hasNavbarContent } = useNavbar()
+  const { navbarContent, setActiveWindowId } = useNavbar()
+
+  useEffect(() => {
+    const activeWindowId = windows
+      .filter((window) => window.id === activeWindow)
+      .map((win) => Number(win.id))[0]
+    setActiveWindowId(activeWindowId)
+  }, [windows, activeWindow, setActiveWindowId])
 
   if (!mounted) {
     // Render a static placeholder or nothing on the first render (SSR)
@@ -346,6 +355,19 @@ const PcDesktop: React.FC = () => {
               }}
               className="h-screen relative overflow-hidden select-none"
             >
+              {backgroundImage && backgroundImage.length > 20 && (
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  disablePictureInPicture
+                  className="absolute top-0 left-0 w-full h-full object-cover"
+                >
+                  <source src={backgroundImage} type="video/mp4" />
+                </video>
+              )}
+
               <div className="h-screen relative overflow-hidden">
                 {/* **************  Desktop Icons ************** */}
 
@@ -398,7 +420,7 @@ const PcDesktop: React.FC = () => {
                   <div className="absolute top-0 w-full bg-gradient-to-r to-[#0a246a] from-[#2563eb] h-10">
                     <div className="flex h-full items-center justify-between ml-10">
                       <div className="flex h-full items-center">
-                        {hasNavbarContent ? (
+                        {navbarContent ? (
                           <>{navbarContent}</>
                         ) : (
                           <div className="text-lg font-extrabold">
@@ -451,6 +473,7 @@ const PcDesktop: React.FC = () => {
                     onMaximize={maximizeWindow}
                     isActive={window.id === activeWindow}
                     onFocus={setActiveWindow}
+                    onBlur={setActiveWindow}
                     updatePosition={updatePosition}
                     updateSize={updateSize}
                   />

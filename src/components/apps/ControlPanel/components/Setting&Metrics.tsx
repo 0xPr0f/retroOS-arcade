@@ -327,26 +327,30 @@ const AppearanceSettings = ({
     string | undefined
   >(settings?.theme.backgroundUrl)
   const [name, setName] = useState('')
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     setName(file?.name!)
     if (file) {
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = () => {
-        setBackgroundDesktop(reader.result as string)
-        setBackgroundImage(reader.result as string)
-        setSettings({
-          ...settings!,
-          theme: {
-            ...settings!.theme,
-            backgroundUrl: reader.result as string,
-          },
-        })
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        const reader = new FileReader()
+        reader.readAsDataURL(file)
+        reader.onload = () => {
+          const backgroundUrl = reader.result as string
+          setBackgroundDesktop(backgroundUrl)
+          setBackgroundImage(backgroundUrl)
+          setSettings({
+            ...settings!,
+            theme: {
+              ...settings!.theme,
+              backgroundUrl,
+            },
+          })
+        }
       }
     }
   }
-  const router = useRouter()
+
   return (
     <div className="p-4 space-y-4">
       <div className="flex gap-2 items-center">
@@ -383,7 +387,7 @@ const AppearanceSettings = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,video/*"
           onChange={handleFileChange}
           className="hidden"
         />

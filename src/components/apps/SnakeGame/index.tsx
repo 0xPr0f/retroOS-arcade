@@ -2,7 +2,13 @@ import React, { useEffect } from 'react'
 import SnakeGameApp from './components/SnakeGame'
 import { useNavbar, useDispatchWindows } from '@/components/pc/drives'
 
-const SnakeGame = () => {
+const SnakeGame = ({
+  onBlur,
+  onFocus,
+}: {
+  onBlur?: (id: number) => void
+  onFocus?: (id: number) => void
+}) => {
   const { createDispatchWindow } = useDispatchWindows()
   const { setNavbarContent } = useNavbar()
 
@@ -65,10 +71,16 @@ const SnakeGame = () => {
         </div>
       ),
       initialPosition: { x: 100, y: 50 },
-      initialSize: { width: 300, height: 400 },
+      initialSize: { width: 220, height: 350 },
       onClose: () => console.log('Window closed'),
     })
   }
+
+  useEffect(() => {
+    if (onFocus) {
+      console.log('focus', 1)
+    }
+  }, [onFocus])
 
   useEffect(() => {
     // Set custom navbar content when the window opens.
