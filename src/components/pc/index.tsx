@@ -164,7 +164,7 @@ const WindowComponent: React.FC<WindowProps> = ({
           </button>
         </div>
       </div>
-      <div className="h-[calc(100%-2.5rem)] text-black bg-white">
+      <div className="h-[calc(100%-2.5rem)] w-full text-black bg-white">
         {displayApp(window.key!, onBlur, onFocus)}
       </div>
       {!window.isFixedSize && (

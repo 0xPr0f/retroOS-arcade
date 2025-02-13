@@ -3,7 +3,7 @@ import FeedbackForm from './components/FeedbackForm'
 
 const Feedback = () => {
   return (
-    <div>
+    <div className="h-full overflow-y-auto">
       <FeedbackForm />
     </div>
   )

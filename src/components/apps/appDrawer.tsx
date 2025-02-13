@@ -72,8 +72,8 @@ const apps: App[] = [
     greater: true,
     fixed: true,
     openingDimensions: {
-      width: 350,
-      height: 450,
+      width: 270,
+      height: 370,
     },
   },
   {
@@ -82,12 +82,14 @@ const apps: App[] = [
     icon: MusicIcon.src,
     startMenu: true,
     // greater: true,
+    fixed: true,
     openingPosition: {
       x: 150,
       y: 150,
     },
     openingDimensions: {
-      width: 700,
+      width: 300,
+      height: 458,
     },
   },
   {
@@ -142,7 +144,7 @@ const apps: App[] = [
     icon: SnakeGameIcon.src,
     openingPosition: {
       x: 300,
-      y: 50,
+      y: 100,
     },
     openingDimensions: {
       height: 600,
