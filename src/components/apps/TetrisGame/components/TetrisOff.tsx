@@ -12,7 +12,7 @@ const BOARD_WIDTH = 12
 const BOARD_HEIGHT = 16
 const INITIAL_SPEED = 800
 const MIN_SPEED = 100
-const SPEED_DECREASE_RATE = 50 // ms decrease per 1000 points
+const SPEED_DECREASE_RATE = 50
 const PREVIEW_COUNT = 1
 
 const SHAPES = [
@@ -405,7 +405,7 @@ const TetrisOffChainGame = () => {
           <TabsTrigger value="offchain">Off-chain Tetris</TabsTrigger>
           <TabsTrigger value="onchain">On-chain Tetris</TabsTrigger>
         </TabsList>
-        <TabsContent value="offchain" className="px-4 py-4">
+        <TabsContent value="offchain" className="p-4">
           <div className="flex flex-col items-center">
             <div className="flex justify-between w-full max-w-lg mb-1">
               <div className="text-2xl font-bold text-gray-800">
@@ -453,7 +453,7 @@ const TetrisOffChainGame = () => {
             </div>
           </div>
         </TabsContent>
-        <TabsContent value="onchain" className="p-6">
+        <TabsContent value="onchain" className="p-4">
           <div className="flex items-center justify-center h-64">
             <p className="text-gray-500">On-chain Tetris coming soon!</p>
           </div>
