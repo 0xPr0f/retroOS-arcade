@@ -144,11 +144,11 @@ const apps: App[] = [
     icon: SnakeGameIcon.src,
     openingPosition: {
       x: 300,
-      y: 100,
+      y: 80,
     },
     openingDimensions: {
-      height: 600,
-      width: 600,
+      height: 560,
+      width: 500,
     },
     greater: true,
     game: true,

@@ -47,6 +47,40 @@ const WindowComponent: React.FC<WindowProps> = ({
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const dragStart = useRef({ x: 0, y: 0, offsetX: 0, offsetY: 0 })
+  const [isClosing, setIsClosing] = useState(false)
+  const [isOpening, setIsOpening] = useState(true)
+  const [isMinimizing, setIsMinimizing] = useState(false)
+
+  useEffect(() => {
+    // Opening animation
+    const timer = setTimeout(() => {
+      setIsOpening(false)
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const handleClose = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation()
+    setIsClosing(true)
+    setTimeout(() => {
+      onClose(id)
+    }, 100)
+  }
+
+  const handleMinimize = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation()
+    setIsMinimizing(true)
+    setTimeout(() => {
+      onMinimize(id)
+      setIsMinimizing(false)
+    }, 100)
+  }
+
+  const handleMaximize = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation()
+    if (window.isFixedSize) return
+    onMaximize(id)
+  }
 
   const handleMouseDown = (e: React.MouseEvent, type: 'drag' | 'resize') => {
     onFocus(window.id)
@@ -109,12 +143,28 @@ const WindowComponent: React.FC<WindowProps> = ({
   return (
     <div
       ref={windowRef}
-      className={`absolute bg-white rounded shadow-xl ${
-        window.minimized ? 'hidden' : 'block'
-      } ${window.maximized ? 'inset-0' : ''}`}
+      className={`absolute bg-white rounded shadow-xl 
+        ${window.minimized ? 'hidden' : 'block'}
+        ${window.maximized ? 'inset-0' : ''}
+        ${
+          isClosing
+            ? 'scale-0 opacity-0 transition-all duration-100 ease-in-out'
+            : 'scale-100 opacity-100'
+        }
+        ${
+          isOpening
+            ? 'scale-0 opacity-0 transition-all duration-100 ease-in-out'
+            : 'scale-100 opacity-100'
+        }
+        ${
+          isMinimizing
+            ? 'scale-75 opacity-50 translate-y-full transition-all duration-100 ease-in-out'
+            : ''
+        }
+      `}
       style={
         window.maximized
-          ? { zIndex: isActive ? 10 : 1 }
+          ? { zIndex: isActive ? 10 : 1, transition: 'none' }
           : {
               width: window.size.width,
               height: window.size.height,
@@ -135,30 +185,20 @@ const WindowComponent: React.FC<WindowProps> = ({
         </div>
         <div className="flex space-x-1">
           <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onMinimize(window.id)
-            }}
-            className="p-1 hover:bg-[#2563eb] rounded"
+            onClick={(e) => handleMinimize(e, window.id)}
+            className="p-1 hover:bg-[#2563eb] rounded transition-colors"
           >
             <Minus className="w-4 h-4 text-white" />
           </button>
           <button
-            onClick={(e) => {
-              e.stopPropagation()
-              if (window.isFixedSize) return
-              onMaximize(window.id)
-            }}
-            className="p-1 hover:bg-[#2563eb] rounded"
+            onClick={(e) => handleMaximize(e, window.id)}
+            className="p-1 hover:bg-[#2563eb] rounded transition-colors"
           >
             <Maximize2 className="w-4 h-4 text-white" />
           </button>
           <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onClose(window.id)
-            }}
-            className="p-1 hover:bg-red-500 rounded"
+            onClick={(e) => handleClose(e, window.id)}
+            className="p-1 hover:bg-red-500 rounded transition-colors"
           >
             <X className="w-4 h-4 text-white" />
           </button>
