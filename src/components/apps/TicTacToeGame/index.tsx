@@ -3,7 +3,7 @@ import TicTacToe from './components/TicTacToe'
 
 const TicTacToeGame = () => {
   return (
-    <div className=" box-border flex-1 overflow-auto">
+    <div className="h-full w-full overflow-y-auto">
       <TicTacToe />
     </div>
   )

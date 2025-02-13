@@ -189,8 +189,12 @@ const apps: App[] = [
     title: 'Tetris',
     icon: TetrisGameIcon.src,
     openingPosition: {
-      x: 150,
-      y: 150,
+      x: 500,
+      y: 100,
+    },
+    openingDimensions: {
+      height: 650,
+      width: 450,
     },
     game: true,
   },

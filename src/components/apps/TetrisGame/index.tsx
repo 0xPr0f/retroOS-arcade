@@ -1,6 +1,7 @@
 import { useDispatchWindows, useNavbar } from '@/components/pc/drives'
 import { Button2 } from '@/components/pc/drives/UI/UI_Components.v1'
 import React, { useEffect } from 'react'
+import TetrisOffChainGame from './components/TetrisOff'
 
 const TetrisGame = ({
   onBlur,
@@ -119,16 +120,8 @@ const TetrisGame = ({
   }, [setNavbarContent])
 
   return (
-    <div>
-      TetrisGame
-      <Button2
-        onClick={async () => {
-          console.log('click')
-          setNavbarContent(<div>THis is a 2 test</div>)
-        }}
-      >
-        Test on chain
-      </Button2>
+    <div className="h-full w-full overflow-y-auto">
+      <TetrisOffChainGame />
     </div>
   )
 }
