@@ -2,6 +2,17 @@
 
 A web-based arcade gaming platform that simulates a desktop operating system experience. Play classic games like Snake, Tetris, and Minesweeper in a familiar desktop environment.
 
+- [RetroOS Arcade](#-retroos-arcade)
+  - [Features](#-features)
+  - [Quick Start](#-quick-start)
+    - [Prerequisites](#-prerequisites)
+    - [Installation](#-installation)
+  - [For Developers](#-for-developers)
+  - [Known Issues](#-known-issues)
+  - [Built With](#-built-with)
+  - [Paterner Tech Usage](#paterner-tech-usage)
+  - [Contributing](#-contributing)
+
 ## ✨ Features
 
 - 🖥️ Complete window management system:
@@ -31,7 +42,6 @@ A web-based arcade gaming platform that simulates a desktop operating system exp
 ### 💻 Installation
 
 1. Clone the repository:
-
 ```bash
 git clone https://github.com/0xPr0f/arcade-vista.git
 ```
@@ -63,20 +73,20 @@ RetroOS Arcade is an open platform where developers can deploy their own applica
 ## ⚠️ Known Issues
 
 - The application is currently in an experimental phase
-- Some rendering issues may occur (images disappearing/reappearing, state reset)
+
 - Performance may vary across different browsers and devices
 - Best performance is achieved using Mozilla Firefox
-- Resource-intensive applications may impact overall system performance
 - URL-based state management (nuqs) may cause:
-  - Unexpected state resets during development
   - Long URLs with complex app states
-  - Potential conflicts with browser history
-  - State synchronization issues in multi-window scenarios
 
 ## 🛠️ Built With
 
 - [Next.js](https://nextjs.org/) - The React Framework for the Web
 - [TypeScript](https://www.typescriptlang.org/) - JavaScript with syntax for types.
+
+## 🔧 Partner Tech
+
+- [Para](https://www.getpara.com/) - Seamless Web3 onboarding with embedded and pre-generated wallets for a frictionless user experience
 
 ## 🤝 Contributing
 
