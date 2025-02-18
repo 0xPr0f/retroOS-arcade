@@ -260,7 +260,7 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
       '\n',
       callData
     )
-
+    //
     const userOpTxHash = await kernelClient.sendUserOperation({
       callData: await kernelClient.account.encodeCalls([
         {
