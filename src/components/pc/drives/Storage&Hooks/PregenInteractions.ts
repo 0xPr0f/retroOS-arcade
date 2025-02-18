@@ -67,27 +67,39 @@ export function usePregenTransaction({
     try {
       let response
       if (!userControlSettingsValue?.use_smart_account) {
-        response = await axios.post('api/create/pregentransaction', {
-          abi,
-          toAddress: toAddress || address,
-          functionName,
-          args,
-          chainId,
-          userShare: pregenEncryptedKeyShare,
-          walletId: pregenWalletId,
-          value,
-        })
+        response = await axios.post(
+          'api/create/pregentransaction',
+          {
+            abi,
+            toAddress: toAddress || address,
+            functionName,
+            args,
+            chainId,
+            userShare: pregenEncryptedKeyShare,
+            walletId: pregenWalletId,
+            value,
+          },
+          {
+            timeout: 60000,
+          }
+        )
       } else {
-        response = await axios.post('api/create/pregensponsoredtx', {
-          abi,
-          toAddress: toAddress || address,
-          functionName,
-          args,
-          chainId,
-          userShare: pregenEncryptedKeyShare,
-          walletId: pregenWalletId,
-          value,
-        })
+        response = await axios.post(
+          'api/create/pregensponsoredtx',
+          {
+            abi,
+            toAddress: toAddress || address,
+            functionName,
+            args,
+            chainId,
+            userShare: pregenEncryptedKeyShare,
+            walletId: pregenWalletId,
+            value,
+          },
+          {
+            timeout: 60000,
+          }
+        )
       }
 
       if (!response.data.success) {

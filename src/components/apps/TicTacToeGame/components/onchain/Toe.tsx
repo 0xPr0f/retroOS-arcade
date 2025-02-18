@@ -169,10 +169,11 @@ const TicTacToeMP = () => {
   })
 
   // Wait for exitMatch transaction
-  const { isLoading: isWaitingForExitMatch } = useWaitForTransactionReceipt({
+  const { isLoading: isWaitingForExitMatchT } = useWaitForTransactionReceipt({
     hash: isConnected ? exitMatchData : exitMatchDataPregen,
   })
 
+  const isWaitingForExitMatch = isSmartAccount ? false : isWaitingForExitMatchT
   const {
     writeContract: writeLeaveQueue,
     data: leaveQueueData,
@@ -209,14 +210,19 @@ const TicTacToeMP = () => {
   })
 
   // Wait for joinQueue transaction
-  const { isLoading: isWaitingForJoinQueue } = useWaitForTransactionReceipt({
+  const { isLoading: isWaitingForJoinQueueT } = useWaitForTransactionReceipt({
     hash: isConnected ? joinQueueData : joinQueueDataPregen,
   })
 
+  const isWaitingForJoinQueue = isSmartAccount ? false : isWaitingForJoinQueueT
+
   // Wait for leaveQueue transaction
-  const { isLoading: isWaitingForLeaveQueue } = useWaitForTransactionReceipt({
+  const { isLoading: isWaitingForLeaveQueueT } = useWaitForTransactionReceipt({
     hash: isConnected ? leaveQueueData : leaveQueueDataPregen,
   })
+  const isWaitingForLeaveQueue = isSmartAccount
+    ? false
+    : isWaitingForLeaveQueueT
 
   // Read Game State
   const { data: gameState, refetch: refetchGameState } = useReadContract({
@@ -347,6 +353,11 @@ const TicTacToeMP = () => {
       }
     } catch (error) {
       console.error('Error making move:', error)
+      addNotification({
+        title: `Error making move`,
+        message: `Something went wrong. Please try again. or Refresh the page.`,
+        type: 'error',
+      })
     }
   }
 
