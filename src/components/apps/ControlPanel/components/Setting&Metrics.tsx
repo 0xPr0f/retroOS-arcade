@@ -16,6 +16,8 @@ import {
   Network,
   Battery,
   MemoryStick,
+  CreditCard,
+  Wallet,
 } from 'lucide-react'
 import UAParser from 'ua-parser-js'
 import { useBattery, useLocalStorage } from 'react-use'
@@ -33,6 +35,7 @@ import {
   lightBlue,
 } from '@/components/pc/drives/Extensions/colors'
 import { useAccount, useDisconnect } from 'wagmi'
+import { useTypedValue } from '@/components/pc/drives'
 
 const hideFirstP = '[&>p:first-child]:hidden'
 const DeviceInfo = ({ isDarkMode }: { isDarkMode: boolean }) => {
@@ -122,6 +125,31 @@ const NB = ({
     </>
   )
 }
+
+const NBCustom = ({
+  isDarkMode,
+  details,
+  className,
+}: {
+  isDarkMode: boolean
+  details: React.ReactNode
+  className?: string
+}) => {
+  return (
+    <>
+      <div
+        className={cn(
+          `rounded-lg p-3`,
+          isDarkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black',
+          className
+        )}
+      >
+        {details}
+      </div>
+    </>
+  )
+}
+
 interface SystemMetrics {
   cpuUsage: number
   memoryUsage: number
@@ -324,10 +352,18 @@ const AppearanceSettings = ({
     'userControlSettings',
     defaultSettings
   )
-  const [backgroundDesktop, setBackgroundDesktop] = useState<
-    string | undefined
-  >(settings?.theme.backgroundUrl)
+
+  const [, setBackgroundDesktop] = useState<string | undefined>(
+    settings?.theme.backgroundUrl
+  )
   const [name, setName] = useState('')
+  const [, setUserControlSettingsValue] = useTypedValue<UserSettings>(
+    'userControlSettings'
+  )
+  useEffect(() => {
+    setUserControlSettingsValue(settings!)
+    console.log(settings)
+  }, [settings])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -426,7 +462,18 @@ const AppearanceSettings = ({
           <span className=" text-green-600">Selected Image: {name}</span>
         )}
       </div>
-      <NotWorking isDarkMode={isDarkMode} />
+      <NBCustom
+        isDarkMode={isDarkMode}
+        details={
+          <>
+            <p className={`font-medium`}>Note</p>
+            <p className="text-sm ">- Max Background Image Size: 3MB</p>
+            <p className="text-sm ">
+              - Some features may not be working as intended
+            </p>
+          </>
+        }
+      />
     </div>
   )
 }
@@ -551,6 +598,7 @@ export interface UserSettings {
     fontSize: 'small' | 'medium' | 'large'
     darkMode: boolean
   }
+  use_smart_account: boolean
 }
 
 export const defaultSettings: UserSettings = {
@@ -560,11 +608,15 @@ export const defaultSettings: UserSettings = {
     fontSize: 'medium',
     darkMode: false,
   },
+  use_smart_account: true,
 }
 const UserInfoSettings = ({ isDarkMode }: { isDarkMode: boolean }) => {
   const [settings, setSettings] = useLocalStorage<UserSettings>(
     'userControlSettings',
     defaultSettings
+  )
+  const [, setUserControlSettingsValue] = useTypedValue<UserSettings>(
+    'userControlSettings'
   )
   const [imagePreview, setImagePreview] = useState<string | undefined>(
     settings?.profileImage
@@ -586,6 +638,9 @@ const UserInfoSettings = ({ isDarkMode }: { isDarkMode: boolean }) => {
     }
   }
 
+  useEffect(() => {
+    setUserControlSettingsValue(settings!)
+  }, [settings])
   // Handle name change
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSettings({
@@ -733,6 +788,86 @@ const ExperimentalSettings = ({ isDarkMode }: { isDarkMode: boolean }) => {
   )
 }
 
+const WalletSettings = ({ isDarkMode }: { isDarkMode: boolean }) => {
+  const [settings, setSettings] = useLocalStorage<UserSettings>(
+    'userControlSettings',
+    defaultSettings
+  )
+  const [userControlSettingsValue, setUserControlSettingsValue] =
+    useTypedValue<UserSettings>('userControlSettings')
+  useEffect(() => {
+    setUserControlSettingsValue(settings!)
+  }, [settings])
+
+  const handleSmartAccountChange = () => {
+    setSettings({
+      ...settings!,
+      use_smart_account: !settings?.use_smart_account,
+    })
+  }
+
+  return (
+    <div>
+      <div className="p-4 space-y-4">
+        <h2 className="text-xl font-bold">Wallet Settings</h2>
+        <div className="flex justify-between items-center">
+          <label className="flex items-center">
+            <CreditCard className="mr-2" />
+            Smart Account Management
+          </label>
+          <Switch
+            checked={Boolean(settings?.use_smart_account)}
+            onCheckedChange={handleSmartAccountChange}
+          />
+        </div>
+
+        <div className="text-sm text-gray-500">
+          <span className="font-bold">Smart Account Management</span>
+
+          <ul className="list-disc list-inside">
+            <li>
+              Gasless transactions with{' '}
+              <Link
+                href="https://www.alchemy.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline"
+              >
+                Alchemy
+              </Link>{' '}
+              smart accounts
+            </li>
+            <li>Sponsored gas fees for improved onboarding</li>
+            <li>Streamlined on-chain interactions for dApps</li>
+            <li>Account abstraction for simplified user experience</li>
+            <li>Batched transactions for optimized execution</li>
+          </ul>
+        </div>
+        <NBCustom
+          className={cn(`mb-0`, 'p-2')}
+          isDarkMode={isDarkMode}
+          details={
+            <>
+              <p className={`font-medium`}>Note</p>
+              <p className="text-sm ">
+                - This feature is only available for pregenerated wallets.
+              </p>
+              <p className="text-sm ">
+                - Switching this feature off will disable gasless transactions
+                and sponsored gas fees.
+              </p>
+              <p className="text-sm ">
+                - Switching this feature off will stop usage of smart account
+                and will revert to using the default account.
+              </p>
+            </>
+          }
+        />
+      </div>
+    </div>
+  )
+}
+
 const SettingsPanel = () => {
   const { useSaveState } = useExperimentalFeatures()
   const [activeTab, setActiveTab] = useSaveState(
@@ -740,7 +875,16 @@ const SettingsPanel = () => {
     parseAsString.withDefault('device'),
     'device'
   ) as [
-    'device' | 'performance' | 'appearance' | 'font' | 'user' | 'storage',
+    (
+      | 'device'
+      | 'performance'
+      | 'appearance'
+      | 'font'
+      | 'user'
+      | 'storage'
+      | 'experiments'
+      | 'wallet'
+    ),
     (value: any) => void
   ]
   const [isDarkMode, setIsDarkMode] = useSaveState(
@@ -797,6 +941,7 @@ const SettingsPanel = () => {
     ),
     user: <UserInfoSettings isDarkMode={isDarkMode} />,
     experiments: <ExperimentalSettings isDarkMode={isDarkMode} />,
+    wallet: <WalletSettings isDarkMode={isDarkMode} />,
   }
 
   const tabIcons = {
@@ -807,6 +952,7 @@ const SettingsPanel = () => {
     storage: <Database className="w-5 h-5" />,
     user: <User className="w-5 h-5" />,
     experiments: <FlaskConical className="w-5 h-5" />,
+    wallet: <Wallet className="w-5 h-5" />,
   }
 
   return (
@@ -827,6 +973,7 @@ const SettingsPanel = () => {
             'font',
             'user',
             'storage',
+            'wallet',
             'experiments',
           ] as const
         ).map((tab) => (

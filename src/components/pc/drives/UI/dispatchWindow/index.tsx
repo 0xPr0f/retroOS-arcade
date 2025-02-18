@@ -210,7 +210,7 @@ export const DispatchWindowProvider: React.FC<{
             </button>
           </div>
           <div
-            className="p-4 h-[calc(100%-2.5rem)] overflow-auto"
+            className="h-[calc(100%-2.5rem)] overflow-auto"
             onClick={() => focusDispatchWindow(window.id)}
           >
             {window.content}

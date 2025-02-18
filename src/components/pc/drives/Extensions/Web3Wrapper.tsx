@@ -19,6 +19,7 @@ import { PregenProvider } from '../Storage&Hooks/PregenSession'
 import { NotificationProvider } from './ToastNotifs'
 import { DispatchWindowProvider } from '../UI/dispatchWindow'
 import { NavbarProvider } from '../Storage&Hooks/NavbarApi'
+import { ValueProvider } from '../Storage&Hooks/ValueProvider'
 
 const connector = paraConnector({
   para: para,
@@ -67,11 +68,13 @@ const Web3Wrapper: React.FC = () => {
         <QueryClientProvider client={queryClient}>
           <DispatchWindowProvider>
             <NotificationProvider>
-              <PregenProvider>
-                <NavbarProvider>
-                  <PcDesktop />
-                </NavbarProvider>
-              </PregenProvider>
+              <ValueProvider>
+                <PregenProvider>
+                  <NavbarProvider>
+                    <PcDesktop />
+                  </NavbarProvider>
+                </PregenProvider>
+              </ValueProvider>
             </NotificationProvider>
           </DispatchWindowProvider>
         </QueryClientProvider>

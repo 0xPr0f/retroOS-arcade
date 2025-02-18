@@ -1,6 +1,14 @@
 'use client'
 
-import React, { useState, useRef, useEffect, useMemo } from 'react'
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+  useContext,
+  createContext,
+} from 'react'
 
 import { Bell, LogOut, Maximize2, Minus, X } from 'lucide-react'
 import { Window, WindowProps } from './types'
@@ -28,9 +36,10 @@ import AddressWidget from './drives/Extensions/AddressWidget'
 import ChainWidget from './drives/Extensions/ChainWidgets'
 import { usePregenSession } from './drives/Storage&Hooks/PregenSession'
 import Loading from './drives/UI/Loading'
-import { Button } from './drives/UI/UI_Components.v1'
 import { useNotifications } from './drives/Extensions/ToastNotifs'
-import { useNavbar } from './drives'
+import { useDispatchWindows, useNavbar, useTypedValue } from './drives'
+import RetroWelcome from './welcome'
+import OnboardingTour from './onboarding'
 
 const WindowComponent: React.FC<WindowProps> = ({
   window,
@@ -218,6 +227,14 @@ const WindowComponent: React.FC<WindowProps> = ({
   )
 }
 
+const WindowContext = createContext<{
+  openWindow: (appId: string) => void
+}>({ openWindow: () => {} })
+
+export const useOpenWindow = () => {
+  return useContext(WindowContext)
+}
+
 const PcDesktop: React.FC = () => {
   const { useSaveState } = useExperimentalFeatures()
   const validateWindows = (value: unknown): Window[] => {
@@ -282,51 +299,45 @@ const PcDesktop: React.FC = () => {
       )
     )
   }
+  const openWindow = useCallback(
+    (appId: string) => {
+      const app = apps.find((a) => a.id === appId)
+      if (!app || app.isDisabled) return
 
-  const openWindow = (appId: string) => {
-    const app = apps.find((a) => a.id === appId)
-    if (!app || app.isDisabled) return
+      const newWindow: Window = {
+        id: Date.now(),
+        title: app.title,
+        key: app.id,
+        icon: app.icon,
+        minimized: false,
+        maximized: false,
+        position: {
+          x: windows.length * 30 + (app.openingPosition?.x ?? 0),
+          y: windows.length * 30 + (app.openingPosition?.y ?? 0),
+        },
+        size: {
+          width: app.openingDimensions?.width ?? 450,
+          height: app.openingDimensions?.height ?? 400,
+        },
+        isFixedSize: app.fixed,
+        greater: app.greater,
+        originalDimension: app.openingDimensions,
+      }
 
-    const newWindow: Window = {
-      id: Date.now(),
-      title: app.title,
-      key: app.id,
-      icon: app.icon,
-      minimized: false,
-      maximized: false,
-      position: {
-        x: windows.length * 30 + (app.openingPosition?.x ?? 0),
-        y: windows.length * 30 + (app.openingPosition?.y ?? 0),
-      },
-      size: {
-        width: app.openingDimensions?.width ?? 450,
-        height: app.openingDimensions?.height ?? 400,
-      },
-      isFixedSize: app.fixed,
-      greater: app.greater,
-      originalDimension: app.openingDimensions,
-    }
-
-    setWindows((prev) => [...prev, newWindow])
-    setActiveWindow(newWindow.id)
-    setStartMenuOpen(false)
-  }
-
-  useEffect(() => {
-    setBackgroundImage(settings?.theme.backgroundUrl)
-  }, [settings])
+      setWindows((prev) => [...prev, newWindow])
+      setActiveWindow(newWindow.id)
+      setStartMenuOpen(false)
+    },
+    [apps, windows.length, setWindows, setActiveWindow, setStartMenuOpen]
+  )
 
   const filteredApps = useMemo(
     () => userApps.filter((app) => !app.isDisabled && app.onDesktop),
     [userApps]
   )
+
   const { isLoginPregenSession, setPregenWalletSession } = usePregenSession()
-  const {
-    notifications,
-    addNotification,
-    addSilentNotification,
-    openNotificationPanel,
-  } = useNotifications()
+  const { notifications, openNotificationPanel } = useNotifications()
 
   const { isConnected } = useAccount()
   const { disconnect } = useDisconnect()
@@ -364,6 +375,15 @@ const PcDesktop: React.FC = () => {
   }, [])
 
   const { navbarContent, setActiveWindowId } = useNavbar()
+  useEffect(() => {
+    setUserControlSettingsValue(settings!)
+  }, [])
+  const [userControlSettingsValue, setUserControlSettingsValue] =
+    useTypedValue<UserSettings>('userControlSettings')
+
+  useEffect(() => {
+    setBackgroundImage(userControlSettingsValue?.theme.backgroundUrl)
+  }, [userControlSettingsValue])
 
   useEffect(() => {
     const activeWindowId = windows
@@ -371,6 +391,36 @@ const PcDesktop: React.FC = () => {
       .map((win) => Number(win.id))[0]
     setActiveWindowId(activeWindowId)
   }, [windows, activeWindow, setActiveWindowId])
+
+  const { createDispatchWindow, closeDispatchWindow } = useDispatchWindows()
+
+  const [onboardingTour, setOnboardingTour] = useTypedValue('onboardingTour')
+
+  useEffect(() => {
+    const welcomed = localStorage.getItem('retro:welcome:window')
+    setOnboardingTour(welcomed)
+    console.log(onboardingTour, welcomed)
+    if (!welcomed && (isConnected || isLoginPregenSession)) {
+      const windowid = createDispatchWindow({
+        title: 'Welcome to RetroOS',
+        content: (
+          <RetroWelcome
+            closeWindow={() => {
+              closeDispatchWindow(windowid)
+            }}
+          />
+        ),
+        initialSize: {
+          width: 750,
+          height: 640,
+        },
+        initialPosition: {
+          x: 300,
+          y: 100,
+        },
+      })
+    }
+  }, [isConnected, isLoginPregenSession])
 
   if (!mounted) {
     // Render a static placeholder or nothing on the first render (SSR)
@@ -381,14 +431,16 @@ const PcDesktop: React.FC = () => {
     )
   }
   return (
-    <>
+    <WindowContext.Provider value={{ openWindow }}>
       {isConnected || isLoginPregenSession ? (
         <>
           <div>
             <div
               style={{
                 backgroundImage:
-                  backgroundImage && backgroundImage.length > 20
+                  backgroundImage &&
+                  backgroundImage.length > 20 &&
+                  !backgroundImage.includes('video')
                     ? `url(${backgroundImage})`
                     : `linear-gradient(to left,${lightRed},${lightBlue} )`,
                 backgroundSize: 'cover',
@@ -396,26 +448,30 @@ const PcDesktop: React.FC = () => {
               }}
               className="h-screen relative overflow-hidden select-none"
             >
-              {backgroundImage && backgroundImage.length > 20 && (
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  disablePictureInPicture
-                  className="absolute top-0 left-0 w-full h-full object-cover"
-                >
-                  <source src={backgroundImage} type="video/mp4" />
-                  <source src={backgroundImage} type="video/webm" />
-                  <source src={backgroundImage} type="video/ogg" />
-                  <source src={backgroundImage} type="video/mov" />
-                </video>
-              )}
+              {backgroundImage &&
+                backgroundImage.length > 20 &&
+                backgroundImage.includes('video') && (
+                  <video
+                    key={backgroundImage}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    disablePictureInPicture
+                    className="absolute top-0 left-0 w-full h-full object-cover"
+                  >
+                    <source src={backgroundImage} type="video/mp4" />
+                    <source src={backgroundImage} type="video/webm" />
+                    <source src={backgroundImage} type="video/ogg" />
+                    <source src={backgroundImage} type="video/mov" />
+                  </video>
+                )}
 
               <div className="h-screen relative overflow-hidden">
                 {/* **************  Desktop Icons ************** */}
 
                 <div
+                  id="app_drawer_dock"
                   //This on it own caused quite some issues with re-render and resets
                   // onClick={closeContextMenu}
                   // onContextMenu={handleContextMenu}
@@ -433,6 +489,7 @@ const PcDesktop: React.FC = () => {
                         // handleContextMenu(e, app.id)
                       }}
                       style={{ zIndex: 1 }}
+                      id={app.id}
                       className="flex justify-center p-0 flex-col text-white cursor-pointer  rounded group"
                     >
                       <div className="flex justify-center items-center  group-hover:scale-110 transition-transform">
@@ -459,11 +516,14 @@ const PcDesktop: React.FC = () => {
                     </div>
                   ))}
                 </div>
-
+                <div>{!onboardingTour ? <OnboardingTour /> : null}</div>
                 {(isConnected || isLoginPregenSession) && (
                   <div className="absolute top-0 w-full bg-gradient-to-r to-[#0a246a] from-[#2563eb] h-10">
-                    <div className="flex h-full items-center justify-between ml-10">
-                      <div className="flex h-full items-center">
+                    <div
+                      id="navbar-content"
+                      className="flex h-full items-center justify-between ml-10"
+                    >
+                      <div className="flex h-full items-center ">
                         {navbarContent ? (
                           <>{navbarContent}</>
                         ) : (
@@ -476,7 +536,10 @@ const PcDesktop: React.FC = () => {
                       </div>
 
                       <div className="flex pr-8 flex-row-reverse justify-start gap-4 ">
-                        <div className="flex relative items-center  w-fit">
+                        <div
+                          id="notifications_area"
+                          className="flex relative items-center  w-fit"
+                        >
                           <button
                             onClick={() => {
                               openNotificationPanel()
@@ -491,14 +554,23 @@ const PcDesktop: React.FC = () => {
                             )}
                           </button>
                         </div>
-                        <div className="flex w-fit justify-end items-center h-full px-2">
+                        <div
+                          id="time_widget"
+                          className="flex w-fit justify-end items-center h-full px-2"
+                        >
                           <TimeWidget />
                         </div>
                         <div className="flex flex-row-reverse items-center justify-center">
-                          <div className="flex items-center h-full px-2">
+                          <div
+                            id="connected_address"
+                            className="flex items-center h-full px-2"
+                          >
                             <AddressWidget />
                           </div>
-                          <div className="flex items-center h-full">
+                          <div
+                            id="chain_selector"
+                            className="flex items-center h-full"
+                          >
                             <ChainWidget />
                           </div>
                         </div>
@@ -527,6 +599,7 @@ const PcDesktop: React.FC = () => {
                 <div className="absolute bottom-0 w-full bg-gradient-to-r from-[#0a246a] to-[#2563eb] h-12">
                   <div className="flex items-center h-full">
                     <button
+                      id="start_menu"
                       ref={desktopRef}
                       onClick={() => setStartMenuOpen(!startMenuOpen)}
                       className={`px-4 h-full flex items-center space-x-2 text-white hover:bg-[#3a6ea5]`}
@@ -537,32 +610,40 @@ const PcDesktop: React.FC = () => {
                       <span className="font-bold">Start</span>
                     </button>
 
-                    <div className="flex space-x-1 px-2 overflow-x-scroll">
+                    <div
+                      id="start_menu_dock"
+                      className="min-h-7 flex-1 flex space-x-1 px-2 overflow-x-scroll"
+                    >
                       {windows.map((window: any) => (
-                        <button
+                        <div
                           key={window.id}
-                          onClick={() => {
-                            if (window.minimized) {
-                              minimizeWindow(window.id)
-                            }
-                            setActiveWindow(window.id)
-                          }}
-                          className={`flex items-center space-x-2 px-3 h-8 rounded ${
-                            activeWindow === window.id
-                              ? 'bg-[#2563eb]'
-                              : 'hover:bg-[#2563eb]/50'
-                          }`}
+                          className="h-full w-fit whitespace-nowrap"
                         >
-                          <div className="p-1 w-8 h-8">
-                            <Icon
-                              svgSrc={window.key!!.icon}
-                              keycon={window.key}
-                            />
-                          </div>
-                          <span className="text-white text-sm">
-                            {window.title}
-                          </span>
-                        </button>
+                          <button
+                            key={window.id}
+                            onClick={() => {
+                              if (window.minimized) {
+                                minimizeWindow(window.id)
+                              }
+                              setActiveWindow(window.id)
+                            }}
+                            className={`flex w-fit h-full items-center space-x-2 px-3 rounded ${
+                              activeWindow === window.id
+                                ? 'bg-[#2563eb]'
+                                : 'hover:bg-[#2563eb]/50'
+                            }`}
+                          >
+                            <div className="p-1 w-8 h-8 flex-shrink-0">
+                              <Icon
+                                svgSrc={window.key!!.icon}
+                                keycon={window.key}
+                              />
+                            </div>
+                            <span className="text-white text-sm whitespace-nowrap">
+                              {window.title}
+                            </span>
+                          </button>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -615,7 +696,7 @@ const PcDesktop: React.FC = () => {
           <LoginScreen />
         </>
       )}
-    </>
+    </WindowContext.Provider>
   )
 }
 

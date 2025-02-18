@@ -5,6 +5,7 @@ export interface PregenWalletData {
   identifier: string
   wallet_address: string
   pregen_wallet_id: string
+  smart_account_address: string
   encryptedKeyShare: string
 }
 

@@ -6,9 +6,8 @@ import apps from '@/components/apps/appDrawer'
 //we will use what we want from /*react-use*/
 
 const StorageUserApps = () => {
-  const [userInstalledApps, setUserInstalledApps] = useLocalStorage(
-    'user_installed_apps'
-  )
+  const [userInstalledApps] = useLocalStorage('user_installed_apps')
+
   const [userApps, setUserApps] = useState<userAppCustom[]>(() => {
     try {
       const savedApps = userInstalledApps as string

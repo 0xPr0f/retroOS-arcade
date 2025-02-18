@@ -2,6 +2,8 @@ import { useState } from 'react'
 import axios from 'axios'
 import { useChainId } from 'wagmi'
 import { usePregenSession } from './PregenSession'
+import { useTypedValue } from '..'
+import { UserSettings } from '@/components/apps/ControlPanel/components/Setting&Metrics'
 
 interface PregenTransactionParams {
   abi?: any
@@ -33,6 +35,9 @@ export function usePregenTransaction({
 }: UsePregenTransactionProps = {}) {
   const { pregenEncryptedKeyShare, pregenWalletId, isLoginPregenSession } =
     usePregenSession()
+  const [userControlSettingsValue] = useTypedValue<UserSettings>(
+    'userControlSettings'
+  )
 
   const chainId = useChainId()
 
@@ -61,17 +66,30 @@ export function usePregenTransaction({
     setState((prev) => ({ ...prev, isPending: true }))
 
     try {
-      const response = await axios.post('api/create/pregentransaction', {
-        // const response = await axios.post('api/create/pregensponsoredtx', {
-        abi,
-        toAddress: toAddress || address,
-        functionName,
-        args,
-        chainId,
-        userShare: pregenEncryptedKeyShare,
-        walletId: pregenWalletId,
-        value,
-      })
+      let response
+      if (!userControlSettingsValue?.use_smart_account) {
+        response = await axios.post('api/create/pregentransaction', {
+          abi,
+          toAddress: toAddress || address,
+          functionName,
+          args,
+          chainId,
+          userShare: pregenEncryptedKeyShare,
+          walletId: pregenWalletId,
+          value,
+        })
+      } else {
+        response = await axios.post('api/create/pregensponsoredtx', {
+          abi,
+          toAddress: toAddress || address,
+          functionName,
+          args,
+          chainId,
+          userShare: pregenEncryptedKeyShare,
+          walletId: pregenWalletId,
+          value,
+        })
+      }
 
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.error || 'Transaction failed')

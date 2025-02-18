@@ -2,17 +2,6 @@
 
 A web-based arcade gaming platform that simulates a desktop operating system experience. Play classic games like Snake, Tetris, and Minesweeper in a familiar desktop environment.
 
-- [RetroOS Arcade](#-retroos-arcade)
-  - [Features](#-features)
-  - [Quick Start](#-quick-start)
-    - [Prerequisites](#-prerequisites)
-    - [Installation](#-installation)
-  - [For Developers](#-for-developers)
-  - [Known Issues](#-known-issues)
-  - [Built With](#-built-with)
-  - [Paterner Tech Usage](#paterner-tech-usage)
-  - [Contributing](#-contributing)
-
 ## ✨ Features
 
 - 🖥️ Complete window management system:
@@ -42,6 +31,7 @@ A web-based arcade gaming platform that simulates a desktop operating system exp
 ### 💻 Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/0xPr0f/arcade-vista.git
 ```

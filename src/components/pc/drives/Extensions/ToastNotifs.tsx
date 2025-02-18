@@ -251,7 +251,7 @@ class NotificationEmitter {
   }
 }
 
-const DEFAULT_STORAGE_KEY = 'notifications:storage'
+const DEFAULT_STORAGE_KEY = 'reto:notifications:storage'
 const DEFAULT_TOAST_DURATION = 5000
 const DEFAULT_TOAST_DELAY = 1500
 const NOTIFICATION_SPACING = 8 // Space between notifications in pixels
@@ -916,5 +916,5 @@ export type {
 }
 
 // Constants export
-export const STORAGE_KEY = 'notifications:storage'
+export const STORAGE_KEY = DEFAULT_STORAGE_KEY
 export { DEFAULT_THEME, NOTIFICATION_STYLES }

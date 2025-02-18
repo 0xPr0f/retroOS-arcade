@@ -1,8 +1,5 @@
 import { decrypt } from '@/components/library/utils/encryption-utils'
-import {
-  PrepareAndSignSponsoredTransactionWithPregenWalletServer,
-  PrepareAndSignTransactionWithPregenWalletServer,
-} from '@/components/pc/drives/Interactions'
+import { PrepareAndSignSponsoredTransactionWithPregenWalletServer } from '@/components/pc/drives/Interactions'
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 export interface PrepareAndSignTransactionWithPregenWalletServerProps {
@@ -37,24 +34,22 @@ export default async function handler(
       args,
       value,
     } = req.body as PrepareAndSignTransactionWithPregenWalletServerProps
-
     const decryptedKeyShare = decrypt(userShare!)
-    // const txHash =
-    await PrepareAndSignSponsoredTransactionWithPregenWalletServer({
-      userShare: decryptedKeyShare.data,
-      walletId: walletId,
-      abi: abi,
-      toAddress: toAddress,
-      chainId: chainId,
-      value: value,
-      functionName: functionName,
-      args: args,
-    })
-    /*
+    const txHash =
+      await PrepareAndSignSponsoredTransactionWithPregenWalletServer({
+        userShare: decryptedKeyShare.data,
+        walletId: walletId,
+        abi: abi,
+        toAddress: toAddress,
+        chainId: chainId,
+        value: value,
+        functionName: functionName,
+        args: args,
+      })
     return res.status(200).json({
       success: true,
-      data: txHash,
-    }) */
+      data: txHash!,
+    })
   } catch (error) {
     console.error('Transaction Error', error)
     const errorMessage =

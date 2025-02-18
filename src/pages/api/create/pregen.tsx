@@ -9,6 +9,7 @@ import {
 import axios from 'axios'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { PregenWalletData } from '../apps/drivers/db/create'
+import { smartAccountAddress } from '@/components/pc/drives/Interactions'
 
 export default async function createPregenWalletHandler(
   req: NextApiRequest,
@@ -46,6 +47,7 @@ export default async function createPregenWalletHandler(
         identifier: identifier,
         wallet_address: result.data.data.wallet_address,
         pregen_wallet_id: result.data.data.pregen_wallet_id,
+        smart_account_address: result.data.data.smart_account_address,
         encryptedKeyShare: result.data.data.encryptedKeyShare,
       } satisfies PregenWalletData & { success: boolean })
       return
@@ -79,10 +81,15 @@ export default async function createPregenWalletHandler(
     const host = req.headers.host
     const protocol = req.headers['x-forwarded-proto'] || 'http'
     const dbStoreUrl = `${protocol}://${host}/api/apps/drivers/db/create`
+    const smart_account_address = await smartAccountAddress(
+      wallet.address! as `0x${string}`,
+      84532
+    )
     await axios.post(dbStoreUrl, {
       identifier,
       wallet_address: wallet.address!,
       pregen_wallet_id: wallet.id,
+      smart_account_address: smart_account_address,
       encryptedKeyShare: encryptedKeyShare,
     } satisfies PregenWalletData)
 
@@ -91,6 +98,7 @@ export default async function createPregenWalletHandler(
       identifier: identifier,
       wallet_address: wallet.address!,
       pregen_wallet_id: wallet.id,
+      smart_account_address: smart_account_address,
       encryptedKeyShare: encryptedKeyShare,
     } satisfies PregenWalletData & { success: boolean })
   } catch (error) {

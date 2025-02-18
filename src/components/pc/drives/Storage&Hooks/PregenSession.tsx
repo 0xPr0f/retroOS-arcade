@@ -1,12 +1,16 @@
 import { PregenWalletData } from '@/pages/api/apps/drivers/db/create'
 import React, { createContext, useContext, useMemo } from 'react'
 import { useSessionStorage } from 'react-use'
+import { useTypedValue } from './ValueProvider'
+import { UserSettings } from '@/components/apps/ControlPanel/components/Setting&Metrics'
 
 interface PregenContextType {
   pregenWalletSession: PregenWalletData | null
   isLoginPregenSession: boolean
   setPregenWalletSession: (value: PregenWalletData | null) => void
   pregenAddress: string | undefined
+  pregenSmartAccountAddress: string | undefined
+  pregenActiveAddress: string | undefined
   pregenEncryptedKeyShare: string | undefined
   pregenWalletId: string | undefined
 }
@@ -19,12 +23,26 @@ export function PregenProvider({ children }: { children: React.ReactNode }) {
       'retro:pregen.wallet.session',
       null
     )
+  const [userControlSettingsValue] = useTypedValue<UserSettings>(
+    'userControlSettings'
+  )
 
-  // Memoize derived values
   const pregenAddress = useMemo(
     () => pregenWalletSession?.wallet_address,
     [pregenWalletSession]
   )
+
+  const pregenSmartAccountAddress = useMemo(
+    () => pregenWalletSession?.smart_account_address,
+    [pregenWalletSession]
+  )
+
+  const pregenActiveAddress = useMemo(() => {
+    if (userControlSettingsValue?.use_smart_account) {
+      return pregenSmartAccountAddress
+    }
+    return pregenAddress
+  }, [userControlSettingsValue?.use_smart_account, pregenAddress])
 
   const pregenEncryptedKeyShare = useMemo(
     () => pregenWalletSession?.encryptedKeyShare,
@@ -56,6 +74,8 @@ export function PregenProvider({ children }: { children: React.ReactNode }) {
       isLoginPregenSession,
       setPregenWalletSession,
       pregenAddress,
+      pregenSmartAccountAddress,
+      pregenActiveAddress,
       pregenEncryptedKeyShare,
       pregenWalletId,
     }),
@@ -63,6 +83,8 @@ export function PregenProvider({ children }: { children: React.ReactNode }) {
       pregenWalletSession,
       isLoginPregenSession,
       pregenAddress,
+      pregenSmartAccountAddress,
+      pregenActiveAddress,
       pregenEncryptedKeyShare,
       pregenWalletId,
     ]

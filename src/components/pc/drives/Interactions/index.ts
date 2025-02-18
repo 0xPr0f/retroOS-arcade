@@ -14,24 +14,36 @@ import {
 } from '@getpara/viem-v2-integration'
 import {
   encodeFunctionData,
+  createPublicClient,
   hashMessage,
-  SignableMessage,
   Hash,
-  parseEther,
+  SignableMessage,
 } from 'viem'
 
-import { createModularAccountAlchemyClient } from '@alchemy/aa-alchemy'
+import { mainnet, sepolia, baseSepolia } from 'viem/chains'
+import { KERNEL_V3_1, getEntryPoint } from '@zerodev/sdk/constants'
+import { createKernelAccountClient } from '@zerodev/sdk'
+import { createKernelAccount } from '@zerodev/sdk'
 import {
-  LocalAccountSigner,
-  mainnet,
-  sepolia,
-  baseSepolia,
-  SmartAccountSigner,
-  WalletClientSigner,
-} from '@alchemy/aa-core'
-import { SendUserOperationResult } from '@alchemy/aa-core'
+  createZeroDevPaymasterClient,
+  getUserOperationGasPrice,
+} from '@zerodev/sdk'
+import {
+  getKernelAddressFromECDSA,
+  signerToEcdsaValidator,
+} from '@zerodev/ecdsa-validator'
+import {
+  CONTRACT_ABI,
+  CONTRACT_ADDRESS,
+} from '@/components/apps/TicTacToeGame/components/onchain/abidetails'
 
-export const PublicClientInteractionsList = (account: any, chainId: number) => {
+export const PublicClientInteractionsList = ({
+  chainId,
+  account,
+}: {
+  chainId: number
+  account?: any
+}) => {
   const infuraKey = process.env.NEXT_PUBLIC_INFURA_KEY
   const blastAPIKey = process.env.NEXT_PUBLIC_BLAST_API_KEY
   switch (chainId) {
@@ -111,17 +123,18 @@ export const PrepareAndSignTransactionWithPregenWalletServer = async ({
     }
 
     const viemCapsuleAccount = createParaAccount(paraClient)
-    const viemClient = createParaViemClient(
-      paraClient,
-      PublicClientInteractionsList(viemCapsuleAccount, chainId!)
-    )
-
+    const interaction = PublicClientInteractionsList({
+      account: viemCapsuleAccount as any,
+      chainId: chainId!,
+    })
+    const viemClient = createParaViemClient(paraClient, interaction)
+    const activeChain = interaction.chain
     const request = await viemClient.prepareTransactionRequest({
       account: viemCapsuleAccount,
       to: toAddress,
       value: value ? BigInt(value!) : BigInt('0'),
       data: data ? data : '0x',
-      chain: PublicClientInteractionsList(viemCapsuleAccount, chainId!).chain,
+      chain: activeChain,
     })
     const signatureResult = await viemClient.signTransaction({
       ...request,
@@ -131,8 +144,9 @@ export const PrepareAndSignTransactionWithPregenWalletServer = async ({
       serializedTransaction: signatureResult,
     })
     return hash
-  } catch (e) {
+  } catch (e: any) {
     console.log('SignTransactionWithPregenWalletServer Failed: ', e)
+    throw new Error(e.details)
   }
 }
 
@@ -156,66 +170,186 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
   value?: string
 }) => {
   try {
+    if (!userShare || !chainId || !toAddress) {
+      throw new Error('User share, chain ID, and to address are required')
+    }
+
     const paraClient = new ParaServer(
       Environment.BETA,
       process.env.NEXT_PUBLIC_PARA_API_KEY
     )
 
-    const alchemyAPI_key = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
-    const alchemyGasPolicyId = process.env.NEXT_PUBLIC_ALCHEMY_GAS_POLICY_ID
-
-    await paraClient.setUserShare(userShare!)
-    let data
+    await paraClient.setUserShare(userShare)
+    /* let data
     if (abi && functionName && args) {
       data = encodeFunctionData({
-        abi: abi!,
-        functionName: functionName!,
-        args: args!,
+        abi: abi,
+        functionName: functionName,
+        args: args,
       })
-    }
-    const viemCapsuleAccount = createParaAccount(paraClient)
-    const interactionList = PublicClientInteractionsList(
-      viemCapsuleAccount,
-      chainId!
-    )
-    const viemClient = createParaViemClient(paraClient, interactionList)
+    } */
 
-    viemClient.signMessage = async ({
-      message,
-    }: {
-      message: SignableMessage
-    }): Promise<Hash> => {
-      return customSignMessage(paraClient, message)
-    }
-    const walletClientSigner = new WalletClientSigner(viemClient, 'para')
+    const data = encodeFunctionData({
+      abi: CONTRACT_ABI,
+      functionName: 'joinQueue',
+      args: [],
+    })
+    const viemParaAccount = createParaAccount(paraClient)
+    const interaction = PublicClientInteractionsList({
+      account: viemParaAccount as any,
+      chainId: chainId,
+    })
+    const viemClient = createParaViemClient(paraClient, interaction)
+    const activeChain = interaction.chain
+    const kernelVersion = KERNEL_V3_1
+    const entryPoint = getEntryPoint('0.7')
 
-    const alchemyClientWithGas = await createModularAccountAlchemyClient({
-      apiKey: alchemyAPI_key!,
-      chain: baseSepolia,
-      signer: walletClientSigner,
-      gasManagerConfig: {
-        policyId: alchemyGasPolicyId!,
+    const ZERO_DEV_PROJECT_ID = process.env.NEXT_PUBLIC_ZERODEV_PROJECT_ID
+    const ZERO_DEV_BUNDLER_RPC = `https://rpc.zerodev.app/api/v2/bundler/${ZERO_DEV_PROJECT_ID}`
+    const ZERO_DEV_PAYMASTER_RPC = `https://rpc.zerodev.app/api/v2/paymaster/${ZERO_DEV_PROJECT_ID}`
+
+    console.log('1')
+
+    const publicClient = createPublicClient({
+      transport: interaction.transport,
+      chain: interaction.chain,
+    })
+    const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
+      signer: viemClient.account as any,
+      entryPoint: entryPoint,
+      kernelVersion: kernelVersion,
+    })
+
+    const kernalAccount = await createKernelAccount(viemClient, {
+      plugins: {
+        sudo: ecdsaValidator,
+      },
+      entryPoint: entryPoint,
+      kernelVersion: kernelVersion,
+    })
+
+    const kernelClient = createKernelAccountClient({
+      account: kernalAccount,
+      chain: activeChain,
+      bundlerTransport: http(ZERO_DEV_BUNDLER_RPC),
+      client: viemClient,
+      paymaster: {
+        getPaymasterData: (userOperation) => {
+          const zerodevPaymaster = createZeroDevPaymasterClient({
+            chain: activeChain,
+            transport: http(ZERO_DEV_PAYMASTER_RPC),
+          })
+          return zerodevPaymaster.sponsorUserOperation({
+            userOperation,
+          })
+        },
+      },
+      userOperation: {
+        estimateFeesPerGas: async ({ bundlerClient }) => {
+          return getUserOperationGasPrice(bundlerClient)
+        },
       },
     })
 
-    const UserOperations = {
-      target: toAddress!,
-      data: data || '0x',
-      value: value ? BigInt(value) : BigInt('0'),
-    }
+    const callData = await kernelClient.account.encodeCalls([
+      {
+        to: CONTRACT_ADDRESS,
+        value: value ? BigInt(value!) : BigInt('0'),
+        data: data ? data : '0x',
+      },
+    ])
+    console.log(
+      'callData',
+      toAddress,
+      value ? BigInt(value!) : BigInt('0'),
+      data,
+      '\n',
+      callData
+    )
+    const prepUop = await kernelClient.prepareUserOperation({
+      callData: callData,
+    })
+    console.log('prepUop', prepUop)
 
-    // Execute the operations
-    const userOperationResult = await alchemyClientWithGas.sendUserOperation({
-      uo: UserOperations,
+    const signdata = await kernelClient.account.signUserOperation(prepUop)
+
+    console.log('signdata', signdata)
+
+    console.log(kernelClient.account.address)
+    const userOpTxHash = await kernelClient.sendUserOperation({
+      ...prepUop,
+      signature: signdata,
     })
-    // Wait for the operation to be included in a block
-    const txHash = await alchemyClientWithGas.waitForUserOperationTransaction({
-      hash: userOperationResult.hash,
+    console.log('userOpTxHash', userOpTxHash)
+
+    /*
+    const userOpTxHash = await kernelClient.sendUserOperation({
+      callData: await kernelClient.account.encodeCalls([
+        {
+          to: CONTRACT_ADDRESS,
+          value: value ? BigInt(value!) : BigInt('0'),
+          data: data ? data : '0x',
+        },
+      ]),
     })
-    return txHash
-  } catch (e) {
-    console.log('SignTransactionWithSponsoredPregenWalletServer Failed: ', e)
+
+    console.log('User operation result: ', userOpTxHash)
+*/
+    /*
+    const testdata1 = await kernelClient.prepareUserOperation({
+      callData: callData,
+    })
+
+    const testdata = await kernelClient.account.signUserOperation({
+      callData: callData,
+      chainId: chainId,
+    })*/
+
+    // console.log('5', testdata, 'Seperate', testdata1)
+    /*
+    const userOpTxHash = await kernelClient.sendUserOperation({
+      callData: callData,
+    })*/
+    // const userOpHash = await kernelClient.sendUserOperation(testdata)
+    /*const txHashDetails = await kernelClient.waitForUserOperationReceipt({
+      hash: userOpHash,
+    })*/
+
+    return 0 //userOpHash
+  } catch (e: any) {
+    console.log(
+      'PrepareAndSignSponsoredTransactionWithPregenWalletServer Failed: ',
+      e
+    )
+    if (e instanceof Error) {
+      throw new Error((e as any).details)
+    } else {
+      throw new Error('An unknown error occurred during sponsored transaction')
+    }
   }
+}
+
+export const smartAccountAddress = async (
+  address: `0x${string}`,
+  chainId: number
+) => {
+  const interaction = PublicClientInteractionsList({
+    chainId: chainId,
+  })
+  const publicClient = createPublicClient({
+    transport: http(),
+    chain: interaction.chain,
+  })
+  const kernelVersion = KERNEL_V3_1
+  const entryPoint = getEntryPoint('0.7')
+  const smartAccountAddress = await getKernelAddressFromECDSA({
+    publicClient: publicClient as any,
+    eoaAddress: address,
+    kernelVersion: kernelVersion,
+    entryPoint: entryPoint,
+    index: BigInt(0),
+  })
+  return smartAccountAddress
 }
 
 export async function customSignMessage(

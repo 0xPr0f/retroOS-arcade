@@ -22,7 +22,6 @@ import { Check, Copy } from 'lucide-react'
 import { cn } from '@/components/library/utils'
 import { usePregenTransaction } from '@/components/pc/drives/Storage&Hooks/PregenInteractions'
 import { usePregenSession } from '@/components/pc/drives/Storage&Hooks/PregenSession'
-import toast from 'react-hot-toast'
 import { useNotifications } from '@/components/pc/drives/Extensions/ToastNotifs'
 
 const TicTacToeMP = () => {
@@ -30,7 +29,7 @@ const TicTacToeMP = () => {
 
   const { isConnected } = useAccount()
   const chainId = useChainId()
-  const { isLoginPregenSession, pregenAddress } = usePregenSession()
+  const { isLoginPregenSession, pregenActiveAddress } = usePregenSession()
 
   const [gameId, setGameId] = useState<string | null>(null)
   const [board, setBoard] = useState<number[]>(Array(9).fill(0))
@@ -68,7 +67,7 @@ const TicTacToeMP = () => {
   const address = isConnected
     ? playerAddress?.toLowerCase()
     : isLoginPregenSession
-    ? pregenAddress?.toLowerCase()
+    ? pregenActiveAddress?.toLowerCase()
     : undefined
   // Read queue position
   const { data: playerQueuePosition, refetch: refetchQueuePosition } =
@@ -362,8 +361,8 @@ const TicTacToeMP = () => {
   const handleJoinQueue = async () => {
     if (!isOnChain) {
       addNotification({
-        title: `Test notification`,
-        message: `This is a test notification message.`,
+        title: `Chain Unavailable`,
+        message: `This chain is not available. Please use base sepolia.`,
         type: 'error',
         duration: 10000,
       })
@@ -410,9 +409,9 @@ const TicTacToeMP = () => {
   const handleExitMatch = async () => {
     if (!isOnChain) {
       addNotification({
-        title: `Test $notification`,
-        message: `This is a test notification message.`,
-        type: 'success',
+        title: `Chain Unavailable`,
+        message: `This chain is not available. Please use base sepolia.`,
+        type: 'error',
       })
       return
     }
@@ -440,7 +439,7 @@ const TicTacToeMP = () => {
     if (isChainUnavailable) {
       addNotification({
         title: `Chain Unavailable`,
-        message: `This chain is not available.,This chain is not available.,This chain is not available.`,
+        message: `This chain is not available. Please use base sepolia.`,
         type: 'error',
       })
     }

@@ -175,7 +175,7 @@ const apps: App[] = [
     icon: TicTacToeGameIcon.src,
     openingPosition: {
       x: 450,
-      y: 150,
+      y: 120,
     },
     openingDimensions: {
       height: 550,
@@ -192,6 +192,7 @@ const apps: App[] = [
       x: 500,
       y: 100,
     },
+    greater: true,
     openingDimensions: {
       height: 650,
       width: 450,
