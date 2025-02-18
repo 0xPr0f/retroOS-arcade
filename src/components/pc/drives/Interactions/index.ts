@@ -180,20 +180,16 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
     )
 
     await paraClient.setUserShare(userShare)
-    /* let data
+    let data
     if (abi && functionName && args) {
       data = encodeFunctionData({
         abi: abi,
         functionName: functionName,
         args: args,
       })
-    } */
+      console.log('There is data')
+    }
 
-    const data = encodeFunctionData({
-      abi: CONTRACT_ABI,
-      functionName: 'joinQueue',
-      args: [],
-    })
     const viemParaAccount = createParaAccount(paraClient)
     const interaction = PublicClientInteractionsList({
       account: viemParaAccount as any,
@@ -207,8 +203,6 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
     const ZERO_DEV_PROJECT_ID = process.env.NEXT_PUBLIC_ZERODEV_PROJECT_ID
     const ZERO_DEV_BUNDLER_RPC = `https://rpc.zerodev.app/api/v2/bundler/${ZERO_DEV_PROJECT_ID}`
     const ZERO_DEV_PAYMASTER_RPC = `https://rpc.zerodev.app/api/v2/paymaster/${ZERO_DEV_PROJECT_ID}`
-
-    console.log('1')
 
     const publicClient = createPublicClient({
       transport: interaction.transport,
@@ -253,7 +247,7 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
 
     const callData = await kernelClient.account.encodeCalls([
       {
-        to: CONTRACT_ADDRESS,
+        to: toAddress,
         value: value ? BigInt(value!) : BigInt('0'),
         data: data ? data : '0x',
       },
@@ -266,27 +260,11 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
       '\n',
       callData
     )
-    const prepUop = await kernelClient.prepareUserOperation({
-      callData: callData,
-    })
-    console.log('prepUop', prepUop)
 
-    const signdata = await kernelClient.account.signUserOperation(prepUop)
-
-    console.log('signdata', signdata)
-
-    console.log(kernelClient.account.address)
-    const userOpTxHash = await kernelClient.sendUserOperation({
-      ...prepUop,
-      signature: signdata,
-    })
-    console.log('userOpTxHash', userOpTxHash)
-
-    /*
     const userOpTxHash = await kernelClient.sendUserOperation({
       callData: await kernelClient.account.encodeCalls([
         {
-          to: CONTRACT_ADDRESS,
+          to: toAddress,
           value: value ? BigInt(value!) : BigInt('0'),
           data: data ? data : '0x',
         },
@@ -294,28 +272,12 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
     })
 
     console.log('User operation result: ', userOpTxHash)
-*/
-    /*
-    const testdata1 = await kernelClient.prepareUserOperation({
-      callData: callData,
+
+    await kernelClient.waitForUserOperationReceipt({
+      hash: userOpTxHash,
     })
 
-    const testdata = await kernelClient.account.signUserOperation({
-      callData: callData,
-      chainId: chainId,
-    })*/
-
-    // console.log('5', testdata, 'Seperate', testdata1)
-    /*
-    const userOpTxHash = await kernelClient.sendUserOperation({
-      callData: callData,
-    })*/
-    // const userOpHash = await kernelClient.sendUserOperation(testdata)
-    /*const txHashDetails = await kernelClient.waitForUserOperationReceipt({
-      hash: userOpHash,
-    })*/
-
-    return 0 //userOpHash
+    return userOpTxHash
   } catch (e: any) {
     console.log(
       'PrepareAndSignSponsoredTransactionWithPregenWalletServer Failed: ',
