@@ -11,11 +11,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
       - name: Create Release Pull Request
         uses: google-github-actions/release-please-action@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           release-type: node
           package-name: ${{ github.event.repository.name }}
           changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false},{"type":"docs","section":"Documentation","hidden":false},{"type":"style","section":"Styling","hidden":false},{"type":"refactor","section":"Code Refactoring","hidden":false},{"type":"perf","section":"Performance Improvements","hidden":false},{"type":"test","section":"Tests","hidden":false}]'
