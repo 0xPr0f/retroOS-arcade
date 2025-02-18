@@ -29,7 +29,8 @@ const TicTacToeMP = () => {
 
   const { isConnected } = useAccount()
   const chainId = useChainId()
-  const { isLoginPregenSession, pregenActiveAddress } = usePregenSession()
+  const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
+    usePregenSession()
 
   const [gameId, setGameId] = useState<string | null>(null)
   const [board, setBoard] = useState<number[]>(Array(9).fill(0))
@@ -172,7 +173,6 @@ const TicTacToeMP = () => {
     hash: isConnected ? exitMatchData : exitMatchDataPregen,
   })
 
-  // Leave Queue Contract Write
   const {
     writeContract: writeLeaveQueue,
     data: leaveQueueData,
@@ -264,10 +264,10 @@ const TicTacToeMP = () => {
     },
   })
 
-  // Wait for move transaction
-  const { isLoading: isWaitingForMove } = useWaitForTransactionReceipt({
+  const { isLoading } = useWaitForTransactionReceipt({
     hash: isConnected ? moveData : moveDataPregen,
   })
+  const isWaitingForMove = isSmartAccount ? false : isLoading
 
   // Only watch PlayersMatched event since it's needed for game initialization
   useWatchContractEvent({

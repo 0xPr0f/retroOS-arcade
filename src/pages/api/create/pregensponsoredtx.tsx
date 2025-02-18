@@ -34,7 +34,12 @@ export default async function handler(
       args,
       value,
     } = req.body as PrepareAndSignTransactionWithPregenWalletServerProps
-    const decryptedKeyShare = decrypt(userShare!)
+
+    const [decryptedKeyShare, _] = await Promise.all([
+      decrypt(userShare!),
+      new Promise((resolve) => setTimeout(resolve, 100)),
+    ])
+
     const txHash =
       await PrepareAndSignSponsoredTransactionWithPregenWalletServer({
         userShare: decryptedKeyShare.data,
@@ -48,7 +53,7 @@ export default async function handler(
       })
     return res.status(200).json({
       success: true,
-      // data: txHash!,
+      data: txHash,
     })
   } catch (error) {
     console.error('Transaction Error', error)

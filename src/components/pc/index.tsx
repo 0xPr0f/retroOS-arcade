@@ -21,7 +21,10 @@ import { cn } from '../library/utils'
 import { parseAsInteger, parseAsJson, parseAsNumberLiteral } from 'nuqs'
 import useExperimentalFeatures from './drives/Experiment'
 import { useLocalStorage } from 'react-use'
-import { UserSettings } from '../apps/ControlPanel/components/Setting&Metrics'
+import {
+  defaultSettings,
+  UserSettings,
+} from '../apps/ControlPanel/components/Setting&Metrics'
 import apps from '@/components/apps/appDrawer'
 import TimeWidget from './drives/Extensions/TimeWidget'
 
@@ -256,7 +259,8 @@ const PcDesktop: React.FC = () => {
   )
   const [startMenuOpen, setStartMenuOpen] = useState(false)
   const [settings, setSettings] = useLocalStorage<UserSettings>(
-    'userControlSettings'
+    'userControlSettings',
+    defaultSettings
   )
   const [backgroundImage, setBackgroundImage] = useState<string | undefined>()
 
@@ -349,8 +353,10 @@ const PcDesktop: React.FC = () => {
   const desktopRef = useRef<HTMLButtonElement>(null)
 
   const [mounted, setMounted] = useState(false)
+
   useEffect(() => {
     setMounted(true)
+
     console.log(isLoginPregenSession, 'Login pregen')
   }, [])
 

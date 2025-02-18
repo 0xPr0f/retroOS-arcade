@@ -48,15 +48,10 @@ const AddressWidget = () => {
   }
 
   const [copied, setCopied] = useState(false)
-  const { setPregenWalletSession, pregenAddress, pregenActiveAddress } =
-    usePregenSession()
-
-  useEffect(() => {
-    console.log('pregenActiveAddress', pregenActiveAddress)
-  }, [pregenActiveAddress])
+  const { setPregenWalletSession, pregenAddress } = usePregenSession()
 
   const handleCopy = async () => {
-    if (copied) return // Prevent copying while in copied state
+    if (copied) return
 
     try {
       if (isConnected) {

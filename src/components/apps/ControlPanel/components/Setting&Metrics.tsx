@@ -362,7 +362,6 @@ const AppearanceSettings = ({
   )
   useEffect(() => {
     setUserControlSettingsValue(settings!)
-    console.log(settings)
   }, [settings])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -527,7 +526,18 @@ const StorageSettings = ({
   clearUserStorage: () => void
 }) => (
   <div className="p-4 space-y-4">
-    <h2 className="text-xl font-bold">Storage</h2>
+    <div className="flex gap-2 items-center">
+      <h2 className="text-xl font-bold">Storage</h2>
+      <div className="">
+        <RefreshCcw
+          onClick={() => {
+            window.location.reload()
+          }}
+          className=" cursor-pointer"
+        />
+      </div>
+    </div>
+
     <div className="space-y-1">
       <NB
         className={cn(`mb-0`, hideFirstP, 'p-0')}
@@ -809,7 +819,18 @@ const WalletSettings = ({ isDarkMode }: { isDarkMode: boolean }) => {
   return (
     <div>
       <div className="p-4 space-y-4">
-        <h2 className="text-xl font-bold">Wallet Settings</h2>
+        <div className="flex gap-2 items-center">
+          <h2 className="text-xl font-bold">Wallet Settings</h2>
+          <div className="">
+            <RefreshCcw
+              onClick={() => {
+                window.location.reload()
+              }}
+              className=" cursor-pointer"
+            />
+          </div>
+        </div>
+
         <div className="flex justify-between items-center">
           <label className="flex items-center">
             <CreditCard className="mr-2" />

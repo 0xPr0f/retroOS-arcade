@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { useChainId } from 'wagmi'
+import { useChainId, usePublicClient } from 'wagmi'
 import { usePregenSession } from './PregenSession'
 import { useTypedValue } from '..'
 import { UserSettings } from '@/components/apps/ControlPanel/components/Setting&Metrics'
@@ -38,7 +38,6 @@ export function usePregenTransaction({
   const [userControlSettingsValue] = useTypedValue<UserSettings>(
     'userControlSettings'
   )
-
   const chainId = useChainId()
 
   const [state, setState] = useState<TransactionState>({
@@ -63,7 +62,7 @@ export function usePregenTransaction({
       throw new Error('Missing required Pregen credentials')
     }
 
-    setState((prev) => ({ ...prev, isPending: true }))
+    setState((prev) => ({ ...prev, isPending: true, data: undefined }))
 
     try {
       let response
@@ -91,11 +90,14 @@ export function usePregenTransaction({
         })
       }
 
-      if (!response.data.success || !response.data.data) {
+      if (!response.data.success) {
         throw new Error(response.data.error || 'Transaction failed')
       }
 
-      const txHash = response.data.data
+      const txHash = response.data.data as `0x${string}`
+      if (!txHash || !txHash.startsWith('0x')) {
+        throw new Error('Invalid transaction hash received')
+      }
 
       setState((prev) => ({
         ...prev,
@@ -107,9 +109,11 @@ export function usePregenTransaction({
       mutation?.onSuccess?.(txHash)
       return txHash
     } catch (error) {
+      console.error('Transaction error:', error)
       setState((prev) => ({
         ...prev,
         isPending: false,
+        data: undefined,
         error: error as Error,
       }))
 
@@ -129,7 +133,54 @@ export function usePregenTransaction({
       isLoginPregenSession && !!pregenEncryptedKeyShare && !!pregenWalletId,
   }
 }
+/*
+export function useCustomWaitForTransactionReceipt({
+  hash,
+}: {
+  hash?: `0x${string}`
+}) {
+  const [isLoading, setIsLoading] = useState(false)
+  const publicClient = usePublicClient()
+  const chainId = useChainId()
 
+  const kernelClient = createKernelClientWithPaymaster({
+    chainId: chainId,
+  })
+  const [userControlSettingsValue] = useTypedValue<UserSettings>(
+    'userControlSettings'
+  )
+
+  useEffect(() => {
+    if (!hash) return
+
+    const waitForReceipt = async () => {
+      setIsLoading(true)
+      try {
+        if (!userControlSettingsValue?.use_smart_account) {
+          if (!publicClient) throw new Error('Public client not available')
+          await publicClient.waitForTransactionReceipt({ hash })
+        } else {
+          if (!kernelClient) throw new Error('Kernel client not available')
+          await (await kernelClient).waitForUserOperationReceipt({ hash })
+        }
+      } catch (error) {
+        console.error('Error waiting for receipt:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    waitForReceipt()
+  }, [
+    hash,
+    publicClient,
+    kernelClient,
+    userControlSettingsValue?.use_smart_account,
+  ])
+
+  return { isLoading }
+}
+*/
 // Usage example:
 /*
 const ExampleComponent = () => {
@@ -140,6 +191,10 @@ const ExampleComponent = () => {
     isLoading,
     isReady
   } = usePregenTransaction()
+
+  const { isLoading: isWaitingForReceipt } = useWaitForTransactionReceipt({
+    hash: data
+  })
 
   const handleTransaction = async () => {
     try {

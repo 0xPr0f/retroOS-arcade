@@ -35,16 +35,16 @@ const connector = paraConnector({
 })
 
 export const config: CreateConfigParameters = {
-  chains: [sepolia, mainnet, baseSepolia],
+  chains: [baseSepolia, sepolia, mainnet],
   connectors: [connector, injected()],
   transports: {
+    [baseSepolia.id]: webSocket(
+      `wss://base-sepolia.blastapi.io/${process.env.NEXT_PUBLIC_BLAST_API_KEY}`
+    ),
     [sepolia.id]: http(
       `https://sepolia.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_KEY}`
     ),
     [mainnet.id]: http(),
-    [baseSepolia.id]: webSocket(
-      `wss://base-sepolia.blastapi.io/${process.env.NEXT_PUBLIC_BLAST_API_KEY}`
-    ),
   },
 }
 

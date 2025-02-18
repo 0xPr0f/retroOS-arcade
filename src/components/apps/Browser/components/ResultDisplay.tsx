@@ -16,20 +16,16 @@ const Pagination: React.FC<PaginationProps> = ({
   resultsPerPage,
   onPageChange,
 }) => {
-  // Calculate total pages
   const totalPages = Math.ceil(totalResults / resultsPerPage)
 
-  // Generate page numbers to display
   const generatePageNumbers = () => {
     const pages: number[] = []
 
-    // Always show first page
     if (currentPage > 3) {
       pages.push(1)
       if (currentPage > 4) pages.push(-1) // Ellipsis
     }
 
-    // Show pages around current page
     const startPage = Math.max(1, currentPage - 1)
     const endPage = Math.min(totalPages, currentPage + 1)
 
@@ -37,7 +33,6 @@ const Pagination: React.FC<PaginationProps> = ({
       pages.push(i)
     }
 
-    // Always show last page if we're not already close to it
     if (currentPage < totalPages - 2) {
       if (currentPage < totalPages - 3) pages.push(-1) // Ellipsis
       pages.push(totalPages)

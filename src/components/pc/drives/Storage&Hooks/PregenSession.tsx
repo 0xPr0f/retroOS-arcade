@@ -13,6 +13,7 @@ interface PregenContextType {
   pregenActiveAddress: string | undefined
   pregenEncryptedKeyShare: string | undefined
   pregenWalletId: string | undefined
+  isSmartAccount: boolean | undefined
 }
 
 const PregenContext = createContext<PregenContextType | undefined>(undefined)
@@ -43,6 +44,10 @@ export function PregenProvider({ children }: { children: React.ReactNode }) {
     }
     return pregenAddress
   }, [userControlSettingsValue?.use_smart_account, pregenAddress])
+
+  const isSmartAccount = useMemo(() => {
+    return userControlSettingsValue?.use_smart_account
+  }, [userControlSettingsValue?.use_smart_account])
 
   const pregenEncryptedKeyShare = useMemo(
     () => pregenWalletSession?.encryptedKeyShare,
@@ -78,6 +83,7 @@ export function PregenProvider({ children }: { children: React.ReactNode }) {
       pregenActiveAddress,
       pregenEncryptedKeyShare,
       pregenWalletId,
+      isSmartAccount,
     }),
     [
       pregenWalletSession,
@@ -87,6 +93,7 @@ export function PregenProvider({ children }: { children: React.ReactNode }) {
       pregenActiveAddress,
       pregenEncryptedKeyShare,
       pregenWalletId,
+      isSmartAccount,
     ]
   )
 
