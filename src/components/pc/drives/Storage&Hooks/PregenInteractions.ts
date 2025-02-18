@@ -80,7 +80,7 @@ export function usePregenTransaction({
             value,
           },
           {
-            timeout: 60000,
+            timeout: 600000,
           }
         )
       } else {
@@ -97,7 +97,7 @@ export function usePregenTransaction({
             value,
           },
           {
-            timeout: 60000,
+            timeout: 600000,
           }
         )
       }
