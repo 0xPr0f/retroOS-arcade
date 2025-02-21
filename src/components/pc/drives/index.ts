@@ -10,3 +10,11 @@ export { useDispatchWindows } from './UI/dispatchWindow'
 export { useNavbar } from './Storage&Hooks/NavbarApi'
 // Easy syncronization of values between components
 export { useTypedValue, useValue } from './Storage&Hooks/ValueProvider'
+// Internal App Router for dynamic routing between apps
+export { InternalAppRouter } from './Storage&Hooks/InternalAppRouter'
+// Provider that uses the InternalAppRouter for easy routing integration
+export {
+  useAppRouter,
+  useAppRoutes,
+  AppRouterProvider,
+} from './Storage&Hooks/AppRouterProvider'

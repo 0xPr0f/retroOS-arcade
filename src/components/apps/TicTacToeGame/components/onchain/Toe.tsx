@@ -23,6 +23,7 @@ import { cn } from '@/components/library/utils'
 import { usePregenTransaction } from '@/components/pc/drives/Storage&Hooks/PregenInteractions'
 import { usePregenSession } from '@/components/pc/drives/Storage&Hooks/PregenSession'
 import { useNotifications } from '@/components/pc/drives/Extensions/ToastNotifs'
+import { zeroAddress } from 'viem'
 
 const TicTacToeMP = () => {
   const { address: playerAddress } = useAccount()
@@ -298,8 +299,7 @@ const TicTacToeMP = () => {
     if (
       currentGame &&
       typeof currentGame === 'string' &&
-      currentGame !==
-        '0x0000000000000000000000000000000000000000000000000000000000000000'
+      currentGame !== zeroAddress
     ) {
       setGameId(currentGame)
       refetchGameState()
@@ -309,11 +309,9 @@ const TicTacToeMP = () => {
   useEffect(() => {
     if (gameState) {
       setBoard(gameState[4])
-      if (gameState[2] !== '0x0000000000000000000000000000000000000000') {
+      if (gameState[2] !== zeroAddress) {
         setGameStatus(GameStatus.FINISHED)
-      } else if (
-        gameState[1] !== '0x0000000000000000000000000000000000000000'
-      ) {
+      } else if (gameState[1] !== zeroAddress) {
         setGameStatus(GameStatus.PLAYING)
       }
     }

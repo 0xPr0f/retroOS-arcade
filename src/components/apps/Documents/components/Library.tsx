@@ -242,7 +242,7 @@ const InstalledAppsPanel = () => {
     })
   }, [selectedApp])
   return (
-    <div className="flex h-[400px] border rounded-lg shadow-lg">
+    <div className="flex h-full border rounded-lg shadow-lg">
       <div className="w-2/5 border-r p-4 overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">Installed Apps</h2>
         {userApps &&
