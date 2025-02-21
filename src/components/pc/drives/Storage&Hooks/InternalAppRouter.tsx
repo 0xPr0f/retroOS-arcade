@@ -8,7 +8,7 @@ type Route = {
 export class InternalAppRouter {
   private routes: Map<string, Route>
   private currentRoute: Route | null
-  private history: Route[]
+  private history: string[]
   private subscribers: Set<(route: Route) => void>
 
   constructor() {
@@ -25,7 +25,7 @@ export class InternalAppRouter {
 
   public register(path: string, component: any): void {
     if (this.routes.has(path)) {
-      console.warn(`Route ${path} is already registered. Overwriting...`)
+      return
     }
 
     const route: Route = {
@@ -60,17 +60,14 @@ export class InternalAppRouter {
     const values = path.match(route.pattern) || []
 
     paramNames.forEach((param, index) => {
-      const paramName = param.slice(1) // Remove : prefix
+      const paramName = param.slice(1)
       params[paramName] = values[index + 1]
     })
 
     return params
   }
 
-  public navigate(
-    path: string,
-    additionalParams: Record<string, string> = {}
-  ): void {
+  public navigate(path: string, additionalParams: Record<string, string> = {}): void {
     const route = this.findRoute(path)
 
     if (!route) {
@@ -78,8 +75,10 @@ export class InternalAppRouter {
       return
     }
 
-    if (this.currentRoute) {
-      this.history.push({ ...this.currentRoute })
+    // Only add to history if it's different from the last path
+    const lastPath = this.history[this.history.length - 1]
+    if (path !== lastPath) {
+      this.history.push(path)
     }
 
     const routeParams = this.extractParams(route, path)
@@ -94,14 +93,24 @@ export class InternalAppRouter {
   }
 
   public back(): void {
-    if (this.history.length === 0) {
+    if (this.history.length <= 1) {
       console.warn('No previous route in history')
       return
     }
 
-    const previousRoute = this.history.pop()!
-    this.currentRoute = previousRoute
-    this.notifySubscribers()
+    // Remove current path
+    this.history.pop()
+    // Get previous path
+    const previousPath = this.history[this.history.length - 1]
+
+    const route = this.findRoute(previousPath)
+    if (route) {
+      this.currentRoute = {
+        ...route,
+        params: this.extractParams(route, previousPath),
+      }
+      this.notifySubscribers()
+    }
   }
 
   public subscribe(callback: (route: Route) => void): () => void {

@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useState,
   ReactNode,
+  useRef,
 } from 'react'
 import { InternalAppRouter } from './InternalAppRouter'
 
@@ -13,7 +14,9 @@ type Route = {
   path: string
   component: ReactComponent
   params?: Record<string, string>
+  pattern?: RegExp
 }
+
 interface RouterContextType {
   navigate: (path: string, params?: Record<string, string>) => void
   back: () => void
@@ -21,35 +24,39 @@ interface RouterContextType {
   params: Record<string, string>
 }
 
-const RouterContext = createContext<RouterContextType | null>(null)
+const RouterContext = createContext<RouterContextType>({
+  navigate: () => {},
+  back: () => {},
+  currentRoute: null,
+  params: {},
+})
+
+const internalRouter = new InternalAppRouter()
 
 interface RouterProviderProps {
   children: ReactNode
 }
 
-export const AppRouterProvider: React.FC<RouterProviderProps> = ({
-  children,
-}) => {
-  const router = new InternalAppRouter()
+export const AppRouterProvider: React.FC<RouterProviderProps> = ({ children }) => {
   const [currentRoute, setCurrentRoute] = useState<Route | null>(null)
 
   useEffect(() => {
-    const unsubscribe = router.subscribe((route) => {
+    const unsubscribe = internalRouter.subscribe((route) => {
       setCurrentRoute(route)
     })
 
     return () => unsubscribe()
   }, [])
 
-  const contextValue: RouterContextType = {
-    navigate: (path, params = {}) => router.navigate(path, params),
-    back: () => router.back(),
+  const value = {
+    navigate: (path: string, params = {}) => internalRouter.navigate(path, params),
+    back: () => internalRouter.back(),
     currentRoute,
     params: currentRoute?.params || {},
   }
 
   return (
-    <RouterContext.Provider value={contextValue}>
+    <RouterContext.Provider value={value}>
       {children}
     </RouterContext.Provider>
   )
@@ -58,24 +65,29 @@ export const AppRouterProvider: React.FC<RouterProviderProps> = ({
 export const useAppRouter = () => {
   const context = useContext(RouterContext)
   if (!context) {
-    throw new Error('useRouter must be used within a RouterProvider')
+    throw new Error('useAppRouter must be used within AppRouterProvider')
   }
   return context
 }
 
-export const useAppRoutes = (
+export const AppRouteRegistrar: React.FC<{
   routes: Array<{ path: string; component: ReactComponent }>
-) => {
-  const router = new InternalAppRouter()
+}> = ({ routes }) => {
+  const registeredRef = useRef(false)
 
   useEffect(() => {
-    routes.forEach(({ path, component }) => {
-      router.register(path, component)
-    })
+    if (!registeredRef.current) {
+      routes.forEach(({ path, component }) => {
+        internalRouter.register(path, component)
+      })
+      registeredRef.current = true
+    }
   }, [routes])
+
+  return null
 }
 
-export const RouteRenderer: React.FC = () => {
+export const AppRouteRenderer: React.FC = () => {
   const { currentRoute } = useAppRouter()
 
   if (!currentRoute) {
@@ -85,4 +97,5 @@ export const RouteRenderer: React.FC = () => {
   const Component = currentRoute.component
   return <Component {...currentRoute.params} />
 }
+
 export { type Route, type ReactComponent }

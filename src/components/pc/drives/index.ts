@@ -15,6 +15,9 @@ export { InternalAppRouter } from './Storage&Hooks/InternalAppRouter'
 // Provider that uses the InternalAppRouter for easy routing integration
 export {
   useAppRouter,
-  useAppRoutes,
+  AppRouteRegistrar,
   AppRouterProvider,
+  AppRouteRenderer,
+  type ReactComponent,
+  type Route
 } from './Storage&Hooks/AppRouterProvider'
