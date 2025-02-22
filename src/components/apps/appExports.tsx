@@ -15,6 +15,7 @@ const MineSweeperGame = lazy(() => import('./Minesweeper'))
 const Piano = lazy(() => import('./Piano'))
 const Feedback = lazy(() => import('./Feedback'))
 const ChainReaction = lazy(() => import('./ChainReaction'))
+const RealmClash = lazy(() => import('./RealmClash'))
 
 // Icons Export
 import DesktopIcon from './MyComputer/icons/desktop.svg'
@@ -30,6 +31,7 @@ import MineSweeperGameIcon from './Minesweeper/icons/minesweeper.svg'
 import PianoIcon from './Piano/icons/piano.svg'
 import FeedbackIcon from './Feedback/icons/feedback.svg'
 import ChainReactionIcon from './ChainReaction/icons/reaction.svg'
+import RealmClashIcon from './RealmClash/icons/realmclash.svg'
 //export the apps and others from here to keep track of exported apps
 export {
   Document,
@@ -46,6 +48,7 @@ export {
   Piano,
   Feedback,
   ChainReaction,
+  RealmClash,
   //////////////////////
   DesktopIcon,
   DocumentIcon,
@@ -60,4 +63,5 @@ export {
   PianoIcon,
   FeedbackIcon,
   ChainReactionIcon,
+  RealmClashIcon,
 }

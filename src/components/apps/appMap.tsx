@@ -14,6 +14,7 @@ import {
   Piano,
   Feedback,
   ChainReaction,
+  RealmClash,
   /////////////////////
   DesktopIcon,
   DocumentIcon,
@@ -28,6 +29,7 @@ import {
   PianoIcon,
   FeedbackIcon,
   ChainReactionIcon,
+  RealmClashIcon,
 } from './appExports'
 
 const appMap: {
@@ -42,14 +44,16 @@ const appMap: {
   wallet: Wallet,
   control: ControlPanel,
   music: Music,
+  piano: Piano,
+  feedback: Feedback,
+  browser: Browser,
   snake: SnakeGame,
   tictactoe: TicTacToeGame,
   tetris: TetrisGame,
-  browser: Browser,
   minesweeper: MineSweeperGame,
-  piano: Piano,
-  feedback: Feedback,
+  realmclash: RealmClash,
   chainreaction: ChainReaction,
+
   // Add new components here by adding new key-value pairs, the key has to match id in app drawer
 }
 export const iconMap: { [key: string]: Object } = {
@@ -67,6 +71,8 @@ export const iconMap: { [key: string]: Object } = {
   feedback: FeedbackIcon,
   start: StartIcon,
   chainreaction: ChainReactionIcon,
+  realmclash: RealmClashIcon,
+
   // Add new icons here by adding new key-value pairs, the key has to match id in app drawer
 }
 export interface IconType {

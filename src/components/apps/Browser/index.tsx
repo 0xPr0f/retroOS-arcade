@@ -3,7 +3,7 @@ import InternetBrowser from './components/Broswer'
 
 const Browser = () => {
   return (
-    <div className="p-2">
+    <div className="h-full w-full overflow-y-auto p-2">
       <InternetBrowser />
     </div>
   )

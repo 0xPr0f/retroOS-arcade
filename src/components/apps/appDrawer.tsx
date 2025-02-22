@@ -9,6 +9,7 @@ import {
   MineSweeperGameIcon,
   MusicIcon,
   PianoIcon,
+  RealmClashIcon,
   SnakeGameIcon,
   TetrisGameIcon,
   TicTacToeGameIcon,
@@ -210,6 +211,21 @@ const apps: App[] = [
     openingDimensions: {
       height: 550,
       width: 450,
+    },
+    greater: true,
+    game: true,
+  },
+  {
+    id: 'realmclash',
+    title: 'Realm Clash',
+    icon: RealmClashIcon.src,
+    openingPosition: {
+      x: 320,
+      y: 150,
+    },
+    openingDimensions: {
+      height: 500,
+      width: 750,
     },
     greater: true,
     game: true,

@@ -34,4 +34,9 @@ export default async function handler(
 
 That's it! Start building your amazing RetroOS app! 🚀
 
+### Available Hooks
+
+RetroOS provides several useful hooks that you can import from the [drives](/src/components/pc/drives/README.md) folder:
+
+
 Have any questions? Reach out to the team!
