@@ -22,7 +22,7 @@ export function HomeContent() {
 
   const settings = {
     apiKey: "y_eQkk-xNUDYHBLvXhoipyEWcrq04D3D",
-    network: Network.ETH_MAINNET,
+    network: Network.BASE_SEPOLIA,
   };
   const alchemy = new Alchemy(settings);
 

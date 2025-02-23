@@ -1,12 +1,11 @@
 
 "use client";
 import { useState, useEffect } from "react";
-import { CopyToClipboard } from "react-copy-to-clipboard";
-import { FaCopy, FaExternalLinkAlt } from "react-icons/fa";
 import { formatEther } from "viem";
-import moment from "moment";
 import { useAccount } from "wagmi";
 import {Alchemy, Network, AssetTransfersCategory} from "alchemy-sdk";
+import { Check, Copy, Link } from "lucide-react";
+import { copyToClipboard } from "@/components/pc/drives";
 
 
 const settings = {
@@ -96,16 +95,26 @@ export function ActivityContent() {
                         className="text-blue-500 hover:underline flex items-center"
                       >
                         {tx?.hash.substring(0, 10)}...{tx?.hash.slice(-10)}
-                        <FaExternalLinkAlt className="ml-1 text-xs" />
+                        <Link className="ml-1 text-xs" />
                       </a>
-                      <CopyToClipboard
-                        text={tx.hash}
-                        onCopy={() => setCopiedHash(tx.hash)}
-                      >
-                        <button className="text-gray-500 hover:text-blue-500">
-                          <FaCopy />
-                        </button>
-                      </CopyToClipboard>
+                      {tx.hash}
+                      {copiedHash && copiedHash?.length > 1 ? (
+                <Check className="w-4 h-4 text-green-500" />
+              ) : (
+                <Copy
+                  className="w-4 h-4 cursor-pointer"
+                  onClick={() => {
+                    copyToClipboard(tx.hash)
+
+                    setCopiedHash("")
+                    setTimeout(
+                      () => setCopiedHash((tx.hash)),
+                      2000
+                    )
+                  }}
+                />
+              )}
+                   
                     </div>
                   </div>
 
