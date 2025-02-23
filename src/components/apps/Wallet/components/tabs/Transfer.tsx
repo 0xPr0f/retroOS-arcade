@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from "react";
 import {
   Settings,
   Search,
@@ -8,29 +8,31 @@ import {
   ChevronDown,
   Info,
   Zap,
-} from 'lucide-react'
+} from "lucide-react";
+import qs from "qs";
+import { useAccount } from "wagmi";
 
 interface Token {
-  name: string
-  symbol: string
-  address: string
-  iconText?: string
-  iconBg?: string
+  name: string;
+  symbol: string;
+  address: string;
+  iconText?: string;
+  iconBg?: string;
 }
 
 interface TokenSelectionModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSelect: (token: Token) => void
+  isOpen: boolean;
+  onClose: () => void;
+  onSelect: (token: Token) => void;
 }
 
 interface SettingsPanelProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="absolute top-16 right-0 w-80 bg-white rounded-2xl shadow-lg border border-gray-200 z-50">
@@ -79,55 +81,56 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 const TokenSelectionModal: React.FC<TokenSelectionModalProps> = ({
   isOpen,
   onClose,
   onSelect,
 }) => {
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const tokens = {
     recent: [
       {
-        name: 'Wrapped Ether',
-        symbol: 'WETH',
-        address: '0x4200...0006',
-        iconText: 'WE',
+        name: "Wrapped Ether",
+        symbol: "WETH",
+        address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        iconText: "WE",
       },
       {
-        name: 'Alchemix ETH',
-        symbol: 'ALETH',
-        address: '0x3E29...5f04',
-        iconText: 'AE',
+        name: "Alchemix ETH",
+        symbol: "ALETH",
+        address: "0x3E29...5f04",
+        iconText: "AE",
       },
       {
-        name: 'Wrapped Pulse from PulseChain',
-        symbol: 'WPLS',
-        address: '0xA882...d68A',
-        iconText: 'WPL',
+        name: "Wrapped Pulse from PulseChain",
+        symbol: "WPLS",
+        address: "0xA882...d68A",
+        iconText: "WPL",
       },
       {
-        name: '0xA107...9a27',
-        symbol: '',
-        address: '0xA107...9a27',
-        iconText: '0x',
+        name: "0xA107...9a27",
+        symbol: "",
+        address: "0xA107...9a27",
+        iconText: "0x",
       },
     ],
     volume: [
-      { name: 'Ethereum', symbol: 'ETH', address: '', iconBg: 'bg-blue-600' },
+      { name: "Ethereum", symbol: "ETH", address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", iconBg: "bg-blue-600" },
       {
-        name: 'USDC',
-        symbol: 'USDC',
-        address: '0xA0b8...eB48',
-        iconBg: 'bg-blue-600',
+        name: "USDC",
+        symbol: "USDC",
+        address: "0xA0b8...eB48",
+        iconBg: "bg-blue-600",
       },
-      { name: 'Base ETH', symbol: 'ETH', address: '', iconBg: 'bg-blue-600' },
-      { name: 'Tether', symbol: 'USDT', address: '', iconBg: 'bg-red-600' },
+      { name: "Base ETH", symbol: "ETH", address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", iconBg: "bg-blue-600" },
+      { name: "Tether", symbol: "USDT", address: "", iconBg: "bg-red-600" },
+      { name: "DAI", symbol: "DAI", address: "0x6b175474e89094c44da98b954eedeac495271d0f", iconBg: "bg-green-600" },
     ],
-  }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
@@ -220,41 +223,67 @@ const TokenSelectionModal: React.FC<TokenSelectionModalProps> = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export const ProfileContent: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('Swap')
-  const [sellAmount, setSellAmount] = useState<string>('0')
+  const [activeTab, setActiveTab] = useState<string>("Swap");
+  const [sellAmount, setSellAmount] = useState<string>("0");
   const [sellToken, setSellToken] = useState<Token>({
-    name: 'Ethereum',
-    symbol: 'ETH',
-    address: '',
-  })
-  const [buyToken, setBuyToken] = useState<Token | null>(null)
-  const [showTokenModal, setShowTokenModal] = useState<boolean>(false)
-  const [modalType, setModalType] = useState<'sell' | 'buy' | null>(null)
-  const [showSettings, setShowSettings] = useState(false)
+    name: "Ethereum",
+    symbol: "ETH",
+    address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  });
+  const [buyToken, setBuyToken] = useState<Token | null>(null);
+  const [showTokenModal, setShowTokenModal] = useState<boolean>(false);
+  const [modalType, setModalType] = useState<"sell" | "buy" | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const { address, chainId, isConnected } = useAccount();
 
-  const tabs = ['Swap', 'Limit', 'Send', 'Buy']
+  const tabs = ["Swap", "Limit", "Send", "Buy"];
 
-  const handleOpenModal = (type: 'sell' | 'buy') => {
-    setModalType(type)
-    setShowTokenModal(true)
-  }
+  const handleOpenModal = (type: "sell" | "buy") => {
+    setModalType(type);
+    setShowTokenModal(true);
+  };
 
   const handleTokenSelect = (token: Token) => {
-    if (modalType === 'sell') {
-      setSellToken(token)
+    if (modalType === "sell") {
+      setSellToken(token);
     } else {
-      setBuyToken(token)
+      setBuyToken(token);
     }
-    setShowTokenModal(false)
-  }
+    setShowTokenModal(false);
+  };
+
+  useEffect(() => {
+    async function getPrice() {
+      if (!isConnected || (sellAmount == undefined || "") || buyToken?.address == undefined) return;
+      console.log(buyToken, sellToken);
+
+      const dParams = {
+        chainId: chainId,
+        sellToken: sellToken.address,
+        buyToken: buyToken?.address,
+        sellAmount: sellAmount,
+        taker: address,
+      }
+      try {
+        // const response = await fetch(`/api/price/route?${qs.stringify(dParams)}`);
+        const response = await fetch(`/api/price/route?chainId=${chainId}&sellToken=${sellToken.address}&buyToken=${buyToken?.address}&sellAmount=${sellAmount}&taker=${address}`);
+
+        const data = await response.json();
+        console.log(data);
+      } catch (error) {
+        console.error("Error fetching price:", error);
+      }
+    }
+    getPrice();
+  }, [buyToken, sellToken, sellAmount, isConnected]);
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'Swap':
+      case "Swap":
         return (
           <div className="space-y-3">
             <div className="bg-white rounded-2xl p-4 shadow-md">
@@ -268,7 +297,7 @@ export const ProfileContent: React.FC = () => {
                   placeholder="0"
                 />
                 <button
-                  onClick={() => handleOpenModal('sell')}
+                  onClick={() => handleOpenModal("sell")}
                   className="flex items-center bg-blue-600 rounded-full px-4 py-2 space-x-2 hover:bg-blue-700 transition-all text-white"
                 >
                   <div className="w-6 h-6 bg-white rounded-full"></div>
@@ -279,7 +308,7 @@ export const ProfileContent: React.FC = () => {
                 </button>
               </div>
               <div className="text-gray-500 mt-1 text-sm">
-                ${(parseFloat(sellAmount || '0') * 2000).toFixed(2)}
+                ${(parseFloat(sellAmount || "0") * 2000).toFixed(2)}
               </div>
             </div>
 
@@ -299,10 +328,10 @@ export const ProfileContent: React.FC = () => {
                   readOnly
                 />
                 <button
-                  onClick={() => handleOpenModal('buy')}
+                  onClick={() => handleOpenModal("buy")}
                   className="bg-blue-600 hover:bg-blue-700 transition-all text-white rounded-full px-4 py-2 text-sm font-medium"
                 >
-                  {buyToken ? buyToken.symbol : 'Select token'} ▼
+                  {buyToken ? buyToken.symbol : "Select token"} ▼
                 </button>
               </div>
             </div>
@@ -311,29 +340,29 @@ export const ProfileContent: React.FC = () => {
               Connect wallet
             </button>
           </div>
-        )
-      case 'Limit':
+        );
+      case "Limit":
         return (
           <div className="text-gray-600 p-3 text-sm">
             Limit order interface coming soon
           </div>
-        )
-      case 'Send':
+        );
+      case "Send":
         return (
           <div className="text-gray-600 p-3 text-sm">
             Send cryptocurrency interface coming soon
           </div>
-        )
-      case 'Buy':
+        );
+      case "Buy":
         return (
           <div className="text-gray-600 p-3 text-sm">
             Buy cryptocurrency interface coming soon
           </div>
-        )
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <div className="px-6 pt-6">
@@ -349,8 +378,8 @@ export const ProfileContent: React.FC = () => {
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2 rounded-full transition-colors ${
                   activeTab === tab
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:text-gray-800'
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:text-gray-800"
                 }`}
               >
                 {tab}
@@ -380,5 +409,5 @@ export const ProfileContent: React.FC = () => {
         />
       </div>
     </div>
-  )
-}
+  );
+};
