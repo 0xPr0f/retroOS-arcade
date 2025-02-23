@@ -1,23 +1,23 @@
-import { useState } from "react";
-import { SettingToggle } from "./ui_components";
+import { useState } from 'react'
+import { SettingToggle, Slider } from './ui_components'
 interface SwitchProps {
-  sound_effect: boolean;
-  background_music: boolean;
-  show_notification: boolean;
+  sound_effect: boolean
+  background_music: boolean
+  show_notification: boolean
 }
 const SettingsUI: React.FC = () => {
   const [switchProps, setSwitchProps] = useState<SwitchProps>({
     sound_effect: false,
     background_music: false,
     show_notification: false,
-  });
+  })
 
   const handleSwitchChange = (key: keyof SwitchProps) => (isOn: boolean) => {
     setSwitchProps((prev) => ({
       ...prev,
       [key]: isOn,
-    }));
-  };
+    }))
+  }
 
   return (
     <div className="p-6">
@@ -27,27 +27,24 @@ const SettingsUI: React.FC = () => {
           <SettingToggle
             label="Sound Effects"
             defaultOn={switchProps.sound_effect}
-            onChange={handleSwitchChange("sound_effect")}
+            onChange={handleSwitchChange('sound_effect')}
           />
           <SettingToggle
             label="Background Music"
             defaultOn={switchProps.background_music}
-            onChange={handleSwitchChange("background_music")}
+            onChange={handleSwitchChange('background_music')}
           />
           <SettingToggle
             label="Show Notifications"
             defaultOn={switchProps.show_notification}
-            onChange={handleSwitchChange("show_notification")}
+            onChange={handleSwitchChange('show_notification')}
           />
           <div className="mt-6">
-            <label className="block text-white mb-2">Graphics Quality</label>
-            <div className="w-full h-2 bg-gray-700 rounded-full">
-              <div className="w-3/4 h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full" />
-            </div>
+            <Slider label="Graphics Quality" defaultValue={75} />
           </div>
         </div>
       </div>
     </div>
-  );
-};
-export default SettingsUI;
+  )
+}
+export default SettingsUI

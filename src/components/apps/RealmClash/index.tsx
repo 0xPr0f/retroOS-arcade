@@ -2,15 +2,11 @@ import React from 'react'
 import RealmClashGame from './components/RealmClashInterface'
 import { AppRouterProvider } from '@/components/pc/drives'
 
-
-
-
 const RealmClash = () => {
-
   return (
-    <div className='h-full w-full overflow-y-auto'>
+    <div className="h-full w-full overflow-y-auto">
       <AppRouterProvider>
-      <RealmClashGame />
+        <RealmClashGame />
       </AppRouterProvider>
     </div>
   )

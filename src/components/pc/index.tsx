@@ -405,7 +405,6 @@ const PcDesktop: React.FC = () => {
   useEffect(() => {
     const welcomed = localStorage.getItem('retro:welcome:window')
     setOnboardingTour(welcomed)
-    console.log(onboardingTour, welcomed)
     if (!welcomed && (isConnected || isLoginPregenSession)) {
       const windowid = createDispatchWindow({
         title: 'Welcome to RetroOS',

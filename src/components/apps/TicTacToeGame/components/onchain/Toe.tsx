@@ -26,9 +26,7 @@ import { useNotifications } from '@/components/pc/drives/Extensions/ToastNotifs'
 import { zeroAddress } from 'viem'
 
 const TicTacToeMP = () => {
-  const { address: playerAddress } = useAccount()
-
-  const { isConnected } = useAccount()
+  const { address: playerAddress, isConnected } = useAccount()
   const chainId = useChainId()
   const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
     usePregenSession()

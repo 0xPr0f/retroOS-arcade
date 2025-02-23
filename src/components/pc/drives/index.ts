@@ -19,5 +19,17 @@ export {
   AppRouterProvider,
   AppRouteRenderer,
   type ReactComponent,
-  type Route
+  type Route,
 } from './Storage&Hooks/AppRouterProvider'
+//Default colors palette used in the app
+export { weirdBlue, darkBlue, lightBlue, lightRed } from './Extensions/colors'
+//UI Extensions for grid sizing
+export { AutoGrid, GridItem } from './UI/UI_Extensions'
+//Utils for clipboard and text shortening
+export {
+  copyToClipboard,
+  shortenText,
+  isValidAddress,
+  categorizeIdentifier,
+  loadExternalURL,
+} from './Extensions/utils'

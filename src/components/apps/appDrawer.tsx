@@ -221,13 +221,14 @@ const apps: App[] = [
     icon: RealmClashIcon.src,
     openingPosition: {
       x: 320,
-      y: 150,
+      y: 130,
     },
     openingDimensions: {
-      height: 500,
+      height: 600,
       width: 750,
     },
     greater: true,
+    fixed: false,
     game: true,
   },
 ]

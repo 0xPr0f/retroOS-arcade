@@ -48,7 +48,8 @@ const AddressWidget = () => {
   }
 
   const [copied, setCopied] = useState(false)
-  const { setPregenWalletSession, pregenAddress } = usePregenSession()
+  const { setPregenWalletSession, pregenAddress, pregenActiveAddress } =
+    usePregenSession()
 
   const handleCopy = async () => {
     if (copied) return
@@ -57,7 +58,7 @@ const AddressWidget = () => {
       if (isConnected) {
         copyToClipboard(address as string)
       } else {
-        copyToClipboard(pregenAddress as string)
+        copyToClipboard(pregenActiveAddress as string)
       }
 
       setCopied(true)
@@ -78,7 +79,7 @@ const AddressWidget = () => {
       >
         <div className="w-2 h-2 rounded-full bg-emerald-400 mr-1"></div>[
         {!isConnected
-          ? shortenText(pregenAddress as string)
+          ? shortenText(pregenActiveAddress as string)
           : shortenText(address as string)}
         ]
       </button>
@@ -97,7 +98,7 @@ const AddressWidget = () => {
               {/* Address */}
               <div className="text-white text-sm font-medium mb-1">
                 {!isConnected
-                  ? shortenText(pregenAddress as string)
+                  ? shortenText(pregenActiveAddress as string)
                   : shortenText(address as string)}
               </div>
 
