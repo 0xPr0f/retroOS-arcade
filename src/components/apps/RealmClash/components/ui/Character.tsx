@@ -2,11 +2,12 @@ import {
   AutoGrid,
   GridItem,
   useAppRouter,
+  useDispatchWindows,
   useNotifications,
   usePregenSession,
   usePregenTransaction,
 } from '@/components/pc/drives'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CharacterCreation } from './ExtraUIProps'
 import {
   useAccount,
@@ -18,6 +19,8 @@ import {
 import { CHARACTER_CARD_ADDRESS } from '../deployments/address'
 import { CHARACTER_CARD_ABI } from '../deployments/abi'
 import { cn } from '@/components/library/utils'
+import { Slider } from './ui_components'
+import { useMouse } from 'react-use'
 
 interface CharacterCard {
   id: string
@@ -72,16 +75,16 @@ const CharacterGrid: React.FC = () => {
   }
 
   return (
-    <div className="p-6 relative min-h-[800px]">
+    <div className="p-6 relative min-h-[700px]">
       <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg p-6 backdrop-blur-sm border border-gray-700/50">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-white">Characters</h2>
         </div>
 
-        <AutoGrid className="" minItemWidth={210} gap={14}>
+        <AutoGrid className="" minItemWidth={250} gap={14}>
           <GridItem
             onClick={handleCreateNewCard}
-            className="bg-gray-800/30 rounded-lg border-2 border-dashed border-gray-600 
+            className="min-h-[410px] bg-gray-800/30 rounded-lg border-2 border-dashed border-gray-600 
                      flex items-center justify-center p-8 cursor-pointer
                      hover:bg-gray-800/50 hover:border-gray-500 transition-all group"
           >
@@ -127,19 +130,352 @@ const CharacterGrid: React.FC = () => {
   )
 }
 
+const StatSliderWithBase: React.FC<{
+  label: string
+  value: number
+  onChange: (value: number) => void
+  min: number
+  max: number
+  disabled?: boolean
+  icon: string
+  backwardOnly?: boolean
+  baseValue: number
+}> = ({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  disabled,
+  icon,
+  backwardOnly,
+  baseValue,
+}) => {
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{icon}</span>
+          <span className="text-gray-300">{label}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-gray-400">{baseValue}</span>
+          <span className="text-gray-400">+</span>
+          <span className="text-white font-medium">{value}</span>
+          <span className="text-gray-400">=</span>
+          <span className="text-blue-400 font-medium">{baseValue + value}</span>
+        </div>
+      </div>
+      <div className="w-full px-4">
+        <Slider
+          min={min}
+          max={max}
+          defaultValue={baseValue + value}
+          onChange={(totalValue) => {
+            const increment = totalValue - baseValue
+            onChange(increment)
+          }}
+          disabled={disabled}
+          backwardOnly={backwardOnly}
+          viewValue={false}
+          value={baseValue + value}
+        />
+      </div>
+    </div>
+  )
+}
+
+const CharacterEdit: React.FC<{
+  characterId: number
+  windowId: string
+  characterStats: any
+}> = ({ characterId, windowId, characterStats }) => {
+  if (!characterStats) return null
+
+  const baseStats = {
+    strength: Number(characterStats.strength) || 0,
+    defense: Number(characterStats.defense) || 0,
+    agility: Number(characterStats.agility) || 0,
+    vitality: Number(characterStats.vitality) || 0,
+    intelligence: Number(characterStats.intelligence) || 0,
+    magicPower: Number(characterStats.magicPower) || 0,
+  }
+
+  const [statIncreases, setStatIncreases] = useState({
+    strength: 0,
+    defense: 0,
+    agility: 0,
+    vitality: 0,
+    intelligence: 0,
+    magicPower: 0,
+  })
+
+  const { closeDispatchWindow } = useDispatchWindows()
+  const TOTAL_POINTS = Number(characterStats.statPoints) || 0
+  const MIN_STAT = 0
+  const MAX_STAT = 255
+
+  const totalPointsUsed = Object.values(statIncreases).reduce(
+    (sum, value) => sum + value,
+    0
+  )
+
+  const remainingPoints = TOTAL_POINTS - totalPointsUsed
+  const backwardOnly = remainingPoints <= 0
+  const handleStatChange = (
+    stat: keyof typeof statIncreases,
+    increment: number
+  ) => {
+    if (increment < 0) {
+      increment = 0
+    }
+
+    const newTotal = baseStats[stat] + increment
+
+    if (newTotal > MAX_STAT) {
+      increment = MAX_STAT - baseStats[stat]
+    }
+
+    const currentIncrement = statIncreases[stat]
+    const pointDifference = increment - currentIncrement
+
+    if (remainingPoints >= pointDifference || pointDifference < 0) {
+      setStatIncreases((prev) => ({
+        ...prev,
+        [stat]: increment,
+      }))
+    } else if (remainingPoints > 0) {
+      setStatIncreases((prev) => ({
+        ...prev,
+        [stat]: currentIncrement + remainingPoints,
+      }))
+    }
+  }
+  const finalStats = {
+    strength: baseStats.strength + statIncreases.strength,
+    defense: baseStats.defense + statIncreases.defense,
+    agility: baseStats.agility + statIncreases.agility,
+    vitality: baseStats.vitality + statIncreases.vitality,
+    intelligence: baseStats.intelligence + statIncreases.intelligence,
+    magicPower: baseStats.magicPower + statIncreases.magicPower,
+  }
+  const chainId = useChainId()
+  const { addNotification } = useNotifications()
+  const availableChainIds = ['84532']
+  const isChainUnavailable = !availableChainIds.some(
+    (chain) => Number(chain) === chainId
+  )
+  const { isConnected, address: playerAddress } = useAccount()
+  const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
+    usePregenSession()
+  const {
+    writeContract: writeIncreaseStats,
+    data: increaseStatsData,
+    isPending: isIncreasingStats,
+    error: increaseStatsError,
+  } = useWriteContract({
+    mutation: {
+      onError: (error: any) => {},
+      onSuccess: (txHash: any) => {},
+    },
+  })
+
+  // Pregen Join Queue Contract Write
+  const {
+    writeContract: writeIncreaseStatsPregen,
+    data: increaseStatsDataPregen,
+    isPending: isIncreasingStatsPregen,
+  } = usePregenTransaction({
+    mutation: {
+      onError: (error: any) => {},
+      onSuccess: (txHash: any) => {},
+    },
+  })
+
+  const handleAllocateStatsPoints = async () => {
+    if (isChainUnavailable) {
+      addNotification({
+        title: `Chain Unavailable`,
+        message: `This chain is not available. Please use base sepolia.`,
+        type: 'error',
+        duration: 10000,
+      })
+      return
+    }
+    /*  uint256 _characterId,
+        uint8 _strengthIncrease,
+        uint8 _defenseIncrease,
+        uint8 _agilityIncrease,
+        uint8 _vitalityIncrease,
+        uint8 _intelligenceIncrease,
+        uint8 _magicPowerIncrease
+*/
+    if (isConnected) {
+      await writeIncreaseStats({
+        address: CHARACTER_CARD_ADDRESS,
+        abi: CHARACTER_CARD_ABI,
+        functionName: 'increaseStats',
+        args: [
+          characterId,
+          statIncreases.strength,
+          statIncreases.defense,
+          statIncreases.agility,
+          statIncreases.vitality,
+          statIncreases.intelligence,
+          statIncreases.magicPower,
+        ],
+      })
+    } else if (isLoginPregenSession) {
+      await writeIncreaseStatsPregen({
+        address: CHARACTER_CARD_ADDRESS,
+        abi: CHARACTER_CARD_ABI,
+        functionName: 'increaseStats',
+        args: [
+          characterId,
+          statIncreases.strength,
+          statIncreases.defense,
+          statIncreases.agility,
+          statIncreases.vitality,
+          statIncreases.intelligence,
+          statIncreases.magicPower,
+        ],
+      })
+    }
+  }
+
+  useWatchContractEvent({
+    address: CHARACTER_CARD_ADDRESS,
+    abi: CHARACTER_CARD_ABI,
+    eventName: 'StatsIncreased',
+    onLogs(logs: any) {
+      closeDispatchWindow(windowId)
+    },
+  })
+
+  const handleAllocate = () => {
+    handleAllocateStatsPoints()
+    //closeDispatchWindow(windowId)
+  }
+
+  return (
+    <div className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg border border-gray-700/50 p-4">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-300">Points Left:</span>
+          <span
+            className={`text-sm font-bold ${
+              remainingPoints > 0 ? 'text-green-400' : 'text-red-400'
+            }`}
+          >
+            {remainingPoints}
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <StatSliderWithBase
+          label="Strength"
+          value={statIncreases.strength}
+          onChange={(value) => handleStatChange('strength', value)}
+          min={MIN_STAT}
+          max={MAX_STAT}
+          icon="⚔️"
+          backwardOnly={backwardOnly}
+          baseValue={baseStats.strength}
+        />
+        <StatSliderWithBase
+          label="Defense"
+          value={statIncreases.defense}
+          onChange={(value) => handleStatChange('defense', value)}
+          min={MIN_STAT}
+          max={MAX_STAT}
+          icon="🛡️"
+          backwardOnly={backwardOnly}
+          baseValue={baseStats.defense}
+        />
+        <StatSliderWithBase
+          label="Agility"
+          value={statIncreases.agility}
+          onChange={(value) => handleStatChange('agility', value)}
+          min={MIN_STAT}
+          max={MAX_STAT}
+          icon="💨"
+          backwardOnly={backwardOnly}
+          baseValue={baseStats.agility}
+        />
+        <StatSliderWithBase
+          label="Vitality"
+          value={statIncreases.vitality}
+          onChange={(value) => handleStatChange('vitality', value)}
+          min={MIN_STAT}
+          max={MAX_STAT}
+          icon="❤️"
+          backwardOnly={backwardOnly}
+          baseValue={baseStats.vitality}
+        />
+        <StatSliderWithBase
+          label="Intelligence"
+          value={statIncreases.intelligence}
+          onChange={(value) => handleStatChange('intelligence', value)}
+          min={MIN_STAT}
+          max={MAX_STAT}
+          icon="✨"
+          backwardOnly={backwardOnly}
+          baseValue={baseStats.intelligence}
+        />
+        <StatSliderWithBase
+          label="Magic Power"
+          value={statIncreases.magicPower}
+          onChange={(value) => handleStatChange('magicPower', value)}
+          min={MIN_STAT}
+          max={MAX_STAT}
+          icon="🔮"
+          backwardOnly={backwardOnly}
+          baseValue={baseStats.magicPower}
+        />
+      </div>
+      <div className="flex justify-between px-3 flex-row-reverse gap-3 mt-5">
+        <button
+          onClick={handleAllocate}
+          disabled={totalPointsUsed === 0}
+          className="h-10 px-6 rounded-md overflow-hidden
+                 bg-gradient-to-r from-blue-500 to-blue-700 
+                 hover:from-blue-600 hover:to-blue-800
+                 disabled:opacity-50 disabled:cursor-not-allowed
+                 transition-all duration-300"
+        >
+          <div className="relative z-10 flex items-center justify-center">
+            <span className="font-medium">Allocate</span>
+          </div>
+        </button>
+
+        <button
+          onClick={() => {
+            closeDispatchWindow(windowId)
+          }}
+          className="h-10 px-6 rounded-md overflow-hidden
+                 bg-gradient-to-r from-gray-600 to-gray-700
+                 hover:from-gray-700 hover:to-gray-800
+                 transition-all duration-300"
+        >
+          <div className="relative z-10 flex items-center justify-center">
+            <span className="font-medium">Cancel</span>
+          </div>
+        </button>
+      </div>
+    </div>
+  )
+}
+
 const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
   const { navigate } = useAppRouter()
-
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mouse = useMouse(containerRef as React.RefObject<Element>)
   const handleCardClick = () => {
     navigate(`/charactercard/${characterId}`)
   }
 
-  console.log(characterId)
-
-  const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    console.log('Edit character:', characterId)
-  }
+  const { createDispatchWindow } = useDispatchWindows()
 
   const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
     usePregenSession()
@@ -223,11 +559,41 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
     })
   const characterStats = dataCharacterStats as any
 
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    console.log('Edit character:', characterId)
+    const centeredX = mouse.docX - 300 / 2
+    const centeredY = mouse.docY - 350 / 1.1
+    const windowId = createDispatchWindow({
+      title: 'Allocate Stats',
+      content: () => {
+        return (
+          <CharacterEdit
+            characterId={characterId}
+            windowId={windowId}
+            characterStats={characterStats}
+          />
+        )
+      },
+      initialPosition: {
+        x: centeredX,
+        y: centeredY,
+      },
+      initialSize: {
+        width: 300,
+        height: 350,
+      },
+      styles: {
+        background: 'bg-gradient-to-b from-gray-900 via-blue-900 to-gray-900',
+        rounded: 'rounded-lg',
+        border: 'border-gray-700/50',
+      },
+    })
+  }
   if (!characterStats) return null
-  console.log(characterStats)
-  console.log(getCharacterClassColor(characterStats.characterClass))
   return (
     <div
+      ref={containerRef}
       onClick={handleCardClick}
       className="bg-gray-800/30 rounded-lg border border-gray-700/30 overflow-hidden 
                 hover:border-gray-600/50 transition-all cursor-pointer
@@ -236,7 +602,7 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
       {/* Character Image or Placeholder */}
       <div
         className={cn(
-          `h-48 bg-gradient-to-br`,
+          `min-h-[231px]  bg-gradient-to-br`,
 
           getCharacterClassColor(characterStats.characterClass),
           `relative`
@@ -271,7 +637,8 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
         <div className="flex justify-between items-center mt-2">
           <span className="text-gray-400">Level</span>
           <span className="text-white">
-            {characterStats && characterStats.experience}
+            {characterStats &&
+              Math.max(0, Math.floor(Number(characterStats.experience) / 100))}
           </span>
         </div>
         <div className="flex justify-between items-center mt-2">

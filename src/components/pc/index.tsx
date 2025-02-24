@@ -356,8 +356,6 @@ const PcDesktop: React.FC = () => {
 
   useEffect(() => {
     setMounted(true)
-
-    console.log(isLoginPregenSession, 'Login pregen')
   }, [])
 
   useEffect(() => {

@@ -354,7 +354,7 @@ export const CharacterCreation: React.FC<{
   )
 }
 
-// Enhanced StatSlider component wrapping your existing Slider
+// Enhanced StatSlider component wrapping the existing Slider
 const StatSlider: React.FC<{
   label: string
   value: number
@@ -389,60 +389,3 @@ const StatSlider: React.FC<{
     </div>
   )
 }
-
-/*
-<div className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg border border-gray-700/50 shadow-2xl w-[320px]">
-          <div
-            className="p-4 border-b border-gray-700"
-            style={{
-              background: linear-gradient(to right, ${weirdBlue}, ${darkBlue}),
-            }}
-          >
-            <h2 className="text-lg font-bold text-white">
-              Create New Character
-            </h2>
-          </div>
-
-          <div className="p-4 space-y-3">
-            <div>
-              <label className="block text-gray-400 mb-1">Name</label>
-              <input
-                type="text"
-                className="w-full bg-gray-700/50 rounded px-3 py-2 text-white border border-gray-600 
-                             focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                placeholder="Character name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-400 mb-1">Class</label>
-              <select
-                onChange={(e) => console.log(Number(e.target.value))}
-                className="w-full bg-gray-700/50 rounded px-3 py-2 text-white border border-gray-600 
-                                   focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              >
-                {characterClassOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex gap-3 pt-3">
-              <button
-                onClick={onClose}
-                className="flex-1 px-4 py-2 bg-gray-700/50 text-white rounded-lg
-                             hover:bg-gray-600 border border-gray-600"
-              >
-                Cancel
-              </button>
-              <button
-                className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600
-                                   hover:from-blue-600 hover:to-blue-700 text-white font-medium border border-blue-600"
-              >
-                Create
-              </button>
-            </div>
-          </div>
-*/

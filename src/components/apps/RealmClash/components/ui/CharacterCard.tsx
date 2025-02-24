@@ -133,26 +133,9 @@ export const CharacterCardUI: React.FC<{ tokenId: string }> = ({ tokenId }) => {
       },
     ],
   })
-  useEffect(() => {
-    console.log(_tokenId)
-  }, [_tokenId])
-  const { data: characterStats, refetch: refetchCharacterStats } =
-    useReadContract({
-      address: CHARACTER_CARD_ADDRESS,
-      abi: CHARACTER_CARD_ABI,
-      functionName: 'getCharacterStats',
-      args: [_tokenId],
-      query: {
-        enabled: !!_tokenId,
-        refetchInterval: 3000,
-      },
-    })
-
-  console.log(characterStats)
   if (!statsResult) return null
-  const effectiveStats = statsResult.map((stat) => stat.result)
-  const characterStatsData = effectiveStats[6] as any
-  console.log(effectiveStats, statsResult)
+  const effectiveStats = (statsResult as any).map((stat: any) => stat.result)
+  const characterStatsData = effectiveStats[6]
   return (
     <div className="p-6">
       <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg p-6 backdrop-blur-sm border border-gray-700/50">

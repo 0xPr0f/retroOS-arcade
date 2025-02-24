@@ -66,17 +66,17 @@ const Web3Wrapper: React.FC = () => {
     <div>
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
-          <DispatchWindowProvider>
-            <NotificationProvider>
-              <ValueProvider>
-                <PregenProvider>
+          <ValueProvider>
+            <PregenProvider>
+              <NotificationProvider>
+                <DispatchWindowProvider>
                   <NavbarProvider>
                     <PcDesktop />
                   </NavbarProvider>
-                </PregenProvider>
-              </ValueProvider>
-            </NotificationProvider>
-          </DispatchWindowProvider>
+                </DispatchWindowProvider>
+              </NotificationProvider>
+            </PregenProvider>
+          </ValueProvider>
         </QueryClientProvider>
       </WagmiProvider>
     </div>

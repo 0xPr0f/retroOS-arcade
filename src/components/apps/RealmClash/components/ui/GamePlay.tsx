@@ -1,65 +1,96 @@
+import { CHARACTER_CARD_ABI } from '../deployments/abi'
+import { CHARACTER_CARD_ADDRESS } from '../deployments/address'
+import { useAccount, useReadContracts, useWriteContract } from 'wagmi'
+import { useChainId, useReadContract } from 'wagmi'
+import { useWatchContractEvent } from 'wagmi'
+import AuraEffect from './AuraEffect'
 import { StatCard } from './ui_components'
-import React, { useRef, useEffect, useMemo, useState } from "react";
+import React, { useRef, useEffect, useMemo, useState } from 'react'
+import { CLASH_BATTLE_SYSTEM_ADDRESS } from '../deployments/address'
+import { CLASH_BATTLE_SYSTEM_ABI } from '../deployments/abi'
+import {
+  shortenText,
+  useAppRouter,
+  useNotifications,
+  usePregenSession,
+  usePregenTransaction,
+} from '@/components/pc/drives'
+import { config } from '../deployments/config'
+import { formatTimeAgoUnix } from './Game'
+import { getCharacterClassLabel } from './Character'
+import { zeroAddress } from 'viem'
+const lightBlue = '#2563eb'
+const weirdBlue = '#3a6ea5'
+const lightRed = '#dc2626'
+const darkBlue = '#0a246a'
 
-const lightBlue = "#2563eb";
-const weirdBlue = "#3a6ea5";
-const lightRed = "#dc2626";
-const darkBlue = "#0a246a";
-
-const Badge: React.FC<{ type: string; color: "red" | "blue" }> = ({
-  type = "ranked",
+const Badge: React.FC<{ type: string; color: 'red' | 'blue' }> = ({
+  type = 'ranked',
   color,
 }) => (
   <span
     className={`px-2 py-1 rounded text-sm font-medium
     ${
-      color === "red"
-        ? "bg-red-500/20 text-red-400 border border-red-500/30"
-        : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+      color === 'red'
+        ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+        : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
     }`}
   >
     {type.charAt(0).toUpperCase() + type.slice(1)}
   </span>
-);
+)
 
 interface StatBarProps {
-  label: string;
-  value: number;
-  maxValue: number;
-  color: string;
-  size?: "small" | "medium" | "large";
-  animated?: boolean;
-  icon?: string;
+  label?: string
+  value?: number
+  maxValue?: number
+  color?: string
+  size?: 'small' | 'medium' | 'large'
+  animated?: boolean
+  icon?: string
+  type?: 'attack' | 'defense'
 }
 
 const StatBar: React.FC<StatBarProps> = ({
   label,
   value,
   maxValue,
-  color,
-  size = "medium",
+  color = 'rgb(239 68 68), rgb(185 28 28)', // Default red gradient
+  size = 'medium',
   animated = true,
   icon,
+  type = 'attack',
 }) => {
-  const percentage = Math.min((value / maxValue) * 100, 100);
+  // Calculate percentage, ensuring it doesn't exceed 100%
+  const percentage =
+    maxValue && maxValue > 0 ? Math.min((value! / maxValue) * 100, 100) : 100
 
   const sizeClasses = {
     small: {
-      bar: "h-1.5",
-      text: "text-xs",
-      padding: "py-0.5",
+      bar: 'h-1.5',
+      text: 'text-xs',
+      padding: 'py-0.5',
     },
     medium: {
-      bar: "h-2",
-      text: "text-sm",
-      padding: "py-1",
+      bar: 'h-2',
+      text: 'text-sm',
+      padding: 'py-1',
     },
     large: {
-      bar: "h-3",
-      text: "text-base",
-      padding: "py-1.5",
+      bar: 'h-3',
+      text: 'text-base',
+      padding: 'py-1.5',
     },
-  };
+  }
+
+  const getBarColor = () => {
+    if (maxValue) {
+      return `linear-gradient(to right, rgb(59, 130, 246), rgb(37, 99, 235), rgb(239, 68, 68))`
+    }
+    return type === 'attack'
+      ? `linear-gradient(to right, rgb(239, 68, 68), rgb(185, 28, 28))`
+      : `linear-gradient(to right, rgb(59, 130, 246), rgb(37, 99, 235))`
+  }
 
   return (
     <div className={`${sizeClasses[size].padding}`}>
@@ -72,18 +103,18 @@ const StatBar: React.FC<StatBarProps> = ({
           </span>
         </div>
         <span className={`${sizeClasses[size].text} text-white font-medium`}>
-          {value}/{maxValue}
+          {maxValue ? `${value}/${maxValue}` : value}
         </span>
       </div>
 
-      {/* Progress Bar */}
-      <div className="relative w-full bg-gray-700/50 rounded-full overflow-hidden">
+      {/* Progress Bar Container */}
+      <div className="relative w-full bg-gray-700 rounded-full overflow-hidden">
         {/* Background pulse for low health warning */}
-        {percentage < 20 && animated && (
-          <div className="absolute inset-0 bg-red-500/20 rounded-full animate-pulse" />
+        {percentage < 20 && animated && maxValue && (
+          <div className="absolute inset-0 bg-red-500/50 rounded-full animate-pulse" />
         )}
 
-        {/* Main bar */}
+        {/* Main progress bar */}
         <div
           className={`
             ${sizeClasses[size].bar}
@@ -93,103 +124,128 @@ const StatBar: React.FC<StatBarProps> = ({
           `}
           style={{
             width: `${percentage}%`,
-            background: `linear-gradient(to right, ${color})`,
+            background: getBarColor(),
           }}
         >
           {/* Shine effect */}
           {animated && (
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0" />
           )}
         </div>
 
-        {/* Secondary animation for critical health */}
-        {percentage < 20 && animated && (
+        {/* Critical health animation */}
+        {percentage < 200 && animated && maxValue && (
           <div
             className={`
               absolute inset-0
               ${sizeClasses[size].bar}
-              bg-red-500/30
+              bg-red-500/50
               animate-pulse
             `}
           />
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 interface CharacterClass {
-  type: "Mage" | "Warrior" | "Assassin" | "Demon";
-  primaryColor: string;
-  secondaryColor: string;
-  auraEffect: string;
+  type: 'Human' | 'King' | 'Mage' | 'Archer' | 'Knight' | 'Demon' | 'God'
+  primaryColor: string
+  secondaryColor: string
+  auraEffect: string
 }
 
-const classStyles: Record<string, CharacterClass> = {
+const classStylesCustom: Record<string | number, CharacterClass> = {
+  Human: {
+    type: 'Human',
+    primaryColor: 'from-yellow-600/80 via-yellow-700/50 to-yellow-800/80',
+    secondaryColor: 'from-yellow-500 via-yellow-600 to-yellow-700',
+    auraEffect: 'balanced-aura',
+  },
+  King: {
+    type: 'King',
+    primaryColor: 'from-amber-500/80 via-amber-600/50 to-amber-700/80',
+    secondaryColor: 'from-amber-400 via-amber-500 to-amber-600',
+    auraEffect: 'royal-aura',
+  },
   Mage: {
-    type: "Mage",
-    primaryColor: "from-blue-500/80 via-blue-600/50 to-blue-700/80",
-    secondaryColor: "from-blue-400 via-blue-500 to-blue-600",
-    auraEffect: "magical-aura",
+    type: 'Mage',
+    primaryColor: 'from-slate-700/80 via-slate-800/50 to-slate-900/80',
+    secondaryColor: 'from-slate-600 via-slate-700 to-slate-800',
+    auraEffect: 'magical-aura',
   },
-  Warrior: {
-    type: "Warrior",
-    primaryColor: "from-red-500/80 via-red-600/50 to-red-700/80",
-    secondaryColor: "from-red-400 via-red-500 to-red-600",
-    auraEffect: "battle-aura",
+  Archer: {
+    type: 'Archer',
+    primaryColor: 'from-emerald-500/80 via-emerald-600/50 to-emerald-700/80',
+    secondaryColor: 'from-emerald-400 via-emerald-500 to-emerald-600',
+    auraEffect: 'swift-aura',
   },
-  Assassin: {
-    type: "Assassin",
-    primaryColor: "from-purple-500/80 via-purple-600/50 to-purple-700/80",
-    secondaryColor: "from-purple-400 via-purple-500 to-purple-600",
-    auraEffect: "shadow-aura",
+  Knight: {
+    type: 'Knight',
+    primaryColor: 'from-zinc-500/80 via-zinc-600/50 to-zinc-700/80',
+    secondaryColor: 'from-zinc-400 via-zinc-500 to-zinc-600',
+    auraEffect: 'guardian-aura',
   },
   Demon: {
-    type: "Demon",
-    primaryColor: "from-rose-500/80 via-rose-600/50 to-rose-700/80",
-    secondaryColor: "from-rose-400 via-rose-500 to-rose-600",
-    auraEffect: "demon-aura",
+    type: 'Demon',
+    primaryColor: 'from-red-600/80 via-red-700/50 to-red-800/80',
+    secondaryColor: 'from-red-500 via-red-600 to-red-700',
+    auraEffect: 'demon-aura',
   },
-};
-
-interface Character {
-  characterName: string;
-  characterClass: "Mage" | "Warrior" | "Assassin" | "Demon";
-  address: string;
-  health: number;
-  attack: number;
+  God: {
+    type: 'God',
+    primaryColor: 'from-neutral-300/80 via-neutral-400/50 to-neutral-500/80',
+    secondaryColor: 'from-neutral-200 via-neutral-300 to-neutral-400',
+    auraEffect: 'divine-aura',
+  },
 }
 
 interface BattleCardProps {
-  character: Character;
-  isActive: boolean;
-  isAttacking: boolean;
-  attackType?: string;
+  character: any
+  address?: string
+  isActive: boolean
+  isAttacking: boolean
+  attackType?: string
+  powerPoints?: number
 }
 
 const BattleCard: React.FC<BattleCardProps> = ({
   character,
+  address,
   isActive = false,
   isAttacking = false,
   attackType,
+  powerPoints,
 }) => {
-  const defaultClass: CharacterClass = {
-    type: "Demon", 
-    primaryColor: "from-gray-500/80 via-gray-600/50 to-gray-700/80",
-    secondaryColor: "from-gray-400 via-gray-500 to-gray-600",
-    auraEffect: "battle-aura",
-  };
+  const defaultClass = classStylesCustom.Human
 
-  const classStyle = character?.characterClass
-    ? classStyles[character.characterClass]
-    : defaultClass;
+  const { data: characterStats, refetch: refetchCharacterStats } =
+    useReadContract({
+      address: CHARACTER_CARD_ADDRESS,
+      abi: CHARACTER_CARD_ABI,
+      functionName: 'getCharacterStats',
+      args: [character?.characterId],
+      query: {
+        enabled: !!character?.characterId,
+        refetchInterval: 3000,
+      },
+    })
+
+  if (!characterStats) return null
+  const characterStatsData = characterStats as any
+  const classStyle = characterStatsData?.characterClass
+    ? classStylesCustom[
+        getCharacterClassLabel(Number(characterStatsData.characterClass))
+      ]
+    : defaultClass
 
   return (
     <div
       className={`
         relative w-full max-w-[320px] aspect-[3/4] rounded-2xl
         transition-all duration-500 ease-out
-        ${isAttacking ? "scale-110 z-20" : "scale-100 z-10"}
-        ${isActive ? "hover:scale-105" : "opacity-90"}
+        ${isAttacking ? 'scale-110 z-20' : 'scale-100 z-10'}
+        ${isActive ? 'hover:scale-105' : 'opacity-90'}
       `}
     >
       {/* Card Background with Character Art */}
@@ -197,7 +253,7 @@ const BattleCard: React.FC<BattleCardProps> = ({
         className={`
           absolute inset-0 rounded-2xl overflow-hidden
           transition-all duration-300
-          ${isAttacking ? "shadow-2xl shadow-current" : ""}
+          ${isAttacking ? 'shadow-2xl shadow-current' : ''}
         `}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-800">
@@ -213,7 +269,7 @@ const BattleCard: React.FC<BattleCardProps> = ({
               absolute inset-0 
               animate-pulse
               bg-gradient-to-br ${classStyle.primaryColor}
-              ${attackType === "ultimate" ? "opacity-50" : "opacity-30"}
+              ${attackType === 'ultimate' ? 'opacity-50' : 'opacity-30'}
             `}
           />
         )}
@@ -224,7 +280,7 @@ const BattleCard: React.FC<BattleCardProps> = ({
           <div className="space-y-2">
             <div className="flex justify-between items-start">
               <h3 className="text-xl font-bold text-white">
-                {character?.characterName || "Unknown"}
+                {character?.name || 'Unknown'}
               </h3>
               <span
                 className={`
@@ -233,29 +289,38 @@ const BattleCard: React.FC<BattleCardProps> = ({
                   text-white font-medium
                 `}
               >
-                {character?.characterClass || "Unknown"}
+                {getCharacterClassLabel(
+                  Number(characterStatsData.characterClass)
+                ) || 'Unknown'}
               </span>
             </div>
             <p className="text-gray-400 font-mono text-xs truncate">
-              {character?.address || "0x..."}
+              {address || '0x...'}
             </p>
           </div>
 
           {/* Stats */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <StatBar
               label="HP"
-              value={character?.health || 0}
-              maxValue={500}
+              value={Number(character?.currentHealth) || 0}
+              maxValue={Number(character?.maxHealth) || 500}
               color={classStyle.secondaryColor}
-              size="large"
+              size="medium"
+            />
+            <StatBar
+              label="DEF"
+              value={Number(character?.defense) || 0}
+              color={classStyle.secondaryColor}
+              size="medium"
+              type="defense"
             />
             <StatBar
               label="ATK"
-              value={character?.attack || 0}
-              maxValue={100}
+              value={Number(character?.attack) || 0}
               color={classStyle.secondaryColor}
-              size="large"
+              size="medium"
+              type="attack"
             />
           </div>
         </div>
@@ -277,14 +342,14 @@ const BattleCard: React.FC<BattleCardProps> = ({
         <AttackEffect type={attackType} classStyle={classStyle} />
       )}
     </div>
-  );
-};
+  )
+}
 
 const AttackEffect: React.FC<{
-  type?: string;
-  classStyle: CharacterClass;
+  type?: string
+  classStyle: CharacterClass
 }> = ({ type, classStyle }) => {
-  if (!type) return null;
+  if (!type) return null
 
   const effects = {
     quick: (
@@ -342,81 +407,73 @@ const AttackEffect: React.FC<{
         </div>
       </div>
     ),
-  };
+  }
 
-  return effects[type as keyof typeof effects] || null;
-};
+  return effects[type as keyof typeof effects] || null
+}
 
 const AttackButton: React.FC<{
-  icon: string;
-  label: string;
-  type: "quick" | "power" | "ultimate";
-  powerCost: number;
-  onClick: () => void;
-  disabled?: boolean;
-  containerRef: React.RefObject<HTMLDivElement>; 
-}> = ({ icon, label, type, powerCost, onClick, disabled,containerRef }) => {
+  icon: string
+  label: string
+  type: 'quick' | 'power' | 'ultimate'
+  powerCost: number
+  onClick: () => void
+  disabled?: boolean
+}> = ({ icon, label, type, powerCost, onClick, disabled }) => {
   const styles = {
-    quick: "from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800",
-    power: "from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800",
-    ultimate: "from-rose-500 to-rose-700 hover:from-rose-600 hover:to-rose-800",
-  };
+    quick: 'from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800',
+    power:
+      'from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800',
+    ultimate: 'from-rose-500 to-rose-700 hover:from-rose-600 hover:to-rose-800',
+  }
 
-  const [buttonWidth, setButtonWidth] = useState(0);
+  const [displayText, setDisplayText] = useState(label)
+  const buttonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!buttonRef.current) return
 
-    const updateWidth = () => {
-      if (containerRef.current) {
-        setButtonWidth(containerRef.current.offsetWidth);
+    // Find the resizable parent container
+    const container = buttonRef.current.closest('[data-resizable]')
+    if (!container) return
+    const updateText = () => {
+      const { width } = container.getBoundingClientRect()
+
+      if (width < 750) {
+        setDisplayText(
+          label
+            .split(' ')
+            .map((word) => word[0].toUpperCase())
+            .join('')
+        )
+      } else {
+        setDisplayText(label)
       }
-    };
-
-    // Initial measurement
-    updateWidth();
-
-    // Setup resize observer
-    const observer = new ResizeObserver(updateWidth);
-    observer.observe(containerRef.current);
-
-    return () => observer.disconnect();
-  }, []);
-
-  // Get appropriate text based on available width
-  const displayText = useMemo(() => {
-    if (buttonWidth >= 200) {
-      return label; // Full text for wide buttons
-    } else if (buttonWidth >= 150) {
-      // Two letters per word for medium buttons
-      return label.split(' ')
-        .map(word => word.substring(0, 2).toUpperCase())
-        .join('');
-    } else {
-      // Just initials for narrow buttons
-      return label.split(' ')
-        .map(word => word[0].toUpperCase())
-        .join('');
     }
-  }, [label, buttonWidth]);
+
+    updateText()
+
+    const observer = new ResizeObserver(updateText)
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [label, buttonRef])
 
   return (
-    <div ref={containerRef} className=" border border-red-500 group relative w-full">
+    <div className="group relative w-full">
       <button
+        ref={buttonRef}
         onClick={onClick}
         disabled={disabled}
         className={`
-          relative h-14 w-full px-6 rounded-lg overflow-hidden
+          relative h-10 w-full px-2 rounded-lg overflow-hidden
           bg-gradient-to-r ${styles[type]}
           disabled:opacity-50 disabled:cursor-not-allowed
           transition-all duration-300
         `}
       >
-        <div className="relative z-10 flex items-center justify-center gap-3">
+        <div className="relative z-10 flex items-center justify-center gap-1">
           <span className="text-2xl flex-shrink-0">{icon}</span>
-          <span className="font-medium whitespace-nowrap">
-            {displayText}
-          </span>
+          <span className="font-medium whitespace-nowrap">{displayText}</span>
         </div>
 
         <div
@@ -427,7 +484,7 @@ const AttackButton: React.FC<{
 
       <div
         className="absolute -top-12 left-1/2 -translate-x-1/2
-                    bg-gray-900 px-3 py-2 rounded-lg
+                    bg-gray-900 px-2 py-2 rounded-lg
                     text-white text-sm whitespace-nowrap
                     opacity-0 group-hover:opacity-100
                     transition-opacity pointer-events-none
@@ -436,46 +493,36 @@ const AttackButton: React.FC<{
         Power Cost: {powerCost} PP
       </div>
     </div>
-  );
-};
-
+  )
+}
 
 const EndTurnButton: React.FC<{
-  onClick: () => void;
-  powerPoints: number;
-  isPlayerTurn: boolean;
+  onClick: () => void
+  powerPoints: number
+  isPlayerTurn: boolean
 }> = ({ onClick, powerPoints, isPlayerTurn }) => {
-  // Check if player has enough points for any move
-  const canMakeMove = powerPoints >= 2; // 2 is minimum cost for quick attack
-
+  const canMakeMove = powerPoints >= 2
   return (
-    <button
-      onClick={onClick}
-      disabled={!isPlayerTurn || canMakeMove}
-      className={`
-        px-6 py-3 rounded-lg font-medium
-        flex items-center gap-2
-        transition-all duration-200
-        ${
-          isPlayerTurn && !canMakeMove
-            ? "bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-400 border border-blue-500/30 hover:from-blue-500/30 hover:to-blue-600/30 animate-pulse"
-            : "bg-gray-700/20 text-gray-500 border border-gray-600/30 cursor-not-allowed"
-        }
-      `}
-    >
-      <span>🔄</span>
-      <span>End Turn</span>
+    <div className="relative">
+      <button
+        onClick={onClick}
+        disabled={!isPlayerTurn}
+        className={`cursor-pointer whitespace-nowrap w-fit px-2 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200 ${
+          isPlayerTurn
+            ? 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-400 border border-blue-500/30 hover:from-blue-500/30 hover:to-blue-600/30 animate-pulse'
+            : 'bg-gray-700/20 text-gray-500 border border-gray-600/30 cursor-not-allowed'
+        }`}
+      >
+        🔄 End Turn
+      </button>
       {isPlayerTurn && !canMakeMove && (
-        <div
-          className="absolute -top-8 left 1/2 -translate-x-1/2 
-                     text-sm text-gray-400 whitespace-nowrap"
-        >
+        <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-sm text-gray-400 whitespace-nowrap bg-gray-900/80 px-2 py-1 rounded">
           No moves available
         </div>
       )}
-    </button>
-  );
-};
+    </div>
+  )
+}
 // Add to your styles.css or equivalent
 const styles = `
 @keyframes attack-quick {
@@ -557,49 +604,326 @@ const styles = `
     transparent 70%
   );
 }
-`;
+`
 
-const BattleGame: React.FC = () => {
-  // Mock battle data
-  const [playerData] = useState<Character>({
-    characterName: "Dragon Knight",
-    characterClass: "Demon",
-    address: "0xf0e2d...cF0e",
-    health: 418,
-    attack: 44,
-  });
+const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
+  const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
+    usePregenSession()
+  const chainId = useChainId()
 
-  const [opponentData] = useState<Character>({
-    characterName: "Shadow Mage",
-    characterClass: "Mage",
-    address: "0x1234...5678",
-    health: 446,
-    attack: 51,
-  });
+  const { isConnected, address: playerAddress } = useAccount()
+  const address = isConnected
+    ? playerAddress?.toLowerCase()
+    : isLoginPregenSession
+    ? pregenActiveAddress?.toLowerCase()
+    : undefined
 
-  const [isPlayerTurn, setIsPlayerTurn] = useState(true);
-  const [isAttacking, setIsAttacking] = useState(false);
-  const [attackType, setAttackType] = useState<string>();
-  const [powerPoints, setPowerPoints] = useState(103);
+  const { data: battleDetails, refetch: refetchBattleDetails } =
+    useReadContract({
+      address: CLASH_BATTLE_SYSTEM_ADDRESS,
+      abi: CLASH_BATTLE_SYSTEM_ABI,
+      functionName: 'getBattleDetails',
+      args: [gameId],
+      query: {
+        enabled: !!gameId,
+        refetchInterval: 3000,
+      },
+    })
+  const realmClashSystemContract = {
+    address: CLASH_BATTLE_SYSTEM_ADDRESS,
+    abi: CLASH_BATTLE_SYSTEM_ABI,
+  } as const
+  const { data: battleSnapshots, refetch: refetchBattleSnapshots } =
+    useReadContracts({
+      config: config,
+      contracts: [
+        {
+          ...realmClashSystemContract,
+          functionName: 'getBattleSnapshots',
+          args: [gameId],
+        },
+      ],
+    })
 
-  const [containerRef] = useState<React.RefObject<HTMLDivElement>>();
+  const [winnerPlayer, setWinnerPlayer] = useState<string>()
+  const [isAttacking, setIsAttacking] = useState(false)
+  const [attackType, setAttackType] = useState<string>()
+  const [powerPoints, setPowerPoints] = useState(0)
+  const [isViewingBattle, setIsViewingBattle] = useState(false)
+  const [battleDetailsData, setBattleDetailsData] = useState<{
+    player1: string
+    player2: string
+    characterId1: bigint
+    characterId2: bigint
+    state: number
+    startTime: bigint
+    winner: string
+    currentTurnPlayer: string
+    turnState: number
+    turnNumber: number
+    player1PowerPoints: number
+    player2PowerPoints: number
+  } | null>(null)
+  const [battleSnapshotsStateData, setBattleSnapshotsStateData] = useState<{
+    player1Snapshot: {
+      name: string
+      intelligence: number
+      hasForfeit: boolean
+      attack: number
+      characterId: bigint
+      currentHealth: number
+      defense: number
+      dodgeChance: number
+      maxHealth: number
+    }
+    player2Snapshot: {
+      name: string
+      intelligence: number
+      hasForfeit: boolean
+      attack: number
+      characterId: bigint
+      currentHealth: number
+      defense: number
+      dodgeChance: number
+      maxHealth: number
+    }
+  } | null>(null)
+  const { addNotification } = useNotifications()
+  const { navigate } = useAppRouter()
 
+  const availableChainIds = ['84532']
+  const isChainUnavailable = !availableChainIds.some(
+    (chain) => Number(chain) === chainId
+  )
+  const {
+    writeContract: writeBattle,
+    data: battleData,
+    isPending: isBattle,
+    error: battleError,
+  } = useWriteContract({
+    mutation: {
+      onError: (error: any) => {
+        console.log(error)
+      },
+      onSuccess: (txHash: any) => {},
+    },
+  })
 
-  const handleAttack = (type: "quick" | "power" | "ultimate", cost: number) => {
-    if (powerPoints < cost) return;
+  // Pregen Join Queue Contract Write
+  const {
+    writeContract: writeBattlePregen,
+    data: battleDataPregen,
+    isPending: isBattlePregen,
+  } = usePregenTransaction({
+    mutation: {
+      onError: (error: any) => {
+        console.log(error)
+      },
+      onSuccess: (txHash: any) => {},
+    },
+  })
 
-    setIsAttacking(true);
-    setAttackType(type);
-    setPowerPoints((prev) => prev - cost);
+  const handleForfeitBattle = async () => {
+    if (isChainUnavailable) {
+      addNotification({
+        title: `Chain Unavailable`,
+        message: `This chain is not available. Please use base sepolia.`,
+        type: 'error',
+        duration: 10000,
+      })
+      return
+    }
+    if (isConnected) {
+      await writeBattle({
+        address: CLASH_BATTLE_SYSTEM_ADDRESS,
+        abi: CLASH_BATTLE_SYSTEM_ABI,
+        functionName: 'forfeitBattle',
+        args: [gameId],
+      })
+    } else if (isLoginPregenSession) {
+      await writeBattlePregen({
+        address: CLASH_BATTLE_SYSTEM_ADDRESS,
+        abi: CLASH_BATTLE_SYSTEM_ABI,
+        functionName: 'forfeitBattle',
+        args: [gameId],
+      })
+    }
+  }
 
-    // Reset attack state after animation
+  const handleForfeitBattleAction = async () => {
+    await handleForfeitBattle()
+  }
+
+  const handleAttackInBattle = async (attackType: number) => {
+    if (isChainUnavailable) {
+      addNotification({
+        title: `Chain Unavailable`,
+        message: `This chain is not available. Please use base sepolia.`,
+        type: 'error',
+        duration: 10000,
+      })
+      return
+    }
+    if (isConnected) {
+      await writeBattle({
+        address: CLASH_BATTLE_SYSTEM_ADDRESS,
+        abi: CLASH_BATTLE_SYSTEM_ABI,
+        functionName: 'performAttack',
+        args: [gameId, attackType],
+      })
+    } else if (isLoginPregenSession) {
+      await writeBattlePregen({
+        address: CLASH_BATTLE_SYSTEM_ADDRESS,
+        abi: CLASH_BATTLE_SYSTEM_ABI,
+        functionName: 'performAttack',
+        args: [gameId, attackType],
+      })
+    }
+  }
+
+  const handleAttack = async (
+    type: 'quick' | 'power' | 'ultimate',
+    cost: number
+  ) => {
+    if (powerPoints < cost) return
+    await handleAttackInBattle(cost)
+    setIsAttacking(true)
+    setAttackType(type)
+    setPowerPoints((prev) => prev - cost)
+
     setTimeout(() => {
-      setIsAttacking(false);
-      setAttackType(undefined);
-     setIsPlayerTurn(false);
-    }, 1000);
-  };
+      setIsAttacking(false)
+      setAttackType(undefined)
+    }, 1000)
+  }
 
+  const handleEndTurn = async () => {
+    if (isChainUnavailable) {
+      addNotification({
+        title: `Chain Unavailable`,
+        message: `This chain is not available. Please use base sepolia.`,
+        type: 'error',
+        duration: 10000,
+      })
+      return
+    }
+    if (isConnected) {
+      writeBattle({
+        address: CLASH_BATTLE_SYSTEM_ADDRESS,
+        abi: CLASH_BATTLE_SYSTEM_ABI,
+        functionName: 'endTurn',
+        args: [gameId],
+      })
+    } else if (isLoginPregenSession) {
+      await writeBattlePregen({
+        address: CLASH_BATTLE_SYSTEM_ADDRESS,
+        abi: CLASH_BATTLE_SYSTEM_ABI,
+        functionName: 'endTurn',
+        args: [gameId],
+      })
+    }
+  }
+
+  useWatchContractEvent({
+    address: CLASH_BATTLE_SYSTEM_ADDRESS,
+    abi: CLASH_BATTLE_SYSTEM_ABI,
+    eventName: 'AttackPerformed',
+    onLogs(logs: any) {
+      const { battleId } = logs[0].args
+      if (Number(battleId) === Number(gameId)) {
+        refetchBattleSnapshots()
+        refetchBattleDetails()
+      }
+    },
+  })
+  useWatchContractEvent({
+    address: CLASH_BATTLE_SYSTEM_ADDRESS,
+    abi: CLASH_BATTLE_SYSTEM_ABI,
+    eventName: 'BattleCompleted',
+    onLogs(logs: any) {
+      const { battleId } = logs[0].args
+      if (Number(battleId) === Number(gameId)) {
+        refetchBattleSnapshots()
+        refetchBattleDetails()
+      }
+    },
+  })
+
+  useEffect(() => {
+    setPowerPoints(
+      battleDetailsData?.player1.toLowerCase() === address?.toLowerCase()
+        ? Number(battleDetailsData?.player1PowerPoints)
+        : Number(battleDetailsData?.player2PowerPoints)
+    )
+  }, [battleDetailsData])
+
+  useEffect(() => {
+    if (!battleDetailsData) return
+    if (battleDetailsData?.winner !== zeroAddress) {
+      setWinnerPlayer(battleDetailsData?.winner)
+      console.log(battleDetailsData?.winner)
+    }
+  }, [battleDetailsData])
+
+  useEffect(() => {
+    if (!battleDetails || !battleSnapshots) return
+    const battleDetailsData = battleDetails as any
+    setBattleDetailsData({
+      player1: battleDetailsData[0],
+      player2: battleDetailsData[1],
+      characterId1: battleDetailsData[2],
+      characterId2: battleDetailsData[3],
+      state: battleDetailsData[4],
+      startTime: battleDetailsData[5],
+      winner: battleDetailsData[6],
+      currentTurnPlayer: battleDetailsData[7],
+      turnState: battleDetailsData[8],
+      turnNumber: battleDetailsData[9],
+      player1PowerPoints: battleDetailsData[10],
+      player2PowerPoints: battleDetailsData[11],
+    })
+    if (
+      String((battleDetails as any)[0]).toLowerCase() ===
+        address?.toLowerCase() ||
+      String((battleDetails as any)[1]).toLowerCase() === address?.toLowerCase()
+    ) {
+      setIsViewingBattle(false)
+    } else {
+      setIsViewingBattle(true)
+    }
+  }, [battleDetails, battleSnapshots])
+
+  useEffect(() => {
+    if (!battleDetails || !battleSnapshots) return
+    const effectiveBattleSnapshots = (battleSnapshots as any).map(
+      (snapshot: any) => snapshot.result
+    )
+    const battleSnapshotsData = {
+      player1Snapshot: {
+        name: effectiveBattleSnapshots[0][0].name,
+        intelligence: effectiveBattleSnapshots[0][0].intelligence,
+        hasForfeit: effectiveBattleSnapshots[0][0].hasForfeit,
+        attack: effectiveBattleSnapshots[0][0].attack,
+        characterId: effectiveBattleSnapshots[0][0].characterId,
+        currentHealth: effectiveBattleSnapshots[0][0].currentHealth,
+        defense: effectiveBattleSnapshots[0][0].defense,
+        dodgeChance: effectiveBattleSnapshots[0][0].dodgeChance,
+        maxHealth: effectiveBattleSnapshots[0][0].maxHealth,
+      },
+      player2Snapshot: {
+        name: effectiveBattleSnapshots[0][1].name,
+        intelligence: effectiveBattleSnapshots[0][1].intelligence,
+        hasForfeit: effectiveBattleSnapshots[0][1].hasForfeit,
+        attack: effectiveBattleSnapshots[0][1].attack,
+        characterId: effectiveBattleSnapshots[0][1].characterId,
+        currentHealth: effectiveBattleSnapshots[0][1].currentHealth,
+        defense: effectiveBattleSnapshots[0][1].defense,
+        dodgeChance: effectiveBattleSnapshots[0][1].dodgeChance,
+        maxHealth: effectiveBattleSnapshots[0][1].maxHealth,
+      },
+    }
+    setBattleSnapshotsStateData(battleSnapshotsData)
+  }, [battleDetails, battleSnapshots])
 
   return (
     <div className="bg-gradient-to-b from-gray-900 via-blue-900 to-gray-900">
@@ -614,19 +938,51 @@ const BattleGame: React.FC = () => {
           >
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold text-white">Battle Arena</h1>
+                <h1
+                  onClick={() => {
+                    refetchBattleDetails()
+                    refetchBattleSnapshots()
+                  }}
+                  className="text-xl font-bold text-white"
+                >
+                  Battle Arena #{gameId}
+                </h1>
                 <Badge type="ranked" color="red" />
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 bg-gray-900/30 px-3 py-1.5 rounded-lg border border-gray-700/30">
                   <span className="text-yellow-500">⚡</span>
-                  <span className="text-gray-300 text-sm">Power Points:</span>
-                  <span className="text-white font-bold">{powerPoints}</span>
+                  {!isViewingBattle ? (
+                    <>
+                      <span className="text-gray-300 text-sm">
+                        Power Points:
+                      </span>
+                      <span className="text-white font-bold">
+                        {address?.toLowerCase() ===
+                        battleDetailsData?.player1.toLowerCase()
+                          ? battleDetailsData?.player1PowerPoints
+                          : battleDetailsData?.player2PowerPoints}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-gray-300 text-sm">P1:</span>
+                      <span className="text-white font-bold">
+                        {battleDetailsData?.player1PowerPoints}
+                      </span>
+                      <span className="text-gray-300 text-sm">P2:</span>
+                      <span className="text-white font-bold">
+                        {battleDetailsData?.player2PowerPoints}
+                      </span>
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 bg-gray-900/30 px-3 py-1.5 rounded-lg border border-gray-700/30">
                   <span className="text-blue-400">⏱️</span>
-                  <span className="text-gray-300 text-sm">Turn Timer:</span>
-                  <span className="text-white font-bold">1:30</span>
+                  <span className="text-gray-300 text-sm">Start Timer:</span>
+                  <span className="text-white font-bold">
+                    {formatTimeAgoUnix(Number(battleDetailsData?.startTime))}
+                  </span>
                 </div>
               </div>
             </div>
@@ -637,8 +993,28 @@ const BattleGame: React.FC = () => {
             {/* Player Card */}
             <div className="flex justify-center items-center">
               <BattleCard
-                character={playerData}
-                isActive={isPlayerTurn}
+                character={
+                  isViewingBattle
+                    ? battleSnapshotsStateData?.player1Snapshot
+                    : address?.toLowerCase() ===
+                      battleDetailsData?.player1.toLowerCase()
+                    ? battleSnapshotsStateData?.player1Snapshot
+                    : battleSnapshotsStateData?.player2Snapshot
+                }
+                address={shortenText(
+                  isViewingBattle
+                    ? battleDetailsData?.player1!
+                    : address?.toLowerCase() ===
+                      battleDetailsData?.player1.toLowerCase()
+                    ? battleDetailsData?.player1!
+                    : battleDetailsData?.player2!
+                )}
+                isActive={
+                  // Check if it's the player's turn by comparing addresses
+                  !isViewingBattle &&
+                  address?.toLowerCase() ===
+                    battleDetailsData?.currentTurnPlayer?.toLowerCase()
+                }
                 isAttacking={isAttacking}
                 attackType={attackType}
               />
@@ -653,95 +1029,177 @@ const BattleGame: React.FC = () => {
                 VS
               </div>
               {/* Turn Indicator */}
-              <div className="bg-gray-800/50 px-3 py-1.5 rounded-lg border border-gray-700/30 whitespace-nowrap">
-                {isPlayerTurn ? (
-                  <div className="text-green-400 flex items-center gap-2 text-sm">
-                    <span className="animate-pulse">●</span>
-                    Your Turn
+
+              {winnerPlayer ? (
+                <div className="bg-gray-800/50 px-3 py-1.5 rounded-lg border border-gray-700/30 whitespace-nowrap">
+                  <div className="text-gray-400 text-sm">
+                    <span
+                      className={`${
+                        !isViewingBattle &&
+                        (winnerPlayer.toLowerCase() === address?.toLowerCase()
+                          ? 'text-green-400'
+                          : 'text-red-400')
+                      }`}
+                    >
+                      {winnerPlayer === battleDetailsData?.player1
+                        ? battleSnapshotsStateData?.player1Snapshot.name
+                        : battleSnapshotsStateData?.player2Snapshot.name}
+                    </span>
+                    {''} Won
                   </div>
-                ) : (
-                  <div className="text-gray-400 text-sm">Opponent's Turn</div>
-                )}
-              </div>
+                </div>
+              ) : isViewingBattle ? (
+                <div className="bg-gray-800/50 px-3 py-1.5 rounded-lg border border-gray-700/30 whitespace-nowrap">
+                  <div className="text-gray-400 text-sm">
+                    {battleDetailsData?.currentTurnPlayer ===
+                    battleDetailsData?.player1
+                      ? battleSnapshotsStateData?.player1Snapshot.name
+                      : battleSnapshotsStateData?.player2Snapshot.name}
+                    's Turn
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-800/50 px-3 py-1.5 rounded-lg border border-gray-700/30 whitespace-nowrap">
+                  {address?.toLowerCase() ===
+                  battleDetailsData?.currentTurnPlayer?.toLowerCase() ? (
+                    <div className="text-green-400 flex items-center gap-2 text-sm">
+                      <span className="animate-pulse">●</span>
+                      Your Turn
+                    </div>
+                  ) : (
+                    <div className="text-gray-400 text-sm">Opponent's Turn</div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Opponent Card */}
             <div className="flex justify-center items-center">
               <BattleCard
-                character={opponentData}
-                isActive={!isPlayerTurn}
+                character={
+                  isViewingBattle
+                    ? battleSnapshotsStateData?.player2Snapshot
+                    : address?.toLowerCase() ===
+                      battleDetailsData?.player1.toLowerCase()
+                    ? battleSnapshotsStateData?.player2Snapshot
+                    : battleSnapshotsStateData?.player1Snapshot
+                }
+                address={shortenText(
+                  isViewingBattle
+                    ? battleDetailsData?.player2!
+                    : address?.toLowerCase() ===
+                      battleDetailsData?.player1.toLowerCase()
+                    ? battleDetailsData?.player2!
+                    : battleDetailsData?.player1!
+                )}
+                isActive={
+                  // Check if it's opponent's turn by comparing addresses
+                  !isViewingBattle &&
+                  address?.toLowerCase() !==
+                    battleDetailsData?.currentTurnPlayer?.toLowerCase()
+                }
                 isAttacking={false}
                 attackType={undefined}
               />
+              {/*<AuraEffect type="shadow" intensity={1}>
+                <div className="w-52 border border-black h-60"></div>
+              </AuraEffect> */}
             </div>
           </div>
 
           {/* Controls Section */}
-          <div ref={containerRef} className="border border-red-500 bg-gray-800/30 border-t border-gray-700/50">
+          <div
+            data-resizable
+            className=" bg-gray-800/30 border-t border-gray-700/50"
+          >
             <div className="container mx-auto px-6 py-4">
-              <div className="flex justify-between items-center">
-                {/* Attack Buttons */}
-                <div className="flex gap-3">
-                  <AttackButton
-                    icon="⚔️"
-                    label="Quick Strike"
-                    type="quick"
-                    powerCost={2}
-                    onClick={() => handleAttack("quick", 2)}
-                    disabled={!isPlayerTurn || powerPoints < 2}
-                    containerRef={containerRef!}
-                  />
-                  <AttackButton
-                    icon="🗡️"
-                    label="Power Slash"
-                    type="power"
-                    powerCost={4}
-                    onClick={() => handleAttack("power", 4)}
-                    disabled={!isPlayerTurn || powerPoints < 4}
-                    containerRef={containerRef!}
-                  />
-                  <AttackButton
-                    icon="⚡"
-                    label="Ultimate"
-                    type="ultimate"
-                    powerCost={8}
-                    onClick={() => handleAttack("ultimate", 8)}
-                    disabled={!isPlayerTurn || powerPoints < 8}
-                    containerRef={containerRef!}
-                  />
+              <div className="flex items-center justify-between w-full">
+                <div className="flex gap-10">
+                  <div className="flex gap-2">
+                    <AttackButton
+                      icon="⚔️"
+                      label="Quick Strike"
+                      type="quick"
+                      powerCost={2}
+                      onClick={() => handleAttack('quick', 1)}
+                      disabled={
+                        address?.toLowerCase() !==
+                          battleDetailsData?.currentTurnPlayer?.toLowerCase() ||
+                        powerPoints < 2
+                      }
+                    />
+                    <AttackButton
+                      icon="🗡️"
+                      label="Power Slash"
+                      type="power"
+                      powerCost={3}
+                      onClick={() => handleAttack('power', 2)}
+                      disabled={
+                        address?.toLowerCase() !==
+                          battleDetailsData?.currentTurnPlayer?.toLowerCase() ||
+                        powerPoints < 3
+                      }
+                    />
+                    <AttackButton
+                      icon="⚡"
+                      label="Ultimate"
+                      type="ultimate"
+                      powerCost={4}
+                      onClick={() => handleAttack('ultimate', 3)}
+                      disabled={
+                        address?.toLowerCase() !==
+                          battleDetailsData?.currentTurnPlayer?.toLowerCase() ||
+                        powerPoints < 4
+                      }
+                    />
+                  </div>
                   <EndTurnButton
                     onClick={() => {
-                      setIsPlayerTurn(false);
-                      // Add any other end turn logic here
+                      handleEndTurn()
                     }}
                     powerPoints={powerPoints}
-                    isPlayerTurn={isPlayerTurn}
+                    isPlayerTurn={
+                      address?.toLowerCase() ===
+                      battleDetailsData?.currentTurnPlayer?.toLowerCase()
+                    }
                   />
                 </div>
 
-                {/* Surrender Button */}
-                <button
-                  className="px-4 py-2 bg-gradient-to-r from-red-500/20 to-red-600/20 
-                                text-red-400 rounded-lg hover:from-red-500/30 hover:to-red-600/30 
-                                transition-colors border border-red-500/30 font-medium text-sm"
-                >
-                  Surrender Battle
-                </button>
+                {battleDetailsData?.winner === zeroAddress ? (
+                  <button
+                    onClick={handleForfeitBattleAction}
+                    className="px-4 py-2 bg-gradient-to-r from-red-500/20 to-red-600/20 
+                  text-red-400 rounded-lg hover:from-red-500/30 hover:to-red-600/30 
+                  transition-colors border border-red-500/30 font-medium text-sm"
+                  >
+                    Surrender Battle
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      navigate('/game')
+                    }}
+                    className="px-4 py-2 bg-gradient-to-r from-red-500/20 to-red-600/20 
+                  text-red-400 rounded-lg hover:from-red-500/30 hover:to-red-600/30 
+                  transition-colors border border-red-500/30 font-medium text-sm"
+                  >
+                    Leave Battle
+                  </button>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
-};
-
+  )
+}
 
 const GamePlayUI: React.FC<{ gameId: string }> = ({ gameId }) => {
   return (
     <div className="p-6">
       <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg p-6 backdrop-blur-sm border border-gray-700/50">
-       <BattleGame/>
+        <BattleGame gameId={gameId} />
       </div>
     </div>
   )

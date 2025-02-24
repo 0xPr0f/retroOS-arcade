@@ -1,10 +1,11 @@
-import {
+import React, {
   useState,
   useCallback,
   useRef,
   useEffect,
   createContext,
   useContext,
+  memo,
 } from 'react'
 import { X } from 'lucide-react'
 
@@ -13,14 +14,21 @@ interface WindowPosition {
   y: number
 }
 
+interface Styles {
+  background?: string
+  rounded?: string
+  border?: string
+}
 interface WindowConfig {
   title: string
   initialPosition?: WindowPosition
   initialSize?: { width: number; height: number }
   minWidth?: number
   minHeight?: number
-  content: React.ReactNode
+  content: React.ReactNode | (() => React.ReactNode)
   onClose?: () => void
+  styles?: Styles
+  dependencies?: any[]
 }
 
 interface ActiveWindow extends WindowConfig {
@@ -28,6 +36,8 @@ interface ActiveWindow extends WindowConfig {
   zIndex: number
   position: WindowPosition
   size: { width: number; height: number }
+  styles?: Styles
+  dependencies?: any[]
 }
 
 interface WindowContextType {
@@ -39,6 +49,17 @@ interface WindowContextType {
 }
 
 const WindowContext = createContext<WindowContextType | null>(null)
+
+// Memoized window content component
+const WindowContent = memo(
+  ({ content }: { content: React.ReactNode | (() => React.ReactNode) }) => {
+    return (
+      <div className="flex-1 min-h-0">
+        {typeof content === 'function' ? content() : content}
+      </div>
+    )
+  }
+)
 
 export const DispatchWindowProvider: React.FC<{
   children: React.ReactNode
@@ -72,6 +93,11 @@ export const DispatchWindowProvider: React.FC<{
         position: config.initialPosition || { x: 50, y: 50 },
         size: config.initialSize || { width: 400, height: 300 },
         zIndex: newZIndex,
+        styles: {
+          background: config.styles?.background || 'bg-white',
+          rounded: config.styles?.rounded || 'rounded-lg',
+          border: config.styles?.border || 'border-gray-200',
+        },
       }
 
       setDispatchWindows((prev) => [...prev, newWindow])
@@ -186,7 +212,7 @@ export const DispatchWindowProvider: React.FC<{
       {Dispatchwindows.map((window) => (
         <div
           key={window.id}
-          className="fixed bg-white rounded-lg shadow-lg border border-gray-200"
+          className={`fixed ${window.styles?.background} ${window.styles?.rounded} shadow-lg border ${window.styles?.border}`}
           style={{
             left: window.position.x,
             top: window.position.y,
@@ -198,7 +224,10 @@ export const DispatchWindowProvider: React.FC<{
           }}
         >
           <div
-            className="flex items-center justify-between px-2 py-1 bg-gray-100 rounded-t-lg"
+            className={`flex items-center justify-between px-2 py-1 bg-gray-100 ${
+              window.styles?.rounded &&
+              window.styles?.rounded.replace('rounded', 'rounded-t')
+            }`}
             onMouseDown={(e) => startDragging(e, window.id, window.position)}
           >
             <h3 className="font-medium text-gray-800">{window.title}</h3>
@@ -210,15 +239,42 @@ export const DispatchWindowProvider: React.FC<{
             </button>
           </div>
           <div
-            className="h-[calc(100%-2.5rem)] overflow-auto"
+            className="h-[calc(100%-2.5rem)] overflow-y-auto flex flex-col"
             onClick={() => focusDispatchWindow(window.id)}
           >
-            {window.content}
+            <WindowStateProvider>
+              {typeof window.content === 'function'
+                ? window.content()
+                : window.content}
+            </WindowStateProvider>
           </div>
         </div>
       ))}
     </WindowContext.Provider>
   )
+}
+// Create a context for window state
+const WindowStateContext = createContext<{
+  forceUpdate: () => void
+}>({
+  forceUpdate: () => {},
+})
+
+// Create a WindowStateProvider component
+const WindowStateProvider = ({ children }: { children: React.ReactNode }) => {
+  const [, setState] = useState({})
+  const forceUpdate = useCallback(() => setState({}), [])
+
+  return (
+    <WindowStateContext.Provider value={{ forceUpdate }}>
+      <div className="flex-1 min-h-0">{children}</div>
+    </WindowStateContext.Provider>
+  )
+}
+
+// Hook to use window state
+export const useWindowState = () => {
+  return useContext(WindowStateContext)
 }
 
 export const useDispatchWindows = () => {

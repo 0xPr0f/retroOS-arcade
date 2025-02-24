@@ -1,20 +1,19 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   darkBlue,
   useAppRouter,
+  useDispatchWindows,
   useNotifications,
   usePregenSession,
   usePregenTransaction,
+  useTypedValue,
   weirdBlue,
-} from "@/components/pc/drives";
+} from '@/components/pc/drives'
 import {
   CHARACTER_CARD_ADDRESS,
   CLASH_BATTLE_SYSTEM_ADDRESS,
-} from "../deployments/address";
-import {
-  CHARACTER_CARD_ABI,
-  CLASH_BATTLE_SYSTEM_ABI,
-} from "../deployments/abi";
+} from '../deployments/address'
+import { CHARACTER_CARD_ABI, CLASH_BATTLE_SYSTEM_ABI } from '../deployments/abi'
 import {
   useAccount,
   useChainId,
@@ -23,10 +22,12 @@ import {
   useWaitForTransactionReceipt,
   useWatchContractEvent,
   useWriteContract,
-} from "wagmi";
-import { getCharacterClassLabel } from "./Character";
-import { config } from "../deployments/config";
-import { shortenText } from "@/components/pc/drives";
+} from 'wagmi'
+import { getCharacterClassLabel } from './Character'
+import { config } from '../deployments/config'
+import { shortenText } from '@/components/pc/drives'
+import { useMouse } from 'react-use'
+import { useWindowState } from '@/components/pc/drives/UI/dispatchWindow'
 
 const GameUI: React.FC = () => {
   return (
@@ -35,120 +36,235 @@ const GameUI: React.FC = () => {
         <GameHome />
       </div>
     </div>
-  );
-};
-export default GameUI;
+  )
+}
+export default GameUI
 
-interface ActiveGame {
-  id: string;
-  opponent: string;
-  started: number;
-  yourTurn: boolean;
-  gameType: "ranked" | "casual";
-  lastMove: number;
+const GameStats: React.FC<{
+  characterIds: number[]
+  activeGameDataArr: number[]
+}> = ({ characterIds, activeGameDataArr }) => {
+  if (!characterIds?.length) return null
+
+  const characterMaps = characterIds.map((id) => ({
+    address: CHARACTER_CARD_ADDRESS as `0x${string}`,
+    abi: CHARACTER_CARD_ABI as any,
+    functionName: 'getCharacterStats',
+    args: [id],
+  }))
+
+  const { data: characterQueries } = useReadContracts({
+    contracts: characterMaps,
+  })
+  /*
+  const powerTierMapping = {
+    E: { min: 0, max: 499 },
+    D: { min: 500, max: 999 },
+    C: { min: 1000, max: 1999 },
+    B: { min: 2000, max: 3999 },
+    A: { min: 4000, max: 5999 },
+    S: { min: 6000, max: 7999 },
+    'S+': { min: 8000, max: Infinity },
+  } as const
+*/
+  const rankMapping = {
+    'Bronze III': { min: 0, max: 149 },
+    'Bronze II': { min: 150, max: 299 },
+    'Bronze I': { min: 300, max: 499 },
+    'Silver III': { min: 500, max: 749 },
+    'Silver II': { min: 750, max: 999 },
+    'Silver I': { min: 1000, max: 1249 },
+    'Gold III': { min: 1250, max: 1649 },
+    'Gold II': { min: 1650, max: 1999 },
+    'Gold I': { min: 2000, max: 2499 },
+    'Platinum III': { min: 2500, max: 3249 },
+    'Platinum II': { min: 3250, max: 3999 },
+    'Platinum I': { min: 4000, max: 4999 },
+    'Diamond III': { min: 5000, max: 6249 },
+    'Diamond II': { min: 6250, max: 7499 },
+    'Diamond I': { min: 7500, max: 9999 },
+    Master: { min: 10000, max: 14999 },
+    Grandmaster: { min: 15000, max: 24999 },
+    Legend: { min: 25000, max: Infinity },
+  } as const
+
+  const totalStats = useMemo(() => {
+    if (!characterQueries)
+      return { wins: 0, losses: 0, totalGames: 0, experience: 0 }
+
+    const gameRankDetails = characterQueries.map((stat: any) => stat.result)
+    return gameRankDetails.reduce(
+      (
+        acc: {
+          wins: number
+          losses: number
+          totalGames: number
+          experience: number
+        },
+        char: any
+      ) => {
+        return {
+          wins: acc.wins + Number(char.wins || 0),
+          losses: acc.losses + Number(char.losses || 0),
+          totalGames:
+            acc.totalGames + Number(char.wins || 0) + Number(char.losses || 0),
+          experience: acc.experience + Number(char.experience || 0),
+        }
+      },
+      { wins: 0, losses: 0, totalGames: 0, experience: 0 }
+    )
+  }, [characterQueries])
+
+  const winRate = useMemo(() => {
+    return totalStats.totalGames > 0
+      ? (totalStats.wins / totalStats.totalGames) * 100
+      : 0
+  }, [totalStats])
+
+  const currentRank = useMemo(() => {
+    return (
+      Object.entries(rankMapping).find(
+        ([_, range]) =>
+          totalStats.experience >= range.min &&
+          totalStats.experience <= range.max
+      )?.[0] || 'Unranked'
+    )
+  }, [totalStats.experience])
+
+  return (
+    <div className="grid grid-cols-3 gap-4">
+      <GameStatCard
+        title="Active Games"
+        value={activeGameDataArr.length.toString()}
+        icon="🎮"
+      />
+      <GameStatCard
+        title="Rank"
+        value={characterQueries ? currentRank : 'Loading...'}
+        icon="🏆"
+      />
+      <GameStatCard
+        title="Win Rate"
+        value={characterQueries ? `${winRate.toFixed(2)}%` : 'Loading...'}
+        icon="📈"
+      />
+    </div>
+  )
 }
 
 const GameHome: React.FC = () => {
-  const { navigate, currentRoute } = useAppRouter();
-  const [activeTab, setActiveTab] = useState("active");
-  const [showChallengeModal, setShowChallengeModal] = useState(false);
+  const { navigate, currentRoute } = useAppRouter()
+  const [activeTab, setActiveTab] = useState('active')
+  const [showChallengeModal, setShowChallengeModal] = useState(false)
 
   const handleGameClick = (gameId: string) => {
-    console.log(currentRoute);
-    navigate(`/gameplay/${gameId}`);
-  };
-  const { isConnected, address: playerAddress } = useAccount();
+    console.log(currentRoute)
+    navigate(`/gameplay/${gameId}`)
+  }
+  const { isConnected, address: playerAddress } = useAccount()
   const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
-    usePregenSession();
-  const chainId = useChainId();
+    usePregenSession()
+  const chainId = useChainId()
   const address = isConnected
     ? playerAddress?.toLowerCase()
     : isLoginPregenSession
     ? pregenActiveAddress?.toLowerCase()
-    : undefined;
+    : undefined
 
-  const { addNotification } = useNotifications();
-  const availableChainIds = ["84532"];
+  const { addNotification } = useNotifications()
+  const availableChainIds = ['84532']
   const isChainUnavailable = !availableChainIds.some(
     (chain) => Number(chain) === chainId
-  );
+  )
 
   useWatchContractEvent({
     address: CLASH_BATTLE_SYSTEM_ADDRESS,
     abi: CLASH_BATTLE_SYSTEM_ABI,
-    eventName: "ChallengeIssued",
+    eventName: 'ChallengeIssued',
     config: config,
     onLogs(logs: any) {
-      const { challenger, challenged } = logs[0].args;
+      const { challenger, challenged } = logs[0].args
       if (String(challenger).toLowerCase() === String(address).toLowerCase()) {
-        refetchChallengesData();
+        refetchChallengesData()
       }
       if (String(challenged).toLowerCase() === String(address).toLowerCase()) {
-        refetchChallengesData();
+        refetchChallengesData()
       }
     },
-  });
+  })
   useWatchContractEvent({
     address: CLASH_BATTLE_SYSTEM_ADDRESS,
     abi: CLASH_BATTLE_SYSTEM_ABI,
-    eventName: "ChallengeAccepted",
+    eventName: 'ChallengeAccepted',
     config: config,
     onLogs(logs: any) {
-      const { challenger, challenged } = logs[0].args;
+      const { challenger, challenged } = logs[0].args
       if (String(challenger).toLowerCase() === String(address).toLowerCase()) {
-        refetchChallengesData();
+        refetchChallengesData()
       }
       if (String(challenged).toLowerCase() === String(address).toLowerCase()) {
-        refetchChallengesData();
+        refetchChallengesData()
       }
     },
-  });
+  })
   useWatchContractEvent({
     address: CLASH_BATTLE_SYSTEM_ADDRESS,
     abi: CLASH_BATTLE_SYSTEM_ABI,
-    eventName: "ChallengeRejected",
+    eventName: 'ChallengeRejected',
     config: config,
     onLogs(logs: any) {
-      const { challenger, challenged } = logs[0].args;
+      const { challenger, challenged } = logs[0].args
       if (String(challenger).toLowerCase() === String(address).toLowerCase()) {
-        refetchChallengesData();
+        refetchChallengesData()
       }
       if (String(challenged).toLowerCase() === String(address).toLowerCase()) {
-        refetchChallengesData();
+        refetchChallengesData()
       }
     },
-  });
+  })
+
+  const { data: allTokenIds } = useReadContract({
+    config: config,
+    address: CHARACTER_CARD_ADDRESS,
+    abi: CHARACTER_CARD_ABI,
+    functionName: 'getCharactersByOwner',
+    args: [address],
+    query: {
+      enabled: !!address,
+      refetchInterval: 3000,
+    },
+  })
 
   const realmClashSystemContract = {
     address: CLASH_BATTLE_SYSTEM_ADDRESS,
     abi: CLASH_BATTLE_SYSTEM_ABI,
-  } as const;
+  } as const
   const { data: challengesResult, refetch: refetchChallengesData } =
     useReadContracts({
       contracts: [
         {
           ...realmClashSystemContract,
-          functionName: "getPlayerChallenges",
+          functionName: 'getPlayerChallenges',
           args: [address],
         },
         {
           ...realmClashSystemContract,
-          functionName: "getPlayerChallengers",
+          functionName: 'getPlayerChallengers',
           args: [address],
         },
         {
           ...realmClashSystemContract,
-          functionName: "getActiveBattle",
+          functionName: 'getActiveBattle',
           args: [address],
         },
       ],
-    });
+    })
 
-  if (!challengesResult) return null;
+  if (!challengesResult) return null
 
   const effectiveChallengesData = challengesResult.map(
     (stat) => stat.result
-  ) as any;
+  ) as any
 
   const allChallenges = [
     ...(effectiveChallengesData[0] || ([] as any)).map((challenge: any) => ({
@@ -159,12 +275,10 @@ const GameHome: React.FC = () => {
       address: challenge,
       isChallenger: false,
     })),
-  ];
+  ]
   const activeGameDataArr =
-    Number(effectiveChallengesData[2]) > 0 ? [effectiveChallengesData[2]] : [];
-  console.log(activeGameDataArr, !effectiveChallengesData);
-  if (!effectiveChallengesData) return null;
-  console.log(allChallenges);
+    Number(effectiveChallengesData[2]) > 0 ? [effectiveChallengesData[2]] : []
+  if (!effectiveChallengesData) return null
 
   return (
     <div className="min-h-full h-fit p-4">
@@ -181,7 +295,7 @@ const GameHome: React.FC = () => {
             <div className="flex justify-between items-center">
               <div>
                 <h1 className="text-2xl font-bold text-white">
-                  Welcome back, Warrior
+                  Welcome back, Clasher!
                 </h1>
                 <p className="text-blue-300 mt-1">Clash on!</p>
               </div>
@@ -197,6 +311,15 @@ const GameHome: React.FC = () => {
                   Challenge
                 </button>
                 <button
+                  onClick={() => {
+                    addNotification({
+                      title: 'Coming Soon',
+                      message:
+                        'This feature is on the contracts and coming soon to the UI!',
+                      type: 'info',
+                      duration: 10000,
+                    })
+                  }}
                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-700
                            text-white rounded-lg hover:from-blue-600 hover:to-blue-800
                            transition-all duration-200 flex items-center gap-2
@@ -211,15 +334,10 @@ const GameHome: React.FC = () => {
 
           {/* Game Stats Bar */}
           <div className="bg-gray-800/50 border-b border-gray-700/50 p-4">
-            <div className="grid grid-cols-3 gap-4">
-              <GameStatCard
-                title="Active Games"
-                value={activeGameDataArr.length.toString()}
-                icon="🎮"
-              />
-              <GameStatCard title="Rank" value="Gold II" icon="🏆" />
-              <GameStatCard title="Win Rate" value="64%" icon="📈" />
-            </div>
+            <GameStats
+              activeGameDataArr={activeGameDataArr}
+              characterIds={allTokenIds as any}
+            />
           </div>
 
           {/* Tabs */}
@@ -227,22 +345,22 @@ const GameHome: React.FC = () => {
             <TabButton
               label="Active Games"
               icon="⚔️"
-              isActive={activeTab === "active"}
-              onClick={() => setActiveTab("active")}
+              isActive={activeTab === 'active'}
+              onClick={() => setActiveTab('active')}
               badge={activeGameDataArr.length}
             />
             <TabButton
               label="Challenges"
               icon="🏆"
-              isActive={activeTab === "challenges"}
-              onClick={() => setActiveTab("challenges")}
+              isActive={activeTab === 'challenges'}
+              onClick={() => setActiveTab('challenges')}
               badge={allChallenges.length}
             />
           </div>
 
           {/* Tab Content */}
           <div className="p-6">
-            {activeTab === "active" && (
+            {activeTab === 'active' && (
               <div className="space-y-4">
                 {activeGameDataArr.length === 0 ? (
                   <EmptyState
@@ -262,7 +380,7 @@ const GameHome: React.FC = () => {
               </div>
             )}
 
-            {activeTab === "challenges" && (
+            {activeTab === 'challenges' && (
               <div className="space-y-4">
                 {allChallenges.length === 0 ? (
                   <EmptyState
@@ -289,8 +407,8 @@ const GameHome: React.FC = () => {
         <ChallengeModal onClose={() => setShowChallengeModal(false)} />
       )}
     </div>
-  );
-};
+  )
+}
 
 // Component for clickable game cards
 const GameCard: React.FC<{ gameId?: string; onClick: () => void }> = ({
@@ -301,20 +419,20 @@ const GameCard: React.FC<{ gameId?: string; onClick: () => void }> = ({
     config: config,
     address: CLASH_BATTLE_SYSTEM_ADDRESS,
     abi: CLASH_BATTLE_SYSTEM_ABI,
-    functionName: "getBattleDetails",
+    functionName: 'getBattleDetails',
     args: [gameId],
-  });
+  })
 
   const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
-    usePregenSession();
-  const { isConnected, address: playerAddress } = useAccount();
+    usePregenSession()
+  const { isConnected, address: playerAddress } = useAccount()
   const address = isConnected
     ? playerAddress?.toLowerCase()
     : isLoginPregenSession
     ? pregenActiveAddress?.toLowerCase()
-    : undefined;
-  if (!gameData) return null;
-  const battleGameData = gameData as any;
+    : undefined
+  if (!gameData) return null
+  const battleGameData = gameData as any
   const battleDetails = {
     player1: battleGameData[0],
     player2: battleGameData[1],
@@ -326,8 +444,8 @@ const GameCard: React.FC<{ gameId?: string; onClick: () => void }> = ({
     currentTurnPlayer: battleGameData[7],
     turnState: battleGameData[8],
     turnNumber: battleGameData[9],
-  };
-  console.log(battleDetails);
+  }
+  console.log(battleDetails)
   return (
     <div
       onClick={onClick}
@@ -345,7 +463,7 @@ const GameCard: React.FC<{ gameId?: string; onClick: () => void }> = ({
           </div>
           <div>
             <h3 className="text-white font-semibold group-hover:text-blue-400 transition-colors">
-              Game vs{" "}
+              Game vs{' '}
               {shortenText(
                 String(battleDetails.player1).toLowerCase() !==
                   address?.toLowerCase()
@@ -359,7 +477,7 @@ const GameCard: React.FC<{ gameId?: string; onClick: () => void }> = ({
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <Badge type={"ranked"} color={"red"} />
+          <Badge type={'ranked'} color={'red'} />
           {battleDetails.currentTurnPlayer.toLowerCase() ===
             address?.toLowerCase() && (
             <span className="text-green-400 flex items-center gap-1">
@@ -372,8 +490,8 @@ const GameCard: React.FC<{ gameId?: string; onClick: () => void }> = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 export const CharacterOption = ({ characterId }: { characterId: bigint }) => {
   const loadCharacterDetails = (_characterId: string) => {
     const { data: characterStats, refetch: refetchCharacterStats } =
@@ -381,52 +499,52 @@ export const CharacterOption = ({ characterId }: { characterId: bigint }) => {
         config: config,
         address: CHARACTER_CARD_ADDRESS,
         abi: CHARACTER_CARD_ABI,
-        functionName: "getCharacterStats",
+        functionName: 'getCharacterStats',
         args: [_characterId],
-      });
-    return characterStats;
-  };
-  const characterStats = loadCharacterDetails(String(characterId));
-  const selectorCharacterStats = characterStats as any;
-  if (!selectorCharacterStats) return null;
+      })
+    return characterStats
+  }
+  const characterStats = loadCharacterDetails(String(characterId))
+  const selectorCharacterStats = characterStats as any
+  if (!selectorCharacterStats) return null
 
   return (
     <option value={String(characterId)}>
-      {selectorCharacterStats.name} :{" "}
+      {selectorCharacterStats.name} :{' '}
       {getCharacterClassLabel(selectorCharacterStats.characterClass)}
     </option>
-  );
-};
+  )
+}
 
 // Challenge Modal Component
 const ChallengeModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
-    usePregenSession();
+    usePregenSession()
 
-  const chainId = useChainId();
+  const chainId = useChainId()
 
-  const { isConnected, address: playerAddress } = useAccount();
+  const { isConnected, address: playerAddress } = useAccount()
   const address = isConnected
     ? playerAddress?.toLowerCase()
     : isLoginPregenSession
     ? pregenActiveAddress?.toLowerCase()
-    : undefined;
+    : undefined
 
-  const { addNotification } = useNotifications();
-  const availableChainIds = ["84532"];
+  const { addNotification } = useNotifications()
+  const availableChainIds = ['84532']
   const isChainUnavailable = !availableChainIds.some(
     (chain) => Number(chain) === chainId
-  );
+  )
 
   const [challengeDetails, setChallengeDetails] = useState<{
-    opponent: string;
-    characterId: string;
-    gameType: string;
+    opponent: string
+    characterId: string
+    gameType: string
   }>({
-    opponent: "",
-    characterId: "",
-    gameType: "ranked",
-  });
+    opponent: '',
+    characterId: '',
+    gameType: 'ranked',
+  })
 
   const {
     writeContract: writeGameChallenge,
@@ -438,7 +556,7 @@ const ChallengeModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       onError: (error: any) => {},
       onSuccess: (txHash: any) => {},
     },
-  });
+  })
 
   // Pregen Join Queue Contract Write
   const {
@@ -450,64 +568,64 @@ const ChallengeModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       onError: (error: any) => {},
       onSuccess: (txHash: any) => {},
     },
-  });
+  })
 
   const handleChallengeOpponent = async () => {
     if (isChainUnavailable) {
       addNotification({
         title: `Chain Unavailable`,
         message: `This chain is not available. Please use base sepolia.`,
-        type: "error",
+        type: 'error',
         duration: 10000,
-      });
-      return;
+      })
+      return
     }
     if (isConnected) {
       await writeGameChallenge({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
-        functionName: "challengePlayer",
+        functionName: 'challengePlayer',
         args: [challengeDetails.opponent, challengeDetails.characterId],
-      });
+      })
     } else if (isLoginPregenSession) {
       await writeGameChallengePregen({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
-        functionName: "challengePlayer",
+        functionName: 'challengePlayer',
         args: [challengeDetails.opponent, challengeDetails.characterId],
-      });
+      })
     }
-  };
+  }
 
   useWatchContractEvent({
     address: CLASH_BATTLE_SYSTEM_ADDRESS,
     abi: CLASH_BATTLE_SYSTEM_ABI,
-    eventName: "ChallengeIssued",
+    eventName: 'ChallengeIssued',
     onLogs(logs: any) {
-      const { challenger, challenged } = logs[0].args;
+      const { challenger, challenged } = logs[0].args
       if (String(challenger).toLowerCase() === String(address).toLowerCase()) {
-        onClose();
+        onClose()
       }
     },
-  });
+  })
 
   const { isLoading } = useWaitForTransactionReceipt({
     hash: isConnected ? gameChallengeData : gameChallengeDataPregen,
-  });
-  const isWaitingForGameChallengeTx = isSmartAccount ? false : isLoading;
+  })
+  const isWaitingForGameChallengeTx = isSmartAccount ? false : isLoading
 
   const { data: addressTokenIds, refetch: refetchAddressTokenIds } =
     useReadContract({
       config: config,
       address: CHARACTER_CARD_ADDRESS,
       abi: CHARACTER_CARD_ABI,
-      functionName: "getCharactersByOwner",
+      functionName: 'getCharactersByOwner',
       args: [address],
       query: {
         enabled: !!address,
         refetchInterval: 3000,
       },
-    });
+    })
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40">
@@ -587,11 +705,11 @@ const ChallengeModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               <button
                 onClick={() => {
                   if (
-                    challengeDetails.characterId === "" ||
-                    challengeDetails.opponent === ""
+                    challengeDetails.characterId === '' ||
+                    challengeDetails.opponent === ''
                   )
-                    return;
-                  handleChallengeOpponent();
+                    return
+                  handleChallengeOpponent()
                 }}
                 className="flex-1 px-4 py-2 rounded-lg
                              bg-gradient-to-r from-lightRed to-red-700
@@ -605,14 +723,14 @@ const ChallengeModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
 // Utility Components
 const GameStatCard: React.FC<{
-  title: string;
-  value: string;
-  icon: string;
+  title: string
+  value: string
+  icon: string
 }> = ({ title, value, icon }) => (
   <div className="bg-gray-900/30 rounded-lg p-3 border border-gray-700/30">
     <div className="flex items-center gap-2">
@@ -623,30 +741,30 @@ const GameStatCard: React.FC<{
       </div>
     </div>
   </div>
-);
+)
 
-const Badge: React.FC<{ type: string; color: "red" | "blue" }> = ({
-  type = "ranked",
+const Badge: React.FC<{ type: string; color: 'red' | 'blue' }> = ({
+  type = 'ranked',
   color,
 }) => (
   <span
     className={`px-2 py-1 rounded text-sm font-medium
     ${
-      color === "red"
-        ? "bg-red-500/20 text-red-400 border border-red-500/30"
-        : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+      color === 'red'
+        ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+        : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
     }`}
   >
     {type.charAt(0).toUpperCase() + type.slice(1)}
   </span>
-);
+)
 
 const TabButton: React.FC<{
-  label: string;
-  icon: string;
-  isActive: boolean;
-  onClick: () => void;
-  badge?: number;
+  label: string
+  icon: string
+  isActive: boolean
+  onClick: () => void
+  badge?: number
 }> = ({ label, icon, isActive, onClick, badge }) => (
   <button
     onClick={onClick}
@@ -655,8 +773,8 @@ const TabButton: React.FC<{
       flex items-center gap-2 relative group
       ${
         isActive
-          ? "bg-gradient-to-b from-gray-800 to-gray-900"
-          : "hover:bg-gray-800/30"
+          ? 'bg-gradient-to-b from-gray-800 to-gray-900'
+          : 'hover:bg-gray-800/30'
       }
     `}
     style={{
@@ -678,63 +796,154 @@ const TabButton: React.FC<{
         transform transition-transform origin-left
         ${
           isActive
-            ? "scale-x-100 bg-gradient-to-r from-lightRed to-blue-500"
-            : "scale-x-0 bg-blue-400"
+            ? 'scale-x-100 bg-gradient-to-r from-lightRed to-blue-500'
+            : 'scale-x-0 bg-blue-400'
         }
       `}
     />
   </button>
-);
+)
 
 const EmptyState: React.FC<{
-  icon: string;
-  title: string;
-  description: string;
+  icon: string
+  title: string
+  description: string
 }> = ({ icon, title, description }) => (
   <div className="text-center py-12">
     <span className="text-6xl mb-4 block">{icon}</span>
     <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
     <p className="text-gray-400">{description}</p>
   </div>
-);
+)
 
-const formatTimeAgoUnix = (unixSeconds: number) => {
-  const timestampMs = unixSeconds * 1000;
-  const nowMs = Date.now();
-  const diffInSeconds = Math.max(0, Math.floor((nowMs - timestampMs) / 1000));
+export const formatTimeAgoUnix = (unixSeconds: number) => {
+  const timestampMs = unixSeconds * 1000
+  const nowMs = Date.now()
+  const diffInSeconds = Math.max(0, Math.floor((nowMs - timestampMs) / 1000))
 
-  if (diffInSeconds < 60) return "just now";
-  const minutes = Math.floor(diffInSeconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo ago`;
-  const years = Math.floor(months / 12);
-  return `${years}y ago`;
-};
+  if (diffInSeconds < 60) return 'just now'
+  const minutes = Math.floor(diffInSeconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days}d ago`
+  const months = Math.floor(days / 30)
+  if (months < 12) return `${months}mo ago`
+  const years = Math.floor(months / 12)
+  return `${years}y ago`
+}
+
+const AcceptModal = ({
+  windowId,
+  handleAcceptChallenge,
+  addressTokenIds,
+}: {
+  windowId: string
+  handleAcceptChallenge: any
+  addressTokenIds: any
+}) => {
+  const { closeDispatchWindow } = useDispatchWindows()
+  const [challengeDetails, setChallengeDetails] = useState<{
+    characterId: string
+  }>({
+    characterId: '',
+  })
+
+  return (
+    <div className="w-full h-full bg-gray-800/30 border border-gray-700/30 rounded-lg p-6 hover:bg-gray-800/50 hover:border-gray-600/50 transition-all">
+      <div className="space-y-6">
+        {/* Character Selection */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-300">
+            Select Your Character
+          </label>
+          <select
+            value={challengeDetails.characterId}
+            onChange={(e) => {
+              const newValue = e.target.value
+              console.log('Selected value:', newValue)
+
+              setChallengeDetails((prevState) => ({
+                ...prevState,
+                characterId: newValue,
+              }))
+            }}
+            className="w-full bg-gray-700/50 rounded px-3 py-2 text-white border border-gray-600"
+          >
+            <option value="">Select a character</option>
+            {Array.isArray(addressTokenIds) &&
+              addressTokenIds.length > 0 &&
+              addressTokenIds.map((characterId: bigint) => {
+                return (
+                  <CharacterOption
+                    key={characterId}
+                    characterId={characterId}
+                  />
+                )
+              })}
+          </select>
+        </div>
+
+        {/* Accept Button */}
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={async () => {
+              if (!challengeDetails.characterId) return
+              await handleAcceptChallenge(challengeDetails.characterId)
+              closeDispatchWindow(windowId)
+            }}
+            className="h-10 px-6 rounded-lg overflow-hidden
+                 bg-gradient-to-r from-blue-500 to-blue-700 
+                 hover:from-blue-600 hover:to-blue-800
+                 disabled:opacity-50 disabled:cursor-not-allowed
+                 transition-all duration-300"
+          >
+            <div className="relative z-10 flex items-center justify-center gap-3">
+              <span className="text-2xl">⚔️</span>
+              <span className="font-medium">Accept</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => {
+              closeDispatchWindow(windowId)
+            }}
+            className="h-10 px-6 rounded-lg overflow-hidden
+                 bg-gradient-to-r from-gray-600 to-gray-700
+                 hover:from-gray-700 hover:to-gray-800
+                 transition-all duration-300"
+          >
+            <div className="relative z-10 flex items-center justify-center gap-3">
+              <span className="text-2xl">❌</span>
+              <span className="font-medium">Cancel</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const ChallengeCard: React.FC<{ challenge: string; challenger?: boolean }> = ({
   challenge,
   challenger = false,
 }) => {
-  const { isConnected, address: playerAddress } = useAccount();
+  const { isConnected, address: playerAddress } = useAccount()
   const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
-    usePregenSession();
-  const chainId = useChainId();
+    usePregenSession()
+  const chainId = useChainId()
   const address = isConnected
     ? playerAddress?.toLowerCase()
     : isLoginPregenSession
     ? pregenActiveAddress?.toLowerCase()
-    : undefined;
+    : undefined
 
-  const { addNotification } = useNotifications();
-  const availableChainIds = ["84532"];
+  const { addNotification } = useNotifications()
+  const availableChainIds = ['84532']
   const isChainUnavailable = !availableChainIds.some(
     (chain) => Number(chain) === chainId
-  );
+  )
 
   const {
     writeContract: writeGameChallenge,
@@ -743,10 +952,12 @@ const ChallengeCard: React.FC<{ challenge: string; challenger?: boolean }> = ({
     error: gameChallengeError,
   } = useWriteContract({
     mutation: {
-      onError: (error: any) => {},
+      onError: (error: any) => {
+        console.log(error)
+      },
       onSuccess: (txHash: any) => {},
     },
-  });
+  })
 
   // Pregen Join Queue Contract Write
   const {
@@ -755,77 +966,126 @@ const ChallengeCard: React.FC<{ challenge: string; challenger?: boolean }> = ({
     isPending: isGameChallengePendingPregen,
   } = usePregenTransaction({
     mutation: {
-      onError: (error: any) => {},
+      onError: (error: any) => {
+        console.log(error)
+      },
       onSuccess: (txHash: any) => {},
     },
-  });
+  })
 
   const handleRejectChallenge = async () => {
     if (isChainUnavailable) {
       addNotification({
         title: `Chain Unavailable`,
         message: `This chain is not available. Please use base sepolia.`,
-        type: "error",
+        type: 'error',
         duration: 10000,
-      });
-      return;
+      })
+      return
     }
     if (isConnected) {
       await writeGameChallenge({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
-        functionName: "rejectChallenge",
+        functionName: 'rejectChallenge',
         args: [challenge],
-      });
+      })
     } else if (isLoginPregenSession) {
       await writeGameChallengePregen({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
-        functionName: "rejectChallenge",
+        functionName: 'rejectChallenge',
         args: [challenge],
-      });
+      })
     }
-  };
+  }
 
+  const handleAcceptChallengeIntermidary = async (characterId: string) => {
+    handleAcceptChallenge(characterId)
+  }
   const handleAcceptChallenge = async (characterId: string) => {
-    console.log(challenge, characterId);
-    if (!characterId) return;
+    if (!characterId) return
     if (isChainUnavailable) {
       addNotification({
         title: `Chain Unavailable`,
         message: `This chain is not available. Please use base sepolia.`,
-        type: "error",
+        type: 'error',
         duration: 10000,
-      });
-      return;
+      })
+      return
     }
     if (isConnected) {
       await writeGameChallenge({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
-        functionName: "acceptChallenge",
+        functionName: 'acceptChallenge',
         args: [challenge, characterId],
-      });
+      })
     } else if (isLoginPregenSession) {
       await writeGameChallengePregen({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
-        functionName: "acceptChallenge",
+        functionName: 'acceptChallenge',
         args: [challenge, characterId],
-      });
+      })
     }
-  };
+  }
+
+  const { createDispatchWindow, closeDispatchWindow } = useDispatchWindows()
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const mouse = useMouse(containerRef as React.RefObject<Element>)
+
+  const { data: addressTokenIds, refetch: refetchAddressTokenIds } =
+    useReadContract({
+      config: config,
+      address: CHARACTER_CARD_ADDRESS,
+      abi: CHARACTER_CARD_ABI,
+      functionName: 'getCharactersByOwner',
+      args: [address],
+      query: {
+        enabled: !!address,
+        refetchInterval: 3000,
+      },
+    })
 
   const handleAccept = async () => {
-    await handleAcceptChallenge("4");
-  };
+    const centeredX = mouse.docX - 200 / 2
+    const centeredY = mouse.docY - 250 / 2
+    const windowId = createDispatchWindow({
+      title: 'Accept Challenge',
+      content: () => {
+        return (
+          <AcceptModal
+            windowId={windowId}
+            handleAcceptChallenge={handleAcceptChallengeIntermidary}
+            addressTokenIds={addressTokenIds}
+          />
+        )
+      },
+      initialPosition: {
+        x: centeredX,
+        y: centeredY,
+      },
+      initialSize: {
+        width: 200,
+        height: 250,
+      },
+      styles: {
+        background: 'bg-gradient-to-b from-gray-900 via-blue-900 to-gray-900',
+        rounded: 'rounded-lg',
+        border: 'border-gray-700/50',
+      },
+    })
+  }
 
   const handleDecline = async () => {
-    await handleRejectChallenge();
-  };
+    await handleRejectChallenge()
+  }
 
   return (
     <div
+      ref={containerRef}
       className="bg-gray-800/30 border border-gray-700/30 rounded-lg p-4
                    hover:bg-gray-800/50 hover:border-gray-600/50 transition-all"
     >
@@ -839,7 +1099,7 @@ const ChallengeCard: React.FC<{ challenge: string; challenger?: boolean }> = ({
           </div>
           <div>
             <h3 className="text-white font-semibold">
-              {challenger ? "Challenge to " : "Challenge from "}{" "}
+              {challenger ? 'Challenge to ' : 'Challenge from '}{' '}
               {shortenText(challenge)}
             </h3>
             <p className="text-gray-400 text-sm">
@@ -883,17 +1143,17 @@ const ChallengeCard: React.FC<{ challenge: string; challenger?: boolean }> = ({
 
       <div className="mt-4 grid grid-cols-3 gap-4">
         <DetailBox icon="⚔️" label="Game Type" value="Ranked" />
-        <DetailBox icon="💰" label="Stake" value={"0"} />
+        <DetailBox icon="💰" label="Stake" value={'0'} />
         <DetailBox icon="⏱️" label="Expires In" value="00:00" />
       </div>
     </div>
-  );
-};
+  )
+}
 
 const DetailBox: React.FC<{
-  icon: string;
-  label: string;
-  value: string;
+  icon: string
+  label: string
+  value: string
 }> = ({ icon, label, value }) => (
   <div className="bg-gray-900/30 rounded-lg p-3 border border-gray-700/30">
     <div className="flex items-center gap-2">
@@ -904,4 +1164,4 @@ const DetailBox: React.FC<{
       </div>
     </div>
   </div>
-);
+)

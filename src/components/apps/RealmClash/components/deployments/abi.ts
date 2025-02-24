@@ -961,7 +961,6 @@ export const CHARACTER_CARD_ABI = [
     ],
   },
 ]
-
 export const CLASH_BATTLE_SYSTEM_ABI = [
   {
     type: 'constructor',
@@ -1388,6 +1387,16 @@ export const CLASH_BATTLE_SYSTEM_ABI = [
         internalType: 'enum RealmClashBattleSystem.TurnState',
       },
       { name: 'turnNumber', type: 'uint256', internalType: 'uint256' },
+      {
+        name: 'player1AttackPoints',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'player2AttackPoints',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
     ],
     stateMutability: 'view',
   },

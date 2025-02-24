@@ -81,13 +81,13 @@ const RealmClashGame = () => {
                 <TabButton
                   onClick={() => handleTabClick('/game')}
                   label="Game"
-                  icon=""
+                  icon="🕹️"
                   isActive={activeTab === '/game'}
                 />
                 <TabButton
                   onClick={() => handleTabClick('/character')}
                   label="Characters"
-                  icon=""
+                  icon="🎭"
                   isActive={activeTab === '/character'}
                 />
                 <TabButton
