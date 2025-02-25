@@ -40,6 +40,30 @@ const GameUI: React.FC = () => {
 }
 export default GameUI
 
+// Loading spinner component
+const LoadingSpinner: React.FC<{ size?: string; color?: string }> = ({
+  size = 'w-8 h-8',
+  color = 'text-blue-500',
+}) => (
+  <div className="flex justify-center items-center">
+    <div
+      className={`${size} ${color} animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]`}
+      role="status"
+    >
+      <span className="sr-only">Loading...</span>
+    </div>
+  </div>
+)
+
+// Shimmer loading effect component
+const ShimmerEffect: React.FC<{ className?: string }> = ({
+  className = 'h-6 w-full',
+}) => (
+  <div
+    className={`${className} bg-gray-700/30 animate-pulse rounded overflow-hidden relative before:absolute before:inset-0 before:-translate-x-full before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent before:animate-[shimmer_1.5s_infinite]`}
+  ></div>
+)
+
 const GameStats: React.FC<{
   characterIds: number[]
   activeGameDataArr: number[]
@@ -53,9 +77,10 @@ const GameStats: React.FC<{
     args: [id],
   }))
 
-  const { data: characterQueries } = useReadContracts({
-    contracts: characterMaps,
-  })
+  const { data: characterQueries, isLoading: isCharacterQueriesLoading } =
+    useReadContracts({
+      contracts: characterMaps,
+    })
   /*
   const powerTierMapping = {
     E: { min: 0, max: 499 },
@@ -137,16 +162,19 @@ const GameStats: React.FC<{
         title="Active Games"
         value={activeGameDataArr.length.toString()}
         icon="🎮"
+        isLoading={false}
       />
       <GameStatCard
         title="Rank"
         value={characterQueries ? currentRank : 'Loading...'}
         icon="🏆"
+        isLoading={isCharacterQueriesLoading}
       />
       <GameStatCard
         title="Win Rate"
         value={characterQueries ? `${winRate.toFixed(2)}%` : 'Loading...'}
         icon="📈"
+        isLoading={isCharacterQueriesLoading}
       />
     </div>
   )
@@ -156,6 +184,7 @@ const GameHome: React.FC = () => {
   const { navigate, currentRoute } = useAppRouter()
   const [activeTab, setActiveTab] = useState('active')
   const [showChallengeModal, setShowChallengeModal] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   const handleGameClick = (gameId: string) => {
     console.log(currentRoute)
@@ -223,7 +252,7 @@ const GameHome: React.FC = () => {
     },
   })
 
-  const { data: allTokenIds } = useReadContract({
+  const { data: allTokenIds, isLoading: isTokenIdsLoading } = useReadContract({
     config: config,
     address: CHARACTER_CARD_ADDRESS,
     abi: CHARACTER_CARD_ABI,
@@ -239,26 +268,98 @@ const GameHome: React.FC = () => {
     address: CLASH_BATTLE_SYSTEM_ADDRESS,
     abi: CLASH_BATTLE_SYSTEM_ABI,
   } as const
-  const { data: challengesResult, refetch: refetchChallengesData } =
-    useReadContracts({
-      contracts: [
-        {
-          ...realmClashSystemContract,
-          functionName: 'getPlayerChallenges',
-          args: [address],
-        },
-        {
-          ...realmClashSystemContract,
-          functionName: 'getPlayerChallengers',
-          args: [address],
-        },
-        {
-          ...realmClashSystemContract,
-          functionName: 'getActiveBattle',
-          args: [address],
-        },
-      ],
-    })
+  const {
+    data: challengesResult,
+    refetch: refetchChallengesData,
+    isLoading: isChallengesLoading,
+  } = useReadContracts({
+    contracts: [
+      {
+        ...realmClashSystemContract,
+        functionName: 'getPlayerChallenges',
+        args: [address],
+      },
+      {
+        ...realmClashSystemContract,
+        functionName: 'getPlayerChallengers',
+        args: [address],
+      },
+      {
+        ...realmClashSystemContract,
+        functionName: 'getActiveBattle',
+        args: [address],
+      },
+    ],
+  })
+
+  // Update loading state based on data fetching
+  useEffect(() => {
+    setIsLoading(isTokenIdsLoading || isChallengesLoading)
+  }, [isTokenIdsLoading, isChallengesLoading])
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-full h-fit p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg border border-gray-700/50 shadow-xl overflow-hidden">
+            {/* Header with shimmer effect */}
+            <div
+              className="p-6 border-b border-gray-700"
+              style={{
+                background: `linear-gradient(to right, ${weirdBlue}, ${darkBlue})`,
+              }}
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <ShimmerEffect className="h-8 w-64 mb-2" />
+                  <ShimmerEffect className="h-4 w-40" />
+                </div>
+                <div className="flex gap-3">
+                  <ShimmerEffect className="h-10 w-28 rounded-lg" />
+                  <ShimmerEffect className="h-10 w-32 rounded-lg" />
+                </div>
+              </div>
+            </div>
+
+            {/* Game Stats Bar with shimmer */}
+            <div className="bg-gray-800/50 border-b border-gray-700/50 p-4">
+              <div className="grid grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="bg-gray-900/30 rounded-lg p-3 border border-gray-700/30"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ShimmerEffect className="h-8 w-8 rounded-full" />
+                      <div className="w-full">
+                        <ShimmerEffect className="h-4 w-16 mb-1" />
+                        <ShimmerEffect className="h-6 w-20" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tabs with shimmer */}
+            <div className="flex border-b border-gray-700 bg-gray-800/30 px-2 pt-2">
+              <ShimmerEffect className="h-12 w-36 rounded-t-lg mr-2" />
+              <ShimmerEffect className="h-12 w-36 rounded-t-lg" />
+            </div>
+
+            {/* Content area with loading spinner */}
+            <div className="p-6 flex justify-center items-center min-h-[300px]">
+              <div className="text-center">
+                <LoadingSpinner size="w-16 h-16" />
+                <p className="mt-4 text-gray-400">Loading game data...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (!challengesResult) return null
 
@@ -415,7 +516,7 @@ const GameCard: React.FC<{ gameId?: string; onClick: () => void }> = ({
   gameId,
   onClick,
 }) => {
-  const { data: gameData } = useReadContract({
+  const { data: gameData, isLoading } = useReadContract({
     config: config,
     address: CLASH_BATTLE_SYSTEM_ADDRESS,
     abi: CLASH_BATTLE_SYSTEM_ABI,
@@ -431,7 +532,29 @@ const GameCard: React.FC<{ gameId?: string; onClick: () => void }> = ({
     : isLoginPregenSession
     ? pregenActiveAddress?.toLowerCase()
     : undefined
+
+  if (isLoading) {
+    return (
+      <div className="bg-gray-800/30 border border-gray-700/30 rounded-lg p-4 hover:bg-gray-800/50 hover:border-gray-600/50 transition-all">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <ShimmerEffect className="w-12 h-12 rounded-full" />
+            <div>
+              <ShimmerEffect className="h-5 w-40 mb-2" />
+              <ShimmerEffect className="h-4 w-24" />
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <ShimmerEffect className="h-6 w-16 rounded-lg" />
+            <ShimmerEffect className="h-4 w-4 rounded-full" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!gameData) return null
+
   const battleGameData = gameData as any
   const battleDetails = {
     player1: battleGameData[0],
@@ -494,18 +617,29 @@ const GameCard: React.FC<{ gameId?: string; onClick: () => void }> = ({
 }
 export const CharacterOption = ({ characterId }: { characterId: bigint }) => {
   const loadCharacterDetails = (_characterId: string) => {
-    const { data: characterStats, refetch: refetchCharacterStats } =
-      useReadContract({
-        config: config,
-        address: CHARACTER_CARD_ADDRESS,
-        abi: CHARACTER_CARD_ABI,
-        functionName: 'getCharacterStats',
-        args: [_characterId],
-      })
-    return characterStats
+    const {
+      data: characterStats,
+      refetch: refetchCharacterStats,
+      isLoading,
+    } = useReadContract({
+      config: config,
+      address: CHARACTER_CARD_ADDRESS,
+      abi: CHARACTER_CARD_ABI,
+      functionName: 'getCharacterStats',
+      args: [_characterId],
+    })
+    return { characterStats, isLoading }
   }
-  const characterStats = loadCharacterDetails(String(characterId))
+
+  const { characterStats, isLoading } = loadCharacterDetails(
+    String(characterId)
+  )
   const selectorCharacterStats = characterStats as any
+
+  if (isLoading) {
+    return <option value={String(characterId)}>Loading character...</option>
+  }
+
   if (!selectorCharacterStats) return null
 
   return (
@@ -614,7 +748,7 @@ const ChallengeModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   })
   const isWaitingForGameChallengeTx = isSmartAccount ? false : isLoading
 
-  const { data: addressTokenIds, refetch: refetchAddressTokenIds } =
+  const { data: addressTokenIds, isLoading: isTokenIdsLoading } =
     useReadContract({
       config: config,
       address: CHARACTER_CARD_ADDRESS,
@@ -731,13 +865,18 @@ const GameStatCard: React.FC<{
   title: string
   value: string
   icon: string
-}> = ({ title, value, icon }) => (
+  isLoading: boolean
+}> = ({ title, value, icon, isLoading }) => (
   <div className="bg-gray-900/30 rounded-lg p-3 border border-gray-700/30">
     <div className="flex items-center gap-2">
       <span className="text-2xl">{icon}</span>
       <div>
         <p className="text-gray-400 text-sm">{title}</p>
-        <p className="text-white font-bold">{value}</p>
+        {isLoading ? (
+          <div className="h-5 w-20 bg-gray-700 animate-pulse rounded"></div>
+        ) : (
+          <p className="text-white font-bold">{value}</p>
+        )}
       </div>
     </div>
   </div>

@@ -87,7 +87,7 @@ const DeviceInfo = ({ isDarkMode }: { isDarkMode: boolean }) => {
     </div>
   )
 }
-const NotWorking = ({ isDarkMode }: { isDarkMode: boolean }) => {
+export const NotWorking = ({ isDarkMode }: { isDarkMode: boolean }) => {
   return (
     <>
       <div

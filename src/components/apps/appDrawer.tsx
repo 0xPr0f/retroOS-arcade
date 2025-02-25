@@ -137,6 +137,7 @@ const apps: App[] = [
       width: 1000,
       height: 300,
     },
+    isDisabled: true,
   },
   //Games
   {
@@ -148,8 +149,8 @@ const apps: App[] = [
       y: 80,
     },
     openingDimensions: {
-      height: 560,
-      width: 500,
+      height: 580,
+      width: 480,
     },
     greater: true,
     game: true,
@@ -163,8 +164,8 @@ const apps: App[] = [
       y: 80,
     },
     openingDimensions: {
-      height: 430,
-      width: 350,
+      height: 500,
+      width: 360,
     },
     greater: true,
     fixed: true,
@@ -209,7 +210,7 @@ const apps: App[] = [
       y: 150,
     },
     openingDimensions: {
-      height: 550,
+      height: 620,
       width: 450,
     },
     greater: true,

@@ -3,7 +3,7 @@ import ModernTabbedInterface from './components/WalletInterface'
 
 const Wallet = () => {
   return (
-    <div className="">
+    <div className="h-full overflow-auto custom-scrollbar">
       <ModernTabbedInterface />
     </div>
   )

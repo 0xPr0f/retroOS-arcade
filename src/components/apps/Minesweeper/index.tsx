@@ -3,7 +3,7 @@ import MinesweeperApp from './components/MinesApp'
 
 const MineSweeperGame = () => {
   return (
-    <div className="p-6">
+    <div className="overflow-y-auto w-full h-full">
       <MinesweeperApp />
     </div>
   )

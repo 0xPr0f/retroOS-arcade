@@ -1,9 +1,8 @@
 'use client'
 import { useState } from 'react'
-import { Home, Settings, User } from 'lucide-react'
+import { Home, Wallet, Clock, ChevronRight } from 'lucide-react'
 import { NavItem } from './NavItem'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, Monitor, Gauge } from 'lucide-react'
 import { HomeContent } from './tabs/Portfolio'
 import { ProfileContent } from './tabs/Transfer'
 import { parseAsInteger } from 'nuqs'
@@ -12,13 +11,14 @@ import { ActivityContent } from './tabs/Activity'
 
 const navItems = [
   { icon: Home, label: 'Portfolio', content: HomeContent },
-  { icon: User, label: 'Transfer', content: ProfileContent },
-  { icon: User, label: 'Activity', content: ActivityContent },
+  { icon: Wallet, label: 'Transfer', content: ProfileContent },
+  { icon: Clock, label: 'Activity', content: ActivityContent },
 ]
 
 interface NavigationProps {
   className?: string
 }
+
 function ModernTabbedInterface({ className = '' }: NavigationProps) {
   const { useSaveState } = useExperimentalFeatures()
 
@@ -32,21 +32,21 @@ function ModernTabbedInterface({ className = '' }: NavigationProps) {
   const ActiveContent = navItems[activeItem].content
 
   return (
-    <div className={`flex ${className}`}>
+    <div className={`flex ${className} bg-gray-900 text-white h-full`}>
       <motion.nav
         initial={false}
-        animate={{ width: isExpanded ? 170 : 75 }}
-        className="relative flex h-fit flex-col gap-4 border-r border-gray-200 bg-gray-50/50 p-4"
+        animate={{ width: isExpanded ? 180 : 75 }}
+        className="relative flex flex-col gap-4 border-r border-gray-700/50 bg-gray-800/50 p-4 h-full"
       >
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="absolute -right-3 top-6 flex h-6 w-6 items-center justify-center rounded-full border bg-white shadow-sm"
+          className="absolute -right-3 top-6 flex h-6 w-6 items-center justify-center rounded-full border border-gray-700 bg-gray-800 shadow-md hover:bg-gray-700 transition-colors z-10"
         >
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.2 }}
           >
-            <ChevronRight className="h-4 w-4 text-gray-600" />
+            <ChevronRight className="h-4 w-4 text-blue-400" />
           </motion.div>
         </button>
         <div className="h-4" />
@@ -64,7 +64,7 @@ function ModernTabbedInterface({ className = '' }: NavigationProps) {
         </div>
       </motion.nav>
 
-      <main className="flex-1">
+      <main className="flex-1 overflow-auto">
         <ActiveContent />
       </main>
     </div>

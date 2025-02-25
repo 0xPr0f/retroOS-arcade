@@ -11,19 +11,15 @@ import { Button, Button2 } from '@/components/pc/drives/UI/UI_Components.v1'
 import { GameStatus, TransactionState } from './types'
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from './abidetails'
 import {
-  defaultBlueBG,
-  lightBlue,
-} from '@/components/pc/drives/Extensions/colors'
-import {
   copyToClipboard,
   shortenText,
 } from '@/components/pc/drives/Extensions/utils'
-import { Check, Copy } from 'lucide-react'
+import { Check, Copy, X, Circle, Clock, Trophy, Loader2 } from 'lucide-react'
 import { cn } from '@/components/library/utils'
 import { usePregenTransaction } from '@/components/pc/drives/Storage&Hooks/PregenInteractions'
 import { usePregenSession } from '@/components/pc/drives/Storage&Hooks/PregenSession'
 import { useNotifications } from '@/components/pc/drives/Extensions/ToastNotifs'
-import { zeroAddress } from 'viem'
+import { zeroAddress, zeroHash } from 'viem'
 
 const TicTacToeMP = () => {
   const { address: playerAddress, isConnected } = useAccount()
@@ -48,6 +44,7 @@ const TicTacToeMP = () => {
     Record<string, TransactionState>
   >({})
   const [leftGame, setLeftGame] = useState<boolean>(false)
+  const [lastMove, setLastMove] = useState<number | null>(null) // Track last move for animation
 
   const { addNotification } = useNotifications()
 
@@ -297,7 +294,7 @@ const TicTacToeMP = () => {
     if (
       currentGame &&
       typeof currentGame === 'string' &&
-      currentGame !== zeroAddress
+      currentGame !== zeroHash
     ) {
       setGameId(currentGame)
       refetchGameState()
@@ -331,6 +328,7 @@ const TicTacToeMP = () => {
     }
     if (!gameId || !gameState?.[1]) return
     updateTransactionState('makeMove', { status: 'loading' })
+    setLastMove(position) // Track the last move for animation
     try {
       if (isConnected) {
         await writeMakeMove({
@@ -453,116 +451,293 @@ const TicTacToeMP = () => {
     setIsOnChain(!isChainUnavailable)
   }, [chainId])
 
-  const renderBoard = () => (
-    <div className="grid grid-cols-3 gap-2 w-64 h-64">
-      {board.map((value, index) => (
-        <div
-          key={index}
-          className="w-20 h-20 border-2 border-gray-300 flex items-center justify-center"
-        >
-          <button
-            onClick={() => handleMove(index)}
-            disabled={
-              !gameState?.[1] ||
-              gameStatus === GameStatus.FINISHED ||
-              value !== 0 ||
+  // Get the winning line for highlighting
+  const getWinningLine = () => {
+    if (gameStatus !== GameStatus.FINISHED || leftGame) return null
+
+    const winLines = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6],
+    ]
+
+    for (let line of winLines) {
+      const [a, b, c] = line
+      if (board[a] > 0 && board[a] === board[b] && board[a] === board[c]) {
+        return line
+      }
+    }
+
+    return null
+  }
+
+  const renderBoard = () => {
+    const winningLine = getWinningLine()
+
+    return (
+      <div className="grid grid-cols-3 gap-2 w-72 h-72">
+        {board.map((value, index) => {
+          const isWinningCell = winningLine?.includes(index)
+          const isLastMoveCell = lastMove === index
+          const canPlay =
+            gameState?.[1] &&
+            gameStatus === GameStatus.PLAYING &&
+            value === 0 &&
+            !(
               (isConnected ? isMakingMove : isMakingMovePregen) ||
-              isWaitingForMove ||
-              //Lower case the comparison
-              (gameState?.[5] // isXNext
-                ? gameState?.[0].toLowerCase() !== address // playerX
-                : gameState?.[1].toLowerCase() !== address) // playerO
-            }
-            className={`
-              w-full h-full text-5xl font-bold
-              ${
-                value === 1
-                  ? 'text-blue-500'
-                  : value === 2
-                  ? 'text-red-500'
-                  : ''
-              }
-              ${
-                (isConnected ? isMakingMove : isMakingMovePregen) ||
-                isWaitingForMove
-                  ? 'opacity-50 cursor-not-allowed'
-                  : ''
-              }
-              hover:bg-gray-100 transition-colors
-            `}
-          >
-            {value === 1 ? 'X' : value === 2 ? 'O' : ''}
-          </button>
+              isWaitingForMove
+            ) &&
+            (gameState?.[5] // isXNext
+              ? gameState?.[0].toLowerCase() === address // playerX
+              : gameState?.[1].toLowerCase() === address) // playerO
+
+          return (
+            <div
+              key={index}
+              className={`relative bg-gray-800/40 rounded-lg border ${
+                isWinningCell
+                  ? value === 1
+                    ? 'border-blue-500/70'
+                    : 'border-red-500/70'
+                  : 'border-gray-700/30'
+              } transition-all duration-300`}
+            >
+              <button
+                onClick={() => handleMove(index)}
+                disabled={!canPlay}
+                className={`
+                  w-full h-full flex items-center justify-center rounded-lg 
+                  ${canPlay ? 'hover:bg-gray-700/50' : ''}
+                  ${
+                    (isConnected ? isMakingMove : isMakingMovePregen) ||
+                    isWaitingForMove
+                      ? 'cursor-wait'
+                      : ''
+                  }
+                  transition-colors
+                `}
+              >
+                <div className="w-12 h-12 flex items-center justify-center">
+                  {value === 1 && (
+                    <div
+                      className={`${
+                        isLastMoveCell ? 'animate-pulse-once' : ''
+                      }`}
+                    >
+                      <X className="h-10 w-10 text-blue-500" strokeWidth={3} />
+                    </div>
+                  )}
+                  {value === 2 && (
+                    <div
+                      className={`${
+                        isLastMoveCell ? 'animate-pulse-once' : ''
+                      }`}
+                    >
+                      <Circle
+                        className="h-9 w-9 text-red-500"
+                        strokeWidth={3}
+                      />
+                    </div>
+                  )}
+                </div>
+                {(isConnected ? isMakingMove : isMakingMovePregen) &&
+                  lastMove === index && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-lg">
+                      <Loader2 className="h-6 w-6 text-blue-400 animate-spin" />
+                    </div>
+                  )}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  const renderGameInfo = () => {
+    if (!gameId) return null
+
+    return (
+      <div className="bg-gray-800/40 rounded-lg p-3 border border-gray-700/30 mb-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-400">Game ID</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-mono text-gray-300">
+              {shortenText(gameId, 6, 6)}
+            </span>
+            {copied.gameId ? (
+              <Check className="w-3.5 h-3.5 text-green-500" />
+            ) : (
+              <Copy
+                className="w-3.5 h-3.5 cursor-pointer text-gray-500 hover:text-gray-300 transition-colors"
+                onClick={() => {
+                  copyToClipboard(gameId)
+                  setCopied((prev) => ({ ...prev, gameId: true }))
+                  setTimeout(
+                    () => setCopied((prev) => ({ ...prev, gameId: false })),
+                    2000
+                  )
+                }}
+              />
+            )}
+          </div>
         </div>
-      ))}
-    </div>
-  )
+
+        {gameState && (
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-sm text-gray-400">
+              {gameState[0]?.toLowerCase() !== address
+                ? 'Opponent (X)'
+                : 'Opponent (O)'}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-mono text-gray-300">
+                {shortenText(
+                  gameState[0]?.toLowerCase() !== address
+                    ? gameState[0]
+                    : gameState[1],
+                  5,
+                  5
+                )}
+              </span>
+              {copied.opponent ? (
+                <Check className="w-3.5 h-3.5 text-green-500" />
+              ) : (
+                <Copy
+                  className="w-3.5 h-3.5 cursor-pointer text-gray-500 hover:text-gray-300 transition-colors"
+                  onClick={() => {
+                    copyToClipboard(
+                      gameState[0].toLowerCase() !== address
+                        ? gameState[0]
+                        : gameState[1]
+                    )
+                    setCopied((prev) => ({ ...prev, opponent: true }))
+                    setTimeout(
+                      () => setCopied((prev) => ({ ...prev, opponent: false })),
+                      2000
+                    )
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const renderGameStatus = () => {
     if (queuePosition > 0) {
       return (
-        <div className="text-yellow-500">
-          In Queue - Position: {queuePosition}
+        <div className="flex items-center gap-2 bg-yellow-500/20 px-3 py-1.5 rounded-lg border border-yellow-500/30 text-yellow-400 mb-3">
+          <Clock className="w-4 h-4" />
+          <span>In Queue - Position: {queuePosition}</span>
         </div>
       )
     }
 
     switch (gameStatus) {
       case GameStatus.WAITING:
-        return <div className="text-yellow-500">Waiting for opponent...</div>
+        return (
+          <div className="flex items-center gap-2 bg-yellow-500/20 px-3 py-1.5 rounded-lg border border-yellow-500/30 text-yellow-400 mb-3">
+            <Clock className="w-4 h-4" />
+            <span>Waiting for opponent...</span>
+          </div>
+        )
       case GameStatus.PLAYING:
         const isYourTurn = gameState?.[5]
           ? gameState?.[0].toLowerCase() === address
           : gameState?.[1].toLowerCase() === address
         return (
-          <div className="mt-1">
+          <div className="space-y-2 mb-3">
             <div
-              className={`text-blue-500 ${
+              className={`
+              flex items-center gap-2 px-3 py-1.5 rounded-lg
+              ${
+                gameState?.[5]
+                  ? 'bg-blue-500/20 border border-blue-500/50'
+                  : 'bg-red-500/20 border border-red-500/50'
+              }
+              ${
                 (isConnected ? isMakingMove : isMakingMovePregen) ||
                 isWaitingForMove
                   ? 'animate-pulse'
                   : ''
-              }`}
+              }
+            `}
             >
-              {gameState?.[5] ? 'X' : 'O'}'s turn
-              {((isConnected ? isMakingMove : isMakingMovePregen) ||
-                isWaitingForMove) &&
-                ' (Processing...)'}
+              <div
+                className={`
+                w-4 h-4 rounded-full flex items-center justify-center
+                ${gameState?.[5] ? 'text-blue-500' : 'text-red-500'}
+              `}
+              >
+                {gameState?.[5] ? <X size={14} /> : <Circle size={12} />}
+              </div>
+              <span className="font-medium text-sm">
+                {(isConnected ? isMakingMove : isMakingMovePregen) ||
+                isWaitingForMove
+                  ? 'Processing move...'
+                  : `${gameState?.[5] ? 'X' : 'O'}'s turn`}
+              </span>
             </div>
+
             <div
-              className={`font-bold ${
-                isYourTurn ? 'text-green-500' : 'text-red-500'
-              }`}
+              className={`
+              flex items-center gap-2 px-3 py-1.5 rounded-lg
+              ${
+                isYourTurn
+                  ? 'bg-green-500/20 border border-green-500/50 text-green-400'
+                  : 'bg-gray-700/30 border border-gray-600/30 text-gray-400'
+              }
+            `}
             >
-              {isYourTurn ? 'Your turn to play!' : "Opponent's turn to play"}
+              <span className="font-medium text-sm">
+                {isYourTurn ? 'Your turn to play!' : "Opponent's turn to play"}
+              </span>
             </div>
           </div>
         )
       case GameStatus.FINISHED:
         return (
-          <div className="space-y-2 mt-1">
+          <div className="space-y-2 mb-3">
             <div
-              className={`text-green-500 ${
+              className={`
+              flex items-center gap-2 px-3 py-1.5 rounded-lg
+              ${
                 leftGame
-                  ? 'text-red-500'
+                  ? 'bg-red-500/20 border border-red-500/50 text-red-400'
                   : gameState?.[2].toLowerCase() === address
-                  ? 'text-green-500'
-                  : 'text-red-500'
-              }`}
+                  ? 'bg-green-500/20 border border-green-500/50 text-green-400'
+                  : 'bg-red-500/20 border border-red-500/50 text-red-400'
+              }
+            `}
             >
-              Game Over -{' '}
-              {leftGame
-                ? 'You forfeited the game!'
-                : gameState?.[2].toLowerCase() === address
-                ? 'You won!'
-                : 'Opponent won!'}
+              {leftGame ? (
+                <span className="font-medium text-sm">
+                  You forfeited the game!
+                </span>
+              ) : gameState?.[2].toLowerCase() === address ? (
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-yellow-400" />
+                  <span className="font-medium text-sm">You won!</span>
+                </div>
+              ) : (
+                <span className="font-medium text-sm">Opponent won!</span>
+              )}
             </div>
-            <Button2
+
+            <button
               onClick={handleResetGame}
-              className="w-full text-white py-2 rounded-sm bg-[#2563eb] hover:bg-[#1e4388]"
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors font-medium text-sm"
             >
-              Start New Game
-            </Button2>
+              <span>Start New Game</span>
+            </button>
           </div>
         )
       default:
@@ -572,150 +747,128 @@ const TicTacToeMP = () => {
 
   return (
     <div className="flex flex-col items-center">
-      <div className="mt-1 mb-1">
-        {!gameId ? (
-          <div className="flex flex-col mt-2 gap-2 items-center">
-            <Button
-              onClick={handleJoinQueue}
-              className={cn(
-                'w-full text-white py-2 mb-0 mt-2 rounded-sm transition duration-200',
-                `${
-                  (isConnected ? isJoiningQueue : isJoiningQueuePregen) ||
-                  isWaitingForJoinQueue
-                    ? 'opacity-50'
-                    : ''
-                }`
-              )}
-              style={{
-                backgroundColor: lightBlue,
-                transition: 'all 0.2s',
-              }}
-              disabled={
-                (isConnected ? isJoiningQueue : isJoiningQueuePregen) ||
-                isWaitingForJoinQueue ||
-                queuePosition > 0
-              }
-              onMouseEnter={(e) =>
-                ((e.target as HTMLButtonElement).style.backgroundColor =
-                  defaultBlueBG)
-              }
-              onMouseLeave={(e) =>
-                ((e.target as HTMLButtonElement).style.backgroundColor =
-                  lightBlue)
-              }
-            >
-              {(isConnected ? isJoiningQueue : isJoiningQueuePregen) ||
-              isWaitingForJoinQueue
-                ? 'Joining Queue...'
-                : queuePosition > 0
-                ? `In Queue - Position ${queuePosition}`
-                : 'Join Queue'}
-            </Button>
+      {/* Game info */}
+      {gameId && renderGameInfo()}
 
-            {queuePosition > 0 && (
-              <Button
-                onClick={handleLeaveQueue}
-                disabled={
-                  (isConnected ? isLeavingQueue : isLeavingQueuePregen) ||
-                  isWaitingForLeaveQueue
-                }
-                className={`w-full text-white py-2 mb-0 rounded-sm transition-colors duration-200 bg-[#ef4444] hover:bg-red-300 ${
-                  (isConnected ? isLeavingQueue : isLeavingQueuePregen) ||
-                  isWaitingForLeaveQueue
-                    ? 'opacity-50'
-                    : ''
-                }`}
-              >
-                <span className="transition-all duration-200 block">
-                  {(isConnected ? isLeavingQueue : isLeavingQueuePregen) ||
-                  isWaitingForLeaveQueue
-                    ? 'Leaving Queue...'
-                    : 'Leave Queue'}
-                </span>
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 hover:bg-gray-100 rounded-sm transition-colors duration-200">
-              <span className="font-medium">
-                Game ID: {shortenText(gameId, 7, 7)}
-              </span>
-              {copied.gameId ? (
-                <Check className="w-4 h-4 text-green-500" />
-              ) : (
-                <Copy
-                  className="w-4 h-4 cursor-pointer"
-                  onClick={() => {
-                    copyToClipboard(gameId)
+      {/* Status */}
+      {renderGameStatus()}
 
-                    setCopied((prev) => ({ ...prev, gameId: true }))
-                    setTimeout(
-                      () => setCopied((prev) => ({ ...prev, gameId: false })),
-                      2000
-                    )
-                  }}
-                />
-              )}
-            </div>
-            <div className="flex font-medium items-center justify-center gap-2 hover:bg-gray-100 rounded-sm transition-colors duration-200">
-              {gameState && (
-                <>
-                  {gameState[0]?.toLowerCase() !== address ? (
-                    <>Opponent (X): {shortenText(gameState[0], 5, 5)}</>
-                  ) : gameState[1]?.toLowerCase() !== address ? (
-                    <>Opponent (O): {shortenText(gameState[1], 5, 5)}</>
-                  ) : null}
-                  {copied.opponent ? (
-                    <Check className="w-4 h-4 text-green-500" />
-                  ) : (
-                    <Copy
-                      className="w-4 h-4 cursor-pointer"
-                      onClick={() => {
-                        copyToClipboard(
-                          gameState[0].toLowerCase() !== address
-                            ? gameState[0]
-                            : gameState[1]
-                        )
-                        setCopied((prev) => ({ ...prev, opponent: true }))
-                        setTimeout(
-                          () =>
-                            setCopied((prev) => ({ ...prev, opponent: false })),
-                          2000
-                        )
-                      }}
-                    />
-                  )}
-                </>
-              )}
-            </div>
-            {renderGameStatus()}
-          </div>
-        )}
-      </div>
-      <div className="flex justify-center mt-3">{renderBoard()}</div>
-      {gameId && gameStatus === GameStatus.PLAYING && (
-        <div>
-          <Button2
+      <div className="flex justify-center">{renderBoard()}</div>
+
+      {/* Action buttons */}
+      {!gameId ? (
+        <div className="flex flex-col gap-2 w-full mt-4">
+          <button
+            onClick={handleJoinQueue}
             disabled={
-              (isConnected ? isExitingMatch : isExitingMatchPregen) ||
-              isWaitingForExitMatch
+              (isConnected ? isJoiningQueue : isJoiningQueuePregen) ||
+              isWaitingForJoinQueue ||
+              queuePosition > 0
             }
-            onClick={handleExitMatch}
-            className={`w-full mt-4 text-white py-2 rounded-sm bg-[#2563eb] hover:bg-[#1e4388] ${
+            className={`
+              w-full flex items-center justify-center gap-2
+              py-2 px-4 rounded-lg transition-colors
+              ${
+                queuePosition > 0
+                  ? 'bg-yellow-600 hover:bg-yellow-700'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              } 
+              text-white font-medium
+              ${
+                (isConnected ? isJoiningQueue : isJoiningQueuePregen) ||
+                isWaitingForJoinQueue
+                  ? 'opacity-70 cursor-wait'
+                  : ''
+              }
+            `}
+          >
+            {(isConnected ? isJoiningQueue : isJoiningQueuePregen) ||
+            isWaitingForJoinQueue ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Joining Queue...</span>
+              </>
+            ) : queuePosition > 0 ? (
+              <>
+                <Clock className="w-4 h-4" />
+                <span>In Queue - Position {queuePosition}</span>
+              </>
+            ) : (
+              <span>Join Queue</span>
+            )}
+          </button>
+
+          {queuePosition > 0 && (
+            <button
+              onClick={handleLeaveQueue}
+              disabled={
+                (isConnected ? isLeavingQueue : isLeavingQueuePregen) ||
+                isWaitingForLeaveQueue
+              }
+              className={`
+                w-full flex items-center justify-center gap-2
+                py-2 px-4 rounded-lg transition-colors
+                bg-red-600 hover:bg-red-700 text-white font-medium
+                ${
+                  (isConnected ? isLeavingQueue : isLeavingQueuePregen) ||
+                  isWaitingForLeaveQueue
+                    ? 'opacity-70 cursor-wait'
+                    : ''
+                }
+              `}
+            >
+              {(isConnected ? isLeavingQueue : isLeavingQueuePregen) ||
+              isWaitingForLeaveQueue ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Leaving Queue...</span>
+                </>
+              ) : (
+                <span>Leave Queue</span>
+              )}
+            </button>
+          )}
+        </div>
+      ) : gameStatus === GameStatus.PLAYING ? (
+        <button
+          disabled={
+            (isConnected ? isExitingMatch : isExitingMatchPregen) ||
+            isWaitingForExitMatch
+          }
+          onClick={handleExitMatch}
+          className={`
+            w-full flex items-center justify-center gap-2
+            py-2 px-4 rounded-lg transition-colors
+            bg-red-600 hover:bg-red-700 text-white font-medium mt-4
+            ${
               (isConnected ? isExitingMatch : isExitingMatchPregen) ||
               isWaitingForExitMatch
-                ? 'opacity-50'
+                ? 'opacity-70 cursor-wait'
                 : ''
-            }`}
-          >
-            {(isConnected ? isExitingMatch : isExitingMatchPregen) ||
-            isWaitingForExitMatch
-              ? 'Leaving Match...'
-              : 'Leave Match'}
-          </Button2>
-        </div>
-      )}
+            }
+          `}
+        >
+          {(isConnected ? isExitingMatch : isExitingMatchPregen) ||
+          isWaitingForExitMatch ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Leaving Match...</span>
+            </>
+          ) : (
+            <span>Leave Match</span>
+          )}
+        </button>
+      ) : null}
+
+      <style>{`
+        @keyframes pulse-once {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        .animate-pulse-once {
+          animation: pulse-once 0.5s ease-in-out;
+        }
+      `}</style>
     </div>
   )
 }

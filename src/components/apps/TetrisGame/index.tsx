@@ -103,7 +103,7 @@ const TetrisGame = ({
   useEffect(() => {
     // Set custom navbar content when the window opens.
     setNavbarContent(
-      <div className="flex items-center space-x-4 border gap-4 border-black">
+      <div className="flex items-center space-x-4 gap-4">
         <span className="text-lg font-extrabold">Tetris Game</span>
         <button
           className="hover:underline h-full "

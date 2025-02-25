@@ -3,7 +3,7 @@ import ChainReactionGame from './components/chainReactionGame'
 
 const ChainReaction = () => {
   return (
-    <div>
+    <div className="h-full w-full overflow-y-auto">
       <ChainReactionGame />
     </div>
   )
