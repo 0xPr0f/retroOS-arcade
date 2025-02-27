@@ -22,7 +22,7 @@ import {
 } from '@/components/pc/drives'
 import { config } from '../deployments/config'
 import { formatTimeAgoUnix } from './Game'
-import { getCharacterClassLabel } from './Character'
+import { getCharacterClassLabel, truncateDescription } from './Character'
 import { parseGwei, zeroAddress } from 'viem'
 
 const lightBlue = '#2563eb'
@@ -211,7 +211,7 @@ interface BattleCardProps {
   address?: string
   isActive: boolean
   isAttacking: boolean
-  attackType?: string
+  attackType?: 'special2' | 'special1' | 'normal'
   powerPoints?: number
 }
 
@@ -371,7 +371,7 @@ const BattleCard: React.FC<BattleCardProps> = ({
               absolute inset-0 
               animate-pulse
               bg-gradient-to-br ${classStyle.primaryColor}
-              ${attackType === 'ultimate' ? 'opacity-50' : 'opacity-30'}
+              ${attackType === 'special2' ? 'opacity-20' : 'opacity-10'}
             `}
           />
         )}
@@ -448,13 +448,13 @@ const BattleCard: React.FC<BattleCardProps> = ({
 }
 
 const AttackEffect: React.FC<{
-  type?: string
+  type?: 'special2' | 'special1' | 'normal'
   classStyle: CharacterClass
 }> = ({ type, classStyle }) => {
   if (!type) return null
 
   const effects = {
-    quick: (
+    normal: (
       <div
         className="absolute -right-1/4 top-1/2 -translate-y-1/2
                     w-32 h-32 animate-attack-quick"
@@ -468,7 +468,7 @@ const AttackEffect: React.FC<{
         />
       </div>
     ),
-    power: (
+    special1: (
       <div
         className="absolute -right-1/2 top-1/2 -translate-y-1/2
                     w-48 h-48 animate-attack-power"
@@ -489,7 +489,7 @@ const AttackEffect: React.FC<{
         />
       </div>
     ),
-    ultimate: (
+    special2: (
       <div className="absolute inset-0 z-30">
         <div
           className={`
@@ -977,20 +977,14 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
   })
   const isWaitingForAttack = isSmartAccount ? false : isWaitingForAttackT
 
-  console.log(isWaitingForAttack && isWaitingForAttack)
   const handleAttack = async (
     type: 'quick' | 'power' | 'ultimate',
     cost: number
   ) => {
     if (powerPoints < cost) return
-    await handleAttackInBattle(cost)
     setIsAttacking(true)
+    await handleAttackInBattle(cost)
     setPowerPoints((prev) => prev - cost)
-
-    setTimeout(() => {
-      setIsAttacking(false)
-      setAttackType(undefined)
-    }, 1000)
   }
 
   const handleEndTurn = async () => {
@@ -1026,13 +1020,17 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
     eventName: 'AttackPerformed',
     onLogs(logs: any) {
       console.log('AttackPerformed', logs[0].args)
-      const { battleId, attacker } = logs[0].args
+      const { battleId, attacker, attackType } = logs[0].args
       if (Number(battleId) === Number(gameId)) {
         refetchBattleSnapshots()
         refetchBattleDetails()
       }
       if (attacker.toLowerCase() === address?.toLowerCase()) {
-        //setAttackType(type)
+        setAttackType(attackType)
+        setTimeout(() => {
+          setIsAttacking(false)
+          setAttackType(undefined)
+        }, 2000)
       }
     },
   })
@@ -1178,7 +1176,7 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
                 </div>
                 <div className="flex items-center gap-2 bg-gray-900/30 px-3 py-1.5 rounded-lg border border-gray-700/30">
                   <span className="text-blue-400">⏱️</span>
-                  <span className="text-gray-300 text-sm">Start Timer:</span>
+                  <span className="text-gray-300 text-sm">Start Time:</span>
                   <span className="text-white font-bold">
                     {formatTimeAgoUnix(Number(battleDetailsData?.startTime))}
                   </span>
@@ -1215,7 +1213,7 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
                     battleDetailsData?.currentTurnPlayer?.toLowerCase()
                 }
                 isAttacking={isAttacking}
-                attackType={attackType}
+                attackType={attackType as any}
               />
             </div>
 
@@ -1241,8 +1239,14 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
                       }`}
                     >
                       {winnerPlayer === battleDetailsData?.player1
-                        ? battleSnapshotsStateData?.player1Snapshot.name
-                        : battleSnapshotsStateData?.player2Snapshot.name}
+                        ? truncateDescription(
+                            battleSnapshotsStateData?.player1Snapshot.name!,
+                            17
+                          )
+                        : truncateDescription(
+                            battleSnapshotsStateData?.player2Snapshot.name!,
+                            17
+                          )}
                     </span>
                     {''} Won
                   </div>
@@ -1252,8 +1256,14 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
                   <div className="text-gray-400 text-sm">
                     {battleDetailsData?.currentTurnPlayer ===
                     battleDetailsData?.player1
-                      ? battleSnapshotsStateData?.player1Snapshot.name
-                      : battleSnapshotsStateData?.player2Snapshot.name}
+                      ? truncateDescription(
+                          battleSnapshotsStateData?.player1Snapshot.name!,
+                          17
+                        )
+                      : truncateDescription(
+                          battleSnapshotsStateData?.player2Snapshot.name!,
+                          17
+                        )}
                     's Turn
                   </div>
                 </div>

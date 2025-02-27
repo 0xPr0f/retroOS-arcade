@@ -465,6 +465,10 @@ const CharacterEdit: React.FC<{
     </div>
   )
 }
+export const truncateDescription = (description: string, maxLength = 100) => {
+  if (!description || description.length <= maxLength) return description
+  return description.substring(0, maxLength) + '...'
+}
 
 const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
   const { navigate } = useAppRouter()
@@ -669,11 +673,6 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
         border: 'border-gray-700/50',
       },
     })
-  }
-
-  const truncateDescription = (description: string, maxLength = 100) => {
-    if (!description || description.length <= maxLength) return description
-    return description.substring(0, maxLength) + '...'
   }
 
   if (!characterStats) return null

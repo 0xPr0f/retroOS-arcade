@@ -53,7 +53,7 @@ export const CharacterCreation: React.FC<{
     description: string
   }>({
     name: 'Neon Black',
-    url: 'This is a test',
+    url: '',
     image: null,
     description: '',
   })
@@ -237,22 +237,31 @@ export const CharacterCreation: React.FC<{
       if (!characterInfo.image) return
       setIsCreating(true)
       try {
-        const keyRequest = await axios.get('/api/create/pinatakey')
-        const keyData = keyRequest.data.data
-        const upload = await pinata.upload
-          .file(characterInfo.image!)
-          .key(keyData.JWT)
+        let tokenUriIpfsUrl = ''
+        if (characterInfo.url.length < 26) {
+          const keyRequest = await axios.get('/api/create/pinatakey')
+          const keyData = keyRequest.data.data
+          const upload = await pinata.upload
+            .file(characterInfo.image!)
+            .key(keyData.JWT)
 
-        const imageIpfsUrl = await pinata.gateways.convert(upload.IpfsHash)
-        const metadata = {
-          name: characterInfo.name,
-          description: characterInfo.description,
-          image: imageIpfsUrl,
-          raw_image_hash: upload.IpfsHash,
+          const imageIpfsUrl = await pinata.gateways.convert(upload.IpfsHash)
+          const metadata = {
+            name: characterInfo.name,
+            description: characterInfo.description,
+            image: imageIpfsUrl,
+            raw_image_hash: upload.IpfsHash,
+          }
+          const tokenUri = await pinata.upload.json(metadata).key(keyData.JWT)
+          tokenUriIpfsUrl = await pinata.gateways.convert(tokenUri.IpfsHash)
+          setCharacterInfo({
+            ...characterInfo,
+            url: tokenUriIpfsUrl,
+          })
         }
-        const tokenUri = await pinata.upload.json(metadata).key(keyData.JWT)
-        const tokenUriIpfsUrl = await pinata.gateways.convert(tokenUri.IpfsHash)
-        await handleCreateCharacter(tokenUriIpfsUrl)
+        await handleCreateCharacter(
+          tokenUriIpfsUrl.length < 10 ? characterInfo.url : tokenUriIpfsUrl
+        )
       } catch (error) {
         console.error('Error creating character:', error)
         addNotification({

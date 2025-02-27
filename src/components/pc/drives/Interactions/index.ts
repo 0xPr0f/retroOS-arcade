@@ -296,6 +296,7 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
         data: data || '0x',
       },
     ])
+
     const txHash = await kernelClient.sendUserOperation({
       callData: encodedCalls,
     })

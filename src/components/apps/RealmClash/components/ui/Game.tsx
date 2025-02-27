@@ -185,7 +185,6 @@ const GameHome: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
 
   const handleGameClick = (gameId: string) => {
-    console.log(currentRoute)
     navigate(`/gameplay/${gameId}`)
   }
   const { isConnected, address: playerAddress } = useAccount()
@@ -560,7 +559,6 @@ const GameCard: React.FC<{ gameId?: string; onClick: () => void }> = ({
     turnState: battleGameData[8],
     turnNumber: battleGameData[9],
   }
-  console.log(battleDetails)
   return (
     <div
       onClick={onClick}
