@@ -2,6 +2,8 @@
 
 A web-based arcade gaming platform that simulates a desktop operating system experience. Play classic games like Snake, Tetris, and Minesweeper in a familiar desktop environment.
 
+[RetroOS contracts](https://github.com/0xPr0f/retroOS-contracts) for the arcade.
+
 ## ✨ Features
 
 - 🖥️ Complete window management system:
