@@ -1,16 +1,13 @@
 import PcDesktop from '@/components/pc'
 import React, { useEffect } from 'react'
 import { useTypedValue } from '@/components/pc/drives'
-
+import FileExplorer from './components/Computer'
 const MyComputer = () => {
-  const [userInstalledApps, setUserInstalledApps] = useTypedValue(
-    'user_installed_apps'
+  return (
+    <div className="text-black w-full h-full overflow-y-auto">
+      <FileExplorer />
+    </div>
   )
-  useEffect(() => {
-    setUserInstalledApps('20')
-    console.log(userInstalledApps)
-  }, [userInstalledApps])
-  return <div className="text-black">MyComputer</div>
 }
 
 export default MyComputer

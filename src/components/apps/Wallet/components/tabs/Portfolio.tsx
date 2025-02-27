@@ -843,7 +843,12 @@ export function HomeContent() {
                                       <span>{nft.tokenType}</span>
                                     </div>
                                   )}
-                                  <button className="mt-2 w-full py-1.5 bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/40 rounded-lg text-blue-400 text-xs transition-colors flex items-center justify-center gap-1">
+                                  <button
+                                    onClick={() => {
+                                      console.log(nft)
+                                    }}
+                                    className="mt-2 w-full py-1.5 bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/40 rounded-lg text-blue-400 text-xs transition-colors flex items-center justify-center gap-1"
+                                  >
                                     <ExternalLink className="h-3 w-3" />
                                     View Details
                                   </button>

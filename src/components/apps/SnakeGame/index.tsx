@@ -77,12 +77,6 @@ const SnakeGame = ({
   }
 
   useEffect(() => {
-    if (onFocus) {
-      console.log('focus', 1)
-    }
-  }, [onFocus])
-
-  useEffect(() => {
     // Set custom navbar content when the window opens.
     setNavbarContent(
       <div className="flex items-center space-x-4 gap-4">

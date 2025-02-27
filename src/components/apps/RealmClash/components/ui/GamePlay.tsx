@@ -1,6 +1,11 @@
 import { CHARACTER_CARD_ABI } from '../deployments/abi'
 import { CHARACTER_CARD_ADDRESS } from '../deployments/address'
-import { useAccount, useReadContracts, useWriteContract } from 'wagmi'
+import {
+  useAccount,
+  useReadContracts,
+  useWaitForTransactionReceipt,
+  useWriteContract,
+} from 'wagmi'
 import { useChainId, useReadContract } from 'wagmi'
 import { useWatchContractEvent } from 'wagmi'
 import AuraEffect from './AuraEffect'
@@ -18,7 +23,8 @@ import {
 import { config } from '../deployments/config'
 import { formatTimeAgoUnix } from './Game'
 import { getCharacterClassLabel } from './Character'
-import { zeroAddress } from 'viem'
+import { parseGwei, zeroAddress } from 'viem'
+
 const lightBlue = '#2563eb'
 const weirdBlue = '#3a6ea5'
 const lightRed = '#dc2626'
@@ -218,6 +224,41 @@ const BattleCard: React.FC<BattleCardProps> = ({
   powerPoints,
 }) => {
   const defaultClass = classStylesCustom.Human
+  const [currentOriginIndex, setCurrentOriginIndex] = useState(0)
+  const [metadata, setMetadata] = useState<{
+    name?: string
+    description?: string
+    image?: string
+  } | null>(null)
+  const [imageLoading, setImageLoading] = useState(true)
+
+  const ipfsOrigins = [
+    'https://nftstorage.link',
+    'https://gateway.pinata.cloud',
+    'https://dweb.link',
+    'https://flk-ipfs.xyz',
+    'https://ipfs.io',
+    'https://brown-perfect-marlin-23.mypinata.cloud',
+  ]
+
+  const getIpfsPath = (url: string | undefined) => {
+    if (!url) return ''
+    const ipfsMatch = url.match(/\/ipfs\/[^/]+/)
+    return ipfsMatch ? ipfsMatch[0] : ''
+  }
+
+  const getUrlWithCurrentOrigin = (url: string | undefined) => {
+    if (!url) return ''
+    const ipfsPath = getIpfsPath(url)
+    if (!ipfsPath) return url // Return original if no IPFS path found
+    return `${ipfsOrigins[currentOriginIndex]}${ipfsPath}`
+  }
+
+  const handleImageError = () => {
+    if (currentOriginIndex < ipfsOrigins.length - 1) {
+      setCurrentOriginIndex((prev) => prev + 1)
+    }
+  }
 
   const { data: characterStats, refetch: refetchCharacterStats } =
     useReadContract({
@@ -230,6 +271,48 @@ const BattleCard: React.FC<BattleCardProps> = ({
         refetchInterval: 3000,
       },
     })
+
+  const { data: tokenUrl } = useReadContract({
+    address: CHARACTER_CARD_ADDRESS,
+    abi: CHARACTER_CARD_ABI,
+    functionName: 'tokenURI',
+    args: [character?.characterId],
+    query: {
+      enabled: !!character?.characterId,
+    },
+  })
+
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      if (!tokenUrl) return
+
+      try {
+        const metadataUrl = getUrlWithCurrentOrigin(tokenUrl as string)
+        const response = await fetch(metadataUrl)
+
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`)
+
+        const text = await response.text()
+        if (!text || text.trim().length === 0) throw new Error('Empty response')
+
+        try {
+          const data = JSON.parse(text)
+          setMetadata(data)
+          setImageLoading(true)
+        } catch (parseError) {
+          console.error('Invalid JSON format:', parseError)
+        }
+      } catch (error) {
+        console.error('Error fetching metadata:', error)
+        if (currentOriginIndex < ipfsOrigins.length - 1) {
+          setCurrentOriginIndex((prev) => prev + 1)
+        }
+      }
+    }
+
+    fetchMetadata()
+  }, [tokenUrl, currentOriginIndex])
 
   if (!characterStats) return null
   const characterStatsData = characterStats as any
@@ -257,9 +340,28 @@ const BattleCard: React.FC<BattleCardProps> = ({
         `}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-800">
-          <div className="w-full h-full flex items-center justify-center text-[8vw]">
-            👤
-          </div>
+          {metadata?.image ? (
+            <>
+              <img
+                src={getUrlWithCurrentOrigin(metadata.image)}
+                alt={metadata.name || 'Character'}
+                className={`w-full h-full object-cover ${
+                  imageLoading ? 'hidden' : 'block'
+                }`}
+                onLoad={() => setImageLoading(false)}
+                onError={handleImageError}
+              />
+              {imageLoading && (
+                <div className="w-full h-full flex items-center justify-center bg-gray-800 animate-pulse">
+                  <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[8vw]">
+              👤
+            </div>
+          )}
         </div>
 
         {/* Aura Effects */}
@@ -280,7 +382,7 @@ const BattleCard: React.FC<BattleCardProps> = ({
           <div className="space-y-2">
             <div className="flex justify-between items-start">
               <h3 className="text-xl font-bold text-white">
-                {character?.name || 'Unknown'}
+                {metadata?.name || character?.name || 'Unknown'}
               </h3>
               <span
                 className={`
@@ -419,7 +521,8 @@ const AttackButton: React.FC<{
   powerCost: number
   onClick: () => void
   disabled?: boolean
-}> = ({ icon, label, type, powerCost, onClick, disabled }) => {
+  isLoading?: boolean
+}> = ({ icon, label, type, powerCost, onClick, disabled, isLoading }) => {
   const styles = {
     quick: 'from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800',
     power:
@@ -463,7 +566,7 @@ const AttackButton: React.FC<{
       <button
         ref={buttonRef}
         onClick={onClick}
-        disabled={disabled}
+        disabled={disabled || isLoading}
         className={`
           relative h-10 w-full px-2 rounded-lg overflow-hidden
           bg-gradient-to-r ${styles[type]}
@@ -474,6 +577,28 @@ const AttackButton: React.FC<{
         <div className="relative z-10 flex items-center justify-center gap-1">
           <span className="text-2xl flex-shrink-0">{icon}</span>
           <span className="font-medium whitespace-nowrap">{displayText}</span>
+          {isLoading && (
+            <svg
+              className="animate-spin h-5 w-5 text-white ml-1"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+          )}
         </div>
 
         <div
@@ -500,22 +625,50 @@ const EndTurnButton: React.FC<{
   onClick: () => void
   powerPoints: number
   isPlayerTurn: boolean
-}> = ({ onClick, powerPoints, isPlayerTurn }) => {
+  isLoading: boolean
+  disabled?: boolean
+}> = ({ onClick, powerPoints, isPlayerTurn, isLoading, disabled }) => {
   const canMakeMove = powerPoints >= 2
   return (
     <div className="relative">
       <button
         onClick={onClick}
-        disabled={!isPlayerTurn}
+        disabled={!isPlayerTurn || isLoading || disabled}
         className={`cursor-pointer whitespace-nowrap w-fit px-2 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200 ${
-          isPlayerTurn
+          isPlayerTurn && !isLoading
             ? 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-400 border border-blue-500/30 hover:from-blue-500/30 hover:to-blue-600/30 animate-pulse'
             : 'bg-gray-700/20 text-gray-500 border border-gray-600/30 cursor-not-allowed'
         }`}
       >
-        🔄 End Turn
+        {isLoading ? (
+          <span className="flex items-center gap-2">
+            <svg
+              className="animate-spin h-4 w-4 text-blue-400"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Ending Turn...
+          </span>
+        ) : (
+          '🔄 End Turn'
+        )}
       </button>
-      {isPlayerTurn && !canMakeMove && (
+      {isPlayerTurn && !canMakeMove && !isLoading && (
         <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-sm text-gray-400 whitespace-nowrap bg-gray-900/80 px-2 py-1 rounded">
           No moves available
         </div>
@@ -643,6 +796,10 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
           args: [gameId],
         },
       ],
+      query: {
+        enabled: !!gameId,
+        refetchInterval: 3000,
+      },
     })
 
   const [winnerPlayer, setWinnerPlayer] = useState<string>()
@@ -749,10 +906,45 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
       })
     }
   }
+  const { isLoading: isWaitingForForfeitBattleT } =
+    useWaitForTransactionReceipt({
+      hash: isConnected ? battleData : battleDataPregen,
+    })
+  const isWaitingForForfeitBattle = isSmartAccount
+    ? false
+    : isWaitingForForfeitBattleT
 
   const handleForfeitBattleAction = async () => {
     await handleForfeitBattle()
   }
+
+  const {
+    writeContract: writeBattlePerformAttack,
+    data: battleDataPerformAttack,
+    isPending: isBattlePerformAttack,
+    error: battleErrorPerformAttack,
+  } = useWriteContract({
+    mutation: {
+      onError: (error: any) => {
+        console.log(error)
+      },
+      onSuccess: (txHash: any) => {},
+    },
+  })
+
+  // Pregen Join Queue Contract Write
+  const {
+    writeContract: writeBattlePerformAttackPregen,
+    data: battleDataPerformAttackPregen,
+    isPending: isBattlePerformAttackPregen,
+  } = usePregenTransaction({
+    mutation: {
+      onError: (error: any) => {
+        console.log(error)
+      },
+      onSuccess: (txHash: any) => {},
+    },
+  })
 
   const handleAttackInBattle = async (attackType: number) => {
     if (isChainUnavailable) {
@@ -765,14 +957,14 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
       return
     }
     if (isConnected) {
-      await writeBattle({
+      await writeBattlePerformAttack({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
         functionName: 'performAttack',
         args: [gameId, attackType],
       })
     } else if (isLoginPregenSession) {
-      await writeBattlePregen({
+      await writeBattlePerformAttackPregen({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
         functionName: 'performAttack',
@@ -780,7 +972,12 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
       })
     }
   }
+  const { isLoading: isWaitingForAttackT } = useWaitForTransactionReceipt({
+    hash: isConnected ? battleDataPerformAttack : battleDataPerformAttackPregen,
+  })
+  const isWaitingForAttack = isSmartAccount ? false : isWaitingForAttackT
 
+  console.log(isWaitingForAttack && isWaitingForAttack)
   const handleAttack = async (
     type: 'quick' | 'power' | 'ultimate',
     cost: number
@@ -788,7 +985,6 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
     if (powerPoints < cost) return
     await handleAttackInBattle(cost)
     setIsAttacking(true)
-    setAttackType(type)
     setPowerPoints((prev) => prev - cost)
 
     setTimeout(() => {
@@ -829,10 +1025,14 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
     abi: CLASH_BATTLE_SYSTEM_ABI,
     eventName: 'AttackPerformed',
     onLogs(logs: any) {
-      const { battleId } = logs[0].args
+      console.log('AttackPerformed', logs[0].args)
+      const { battleId, attacker } = logs[0].args
       if (Number(battleId) === Number(gameId)) {
         refetchBattleSnapshots()
         refetchBattleDetails()
+      }
+      if (attacker.toLowerCase() === address?.toLowerCase()) {
+        //setAttackType(type)
       }
     },
   })
@@ -861,7 +1061,6 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
     if (!battleDetailsData) return
     if (battleDetailsData?.winner !== zeroAddress) {
       setWinnerPlayer(battleDetailsData?.winner)
-      console.log(battleDetailsData?.winner)
     }
   }, [battleDetailsData])
 
@@ -926,7 +1125,7 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
   }, [battleDetails, battleSnapshots])
 
   return (
-    <div className="bg-gradient-to-b from-gray-900 via-blue-900 to-gray-900">
+    <div className="bg-gradient-to-b overflow-x-auto from-gray-900 via-blue-900 to-gray-900">
       <div className="h-full w-full">
         <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl border border-gray-700/50 shadow-2xl h-full w-full">
           {/* Header Bar */}
@@ -1101,7 +1300,7 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
                 isAttacking={false}
                 attackType={undefined}
               />
-              {/*<AuraEffect type="shadow" intensity={1}>
+              {/* <AuraEffect type="shadow" intensity={4}>
                 <div className="w-52 border border-black h-60"></div>
               </AuraEffect> */}
             </div>
@@ -1125,7 +1324,13 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
                       disabled={
                         address?.toLowerCase() !==
                           battleDetailsData?.currentTurnPlayer?.toLowerCase() ||
-                        powerPoints < 2
+                        powerPoints < 2 ||
+                        isWaitingForAttack
+                      }
+                      isLoading={
+                        (isConnected
+                          ? isBattlePerformAttack
+                          : isBattlePerformAttackPregen) || isWaitingForAttack
                       }
                     />
                     <AttackButton
@@ -1137,7 +1342,13 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
                       disabled={
                         address?.toLowerCase() !==
                           battleDetailsData?.currentTurnPlayer?.toLowerCase() ||
-                        powerPoints < 3
+                        powerPoints < 3 ||
+                        isWaitingForAttack
+                      }
+                      isLoading={
+                        (isConnected
+                          ? isBattlePerformAttack
+                          : isBattlePerformAttackPregen) || isWaitingForAttack
                       }
                     />
                     <AttackButton
@@ -1149,7 +1360,13 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
                       disabled={
                         address?.toLowerCase() !==
                           battleDetailsData?.currentTurnPlayer?.toLowerCase() ||
-                        powerPoints < 4
+                        powerPoints < 4 ||
+                        isWaitingForAttack
+                      }
+                      isLoading={
+                        (isConnected
+                          ? isBattlePerformAttack
+                          : isBattlePerformAttackPregen) || isWaitingForAttack
                       }
                     />
                   </div>
@@ -1162,17 +1379,58 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
                       address?.toLowerCase() ===
                       battleDetailsData?.currentTurnPlayer?.toLowerCase()
                     }
+                    isLoading={
+                      (isConnected ? isBattle : isBattlePregen) ||
+                      isWaitingForForfeitBattle
+                    }
+                    disabled={
+                      (isConnected ? isBattle : isBattlePregen) ||
+                      isWaitingForForfeitBattle
+                    }
                   />
                 </div>
 
                 {battleDetailsData?.winner === zeroAddress ? (
                   <button
                     onClick={handleForfeitBattleAction}
-                    className="px-4 py-2 bg-gradient-to-r from-red-500/20 to-red-600/20 
+                    disabled={isWaitingForForfeitBattle}
+                    className={`px-4 py-2 bg-gradient-to-r from-red-500/20 to-red-600/20 
                   text-red-400 rounded-lg hover:from-red-500/30 hover:to-red-600/30 
-                  transition-colors border border-red-500/30 font-medium text-sm"
+                  transition-colors border border-red-500/30 font-medium text-sm
+                  ${
+                    isWaitingForForfeitBattle
+                      ? 'opacity-50 cursor-not-allowed'
+                      : ''
+                  }`}
                   >
-                    Surrender Battle
+                    {(isConnected ? isBattle : isBattlePregen) ||
+                    isWaitingForForfeitBattle ? (
+                      <span className="flex items-center gap-2">
+                        <svg
+                          className="animate-spin h-4 w-4 text-red-400"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Surrendering...
+                      </span>
+                    ) : (
+                      'Surrender Battle'
+                    )}
                   </button>
                 ) : (
                   <button

@@ -20,7 +20,7 @@ import StorageUserApps from './drives/Storage&Hooks'
 import { cn } from '../library/utils'
 import { parseAsInteger, parseAsJson, parseAsNumberLiteral } from 'nuqs'
 import useExperimentalFeatures from './drives/Experiment'
-import { useLocalStorage } from 'react-use'
+import { useLocalStorage, useMouse } from 'react-use'
 import {
   defaultSettings,
   UserSettings,
@@ -43,6 +43,8 @@ import { useNotifications } from './drives/Extensions/ToastNotifs'
 import { useDispatchWindows, useNavbar, useTypedValue } from './drives'
 import RetroWelcome from './welcome'
 import OnboardingTour from './onboarding'
+import TimedPopup from './popupTimedComponent'
+import usePopupManager from './popupTimedComponent'
 
 const WindowComponent: React.FC<WindowProps> = ({
   window,
@@ -399,6 +401,8 @@ const PcDesktop: React.FC = () => {
   const { createDispatchWindow, closeDispatchWindow } = useDispatchWindows()
 
   const [onboardingTour, setOnboardingTour] = useTypedValue('onboardingTour')
+  const [activeValueItem, setActiveValueItem] =
+    useTypedValue<number>('wallet_active')
 
   useEffect(() => {
     const welcomed = localStorage.getItem('retro:welcome:window')
@@ -425,6 +429,161 @@ const PcDesktop: React.FC = () => {
     }
   }, [isConnected, isLoginPregenSession])
 
+  // Keep track of active popups and timers
+  const activePopupRef = useRef<string | null>(null)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const hasShownPopupRef = useRef<boolean>(false) // Track if popup has been shown already
+
+  const handlePopupOpen = (popupId: string) => {}
+  // Function to handle popup actions
+  const handlePopupAction = (action: string, popupId: string) => {}
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 0
+  const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 0
+  const centeredX = windowWidth / 2 - 150
+  const centeredY = windowHeight / 2 - 148.5
+
+  useEffect(() => {
+    const getPopupData = () => {
+      try {
+        const data = localStorage.getItem('app_popups_data')
+        return data ? JSON.parse(data) : {}
+      } catch (e) {
+        console.error('Failed to get popup data', e)
+        return {}
+      }
+    }
+
+    const updatePopupData = (id: string, updates: any) => {
+      try {
+        const allData = getPopupData()
+        allData[id] = { ...(allData[id] || {}), ...updates }
+        localStorage.setItem('app_popups_data', JSON.stringify(allData))
+      } catch (e) {
+        console.error('Failed to update popup data', e)
+      }
+    }
+
+    const popupId = 'claim_popup'
+    // const delay10s = 10_000
+    const remindLaterDelay = 24 * 60 * 60 * 1000 // 24 hours
+    const oneHourDelay = (60 * 60 * 1000) / 2 // 1 hour
+
+    const popupData = getPopupData()[popupId] || {}
+    if (popupData.dontShowAgain) return
+    const shouldShowNow = popupData.nextTime && popupData.nextTime <= Date.now()
+
+    const showPopup = () => {
+      if (hasShownPopupRef.current || activePopupRef.current) return
+      hasShownPopupRef.current = true
+      const handleAction = (action: string) => {
+        if (action === 'navigate') {
+          openWindow('wallet')
+          setActiveValueItem(4)
+          updatePopupData(popupId, { dontShowAgain: true })
+        } else if (action === 'later') {
+          updatePopupData(popupId, {
+            nextTime: Date.now() + 2 * remindLaterDelay,
+          })
+        } else if (action === 'never') {
+          updatePopupData(popupId, { dontShowAgain: true })
+        } else if (action === 'close') {
+          updatePopupData(popupId, { nextTime: Date.now() + oneHourDelay })
+        }
+        closeDispatchWindow(activePopupRef.current!)
+        handlePopupAction(action, popupId)
+        activePopupRef.current = null
+      }
+
+      // Create the popup content
+      const popupContent = (
+        <div className="flex items-center justify-center">
+          <div className="bg-white text-black px-4 py-3 rounded-lg shadow-xl animate-fadeIn">
+            <p className="text-gray-700 mb-3 text-sm leading-relaxed">
+              Claim your pregenerated wallet to protect assets, enable
+              cross-device sync with enhanced security.
+            </p>
+
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-3 mb-3 rounded">
+              <p className="text-blue-800 text-xs">
+                Visit the Wallets app to claim and know more details about
+                ownership benefits and enhanced security features.
+              </p>
+            </div>
+
+            <div className="flex space-y-2 flex-col">
+              <button
+                onClick={() => handleAction('navigate')}
+                className="w-full py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md text-sm"
+              >
+                Go to Wallet App
+              </button>
+
+              <div className="flex justify-between gap-2">
+                <button
+                  onClick={() => handleAction('never')}
+                  className="flex-1 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200"
+                >
+                  Don't Show Again
+                </button>
+                <button
+                  onClick={() => handleAction('later')}
+                  className="flex-1 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-md transition-colors duration-200"
+                >
+                  Remind Later
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+
+      activePopupRef.current = createDispatchWindow({
+        title: () => (
+          <div className="flex items-center justify-start text-blue-600">
+            <h3
+              className="font-bold pt-1"
+              style={{ lineHeight: '1', height: '19px' }}
+            >
+              Claim Wallet
+            </h3>
+          </div>
+        ),
+        content: () => popupContent,
+        initialSize: {
+          width: 300,
+          height: 297,
+        },
+        initialPosition: {
+          x: centeredX,
+          y: centeredY,
+        },
+      })
+      handlePopupOpen(popupId)
+    }
+    if (isLoginPregenSession) {
+      if (!popupData.nextTime) {
+        timerRef.current = setTimeout(() => {
+          showPopup()
+        }, oneHourDelay)
+      } else if (shouldShowNow) {
+        showPopup()
+      } else {
+        const timeRemaining = popupData.nextTime - Date.now()
+        timerRef.current = setTimeout(() => {
+          showPopup()
+        }, timeRemaining)
+      }
+    }
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+        timerRef.current = null
+      }
+    }
+  }, [createDispatchWindow, windowWidth, windowHeight])
+
   if (!mounted) {
     // Render a static placeholder or nothing on the first render (SSR)
     return (
@@ -433,11 +592,12 @@ const PcDesktop: React.FC = () => {
       </div>
     )
   }
+
   return (
     <WindowContext.Provider value={{ openWindow }}>
       {isConnected || isLoginPregenSession ? (
         <>
-          <div>
+          <div ref={containerRef}>
             <div
               style={{
                 backgroundImage:

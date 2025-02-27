@@ -1,4 +1,20 @@
+import { http, injected, webSocket } from 'wagmi'
+import { createConfig } from 'wagmi'
+import { baseSepolia, mainnet, sepolia } from 'wagmi/chains'
+
 export const CONTRACT_ADDRESS = '0x307dceC841c00733810cC159A399c5c0C0C3E1f6'
+export const TicTacToeConfig = createConfig({
+  chains: [baseSepolia, sepolia, mainnet],
+  transports: {
+    [baseSepolia.id]: webSocket(
+      'wss://base-sepolia.blastapi.io/ad59226d-7bf0-4950-8679-6b399d842227'
+    ),
+    [sepolia.id]: http(
+      `https://sepolia.infura.io/v3/ad59226d-7bf0-4950-8679-6b399d842227`
+    ),
+    [mainnet.id]: http(),
+  },
+})
 export const CONTRACT_ABI: any[] = [
   {
     type: 'function',

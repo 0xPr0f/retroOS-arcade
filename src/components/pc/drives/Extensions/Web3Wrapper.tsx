@@ -15,11 +15,14 @@ import { baseSepolia, mainnet, sepolia } from 'wagmi/chains'
 import { injected } from 'wagmi/connectors'
 import PcDesktop from '../..'
 import para from '../Authentication/para'
-import { PregenProvider } from '../Storage&Hooks/PregenSession'
-import { NotificationProvider } from './ToastNotifs'
-import { DispatchWindowProvider } from '../UI/dispatchWindow'
-import { NavbarProvider } from '../Storage&Hooks/NavbarApi'
-import { ValueProvider } from '../Storage&Hooks/ValueProvider'
+import {
+  GameScoreProvider,
+  PregenProvider,
+  NotificationProvider,
+  NavbarProvider,
+  ValueProvider,
+  DispatchWindowProvider,
+} from '@/components/pc/drives'
 
 const connector = paraConnector({
   para: para,
@@ -71,7 +74,9 @@ const Web3Wrapper: React.FC = () => {
               <NotificationProvider>
                 <DispatchWindowProvider>
                   <NavbarProvider>
-                    <PcDesktop />
+                    <GameScoreProvider>
+                      <PcDesktop />
+                    </GameScoreProvider>
                   </NavbarProvider>
                 </DispatchWindowProvider>
               </NotificationProvider>

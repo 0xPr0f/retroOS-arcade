@@ -1,5 +1,10 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react'
-
+import {
+  GameType,
+  useGameScores,
+  usePregenSession,
+} from '@/components/pc/drives'
+import { useAccount } from 'wagmi'
 const GRID_SIZE = 20
 const CELL_SIZE = 20
 const BASE_SPEED = 200
@@ -56,7 +61,15 @@ const SnakeGame = () => {
     }
     return 0
   })
+  const { submitScore } = useGameScores()
   const directionRef = useRef(INITIAL_DIRECTION)
+  const { isLoginPregenSession, pregenActiveAddress } = usePregenSession()
+  const { isConnected, address: playerAddress } = useAccount()
+  const address = isConnected
+    ? playerAddress?.toLowerCase()
+    : isLoginPregenSession
+    ? pregenActiveAddress?.toLowerCase()
+    : undefined
 
   // Track game stats
   const [gameStats, setGameStats] = useState({
@@ -111,7 +124,9 @@ const SnakeGame = () => {
 
     if (checkCollision(head)) {
       setIsGameOver(true)
-
+      if (foodEaten > 0) {
+        submitScore(address, foodEaten, GameType.SNAKE)
+      }
       // Update high score if needed
       if (foodEaten > highScore) {
         setHighScore(foodEaten)

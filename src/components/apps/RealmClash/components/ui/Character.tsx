@@ -60,7 +60,6 @@ const CharacterGrid: React.FC = () => {
     abi: CHARACTER_CARD_ABI,
     eventName: 'CharacterCreated',
     onLogs(logs: any) {
-      console.log(logs)
       console.log(logs[0].args)
       const { creator } = logs[0].args
       if (String(creator).toLowerCase() === String(address).toLowerCase()) {
@@ -502,7 +501,9 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
   } = useWriteContract({
     mutation: {
       onError: (error: any) => {},
-      onSuccess: (txHash: any) => {},
+      onSuccess: (txHash: any) => {
+        refetchCharacterStats()
+      },
     },
   })
 
@@ -514,7 +515,9 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
   } = usePregenTransaction({
     mutation: {
       onError: (error: any) => {},
-      onSuccess: (txHash: any) => {},
+      onSuccess: (txHash: any) => {
+        refetchCharacterStats()
+      },
     },
   })
 
@@ -554,10 +557,87 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
       args: [characterId],
       query: {
         enabled: !!characterId,
-        refetchInterval: 3000,
       },
     })
+
+  const { data: tokenUrl } = useReadContract({
+    address: CHARACTER_CARD_ADDRESS,
+    abi: CHARACTER_CARD_ABI,
+    functionName: 'tokenURI',
+    args: [characterId],
+    query: {
+      enabled: !!characterId,
+    },
+  })
+
   const characterStats = dataCharacterStats as any
+
+  const ipfsOrigins = [
+    'https://nftstorage.link',
+    'https://gateway.pinata.cloud',
+    'https://dweb.link',
+    'https://flk-ipfs.xyz',
+    'https://ipfs.io',
+    'https://brown-perfect-marlin-23.mypinata.cloud',
+  ]
+
+  const [currentOriginIndex, setCurrentOriginIndex] = useState(0)
+  const [metadata, setMetadata] = useState<{
+    name?: string
+    description?: string
+    image?: string
+  } | null>(null)
+
+  const getIpfsPath = (url: string | undefined) => {
+    if (!url) return ''
+    const ipfsMatch = url.match(/\/ipfs\/[^/]+/)
+    return ipfsMatch ? ipfsMatch[0] : ''
+  }
+
+  const getUrlWithCurrentOrigin = (url: string | undefined) => {
+    if (!url) return ''
+    const ipfsPath = getIpfsPath(url)
+    if (!ipfsPath) return url // Return original if no IPFS path found
+    return `${ipfsOrigins[currentOriginIndex]}${ipfsPath}`
+  }
+
+  const handleImageError = () => {
+    if (currentOriginIndex < ipfsOrigins.length - 1) {
+      setCurrentOriginIndex((prev) => prev + 1)
+    }
+  }
+
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      if (!tokenUrl || typeof tokenUrl !== 'string' || tokenUrl.length < 25)
+        return
+
+      try {
+        const metadataUrl = getUrlWithCurrentOrigin(tokenUrl as string)
+        const response = await fetch(metadataUrl)
+
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`)
+
+        const text = await response.text()
+        if (!text || text.trim().length === 0) throw new Error('Empty response')
+
+        try {
+          const data = JSON.parse(text)
+          setMetadata(data)
+        } catch (parseError) {
+          console.error('Invalid JSON format:', parseError)
+        }
+      } catch (error) {
+        console.error('Error fetching metadata:', error)
+        if (currentOriginIndex < ipfsOrigins.length - 1) {
+          setCurrentOriginIndex((prev) => prev + 1)
+        }
+      }
+    }
+
+    fetchMetadata()
+  }, [tokenUrl, currentOriginIndex])
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -590,6 +670,12 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
       },
     })
   }
+
+  const truncateDescription = (description: string, maxLength = 100) => {
+    if (!description || description.length <= maxLength) return description
+    return description.substring(0, maxLength) + '...'
+  }
+
   if (!characterStats) return null
   return (
     <div
@@ -608,11 +694,12 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
           `relative`
         )}
       >
-        {characterStats.imageUrl ? (
+        {metadata?.image ? (
           <img
-            src={characterStats.imageUrl}
+            src={getUrlWithCurrentOrigin(metadata.image)}
             alt={characterStats.name}
             className="w-full h-full object-cover"
+            onError={handleImageError}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -623,6 +710,11 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
         )}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
           <p className="text-lg font-bold text-white">{characterStats.name}</p>
+          {metadata?.description && (
+            <p className="text-xs text-gray-300 mt-1">
+              {truncateDescription(metadata.description)}
+            </p>
+          )}
         </div>
       </div>
 
@@ -751,8 +843,11 @@ export const getCharacterClassColor = (
 }
 
 // Function to get class label from value
-export const getCharacterClassLabel = (value: CharacterClass): string => {
-  const option = characterClassOptions.find((opt) => opt.value === value)
+export const getCharacterClassLabel = (
+  value: CharacterClass | number
+): string => {
+  const numericValue = typeof value === 'string' ? parseInt(value, 10) : value
+  const option = characterClassOptions.find((opt) => opt.value === numericValue)
   return option?.label || 'Unknown'
 }
 

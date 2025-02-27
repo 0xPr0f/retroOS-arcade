@@ -1,5 +1,4 @@
 import React, { ReactNode } from 'react'
-
 type AuraType =
   | 'fire'
   | 'smoke'
@@ -11,7 +10,6 @@ type AuraType =
   | 'ice'
   | 'lightning'
   | 'demon'
-
 type AuraRole =
   | 'mage'
   | 'knight'
@@ -20,17 +18,12 @@ type AuraRole =
   | 'human'
   | 'king'
   | 'archer'
-
 interface AuraEffectProps {
   children: ReactNode
-
   effect?: AuraRole
-
   type?: AuraType
-
   intensity?: number
 }
-
 const AuraEffect: React.FC<AuraEffectProps> = ({
   children,
   type = 'fire',
@@ -47,9 +40,7 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
     king: 'gold',
     archer: 'green',
   }
-
   const finalType = effect ? roleMapping[effect] : type
-
   // Configuration for each aura style
   const auraTypes = {
     fire: {
@@ -58,32 +49,32 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
         'from-yellow-400 to-orange-500',
       ],
       filter: 'fire-aura',
-      animations: ['flame 3s infinite', 'flame 4s infinite reverse'],
+      animations: ['flame 2s infinite', 'flame 3s infinite reverse'],
     },
     smoke: {
       gradients: ['from-gray-700 to-gray-900', 'from-gray-800 to-black'],
       filter: 'smoke-aura',
-      animations: ['smoke 8s infinite', 'smoke 10s infinite reverse'],
+      animations: ['smoke 6s infinite', 'smoke 8s infinite reverse'],
     },
     energy: {
       gradients: ['from-blue-400 to-purple-500', 'from-cyan-300 to-blue-400'],
       filter: 'energy-aura',
-      animations: ['energy 4s infinite', 'energy 5s infinite reverse'],
+      animations: ['energy 3s infinite', 'energy 4s infinite reverse'],
     },
     shadow: {
       gradients: ['from-gray-800 to-black', 'from-gray-900 to-black'],
       filter: 'shadow-aura',
-      animations: ['smoke 6s infinite', 'smoke 8s infinite reverse'],
+      animations: ['smoke 4s infinite', 'smoke 5s infinite reverse'],
     },
     silver: {
       gradients: ['from-gray-300 to-gray-500', 'from-gray-100 to-gray-300'],
       filter: 'silver-aura',
-      animations: ['energy 5s infinite', 'energy 6s infinite reverse'],
+      animations: ['energy 4s infinite', 'energy 5s infinite reverse'],
     },
     green: {
       gradients: ['from-green-500 to-green-700', 'from-green-400 to-green-600'],
       filter: 'nature-aura',
-      animations: ['energy 4s infinite', 'energy 5s infinite reverse'],
+      animations: ['energy 3s infinite', 'energy 4s infinite reverse'],
     },
     gold: {
       gradients: [
@@ -91,27 +82,28 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
         'from-yellow-400 to-yellow-500',
       ],
       filter: 'gold-aura',
-      animations: ['flame 4s infinite', 'flame 5s infinite reverse'],
+      animations: ['flame 3s infinite', 'flame 4s infinite reverse'],
     },
     ice: {
       gradients: ['from-blue-300 to-cyan-500', 'from-blue-200 to-cyan-400'],
       filter: 'ice-aura',
-      animations: ['ice 4s infinite', 'ice 5s infinite reverse'],
+      animations: ['ice 3s infinite', 'ice 4s infinite reverse'],
     },
     lightning: {
       gradients: ['from-yellow-300 to-blue-500', 'from-yellow-200 to-blue-400'],
       filter: 'lightning-aura',
-      animations: ['lightning 1s infinite', 'lightning 1.5s infinite reverse'],
+      animations: [
+        'lightning 0.8s infinite',
+        'lightning 1.2s infinite reverse',
+      ],
     },
     demon: {
       gradients: ['from-red-600 to-red-800', 'from-red-500 to-red-700'],
       filter: 'demon-aura',
-      animations: ['flame 3s infinite', 'flame 4s infinite reverse'],
+      animations: ['flame 2s infinite', 'flame 3s infinite reverse'],
     },
   } as const
-
   const { gradients, filter, animations } = auraTypes[finalType]
-
   return (
     <div className="relative">
       {/* SVG Filters */}
@@ -121,12 +113,114 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
           <filter id="fire-aura">
             <feTurbulence
               type="fractalNoise"
-              baseFrequency={0.02 * intensity}
-              numOctaves={3}
+              baseFrequency={0.003 * intensity}
+              numOctaves={4}
               seed={2}
               result="noise"
             >
               {/* Animate the fractal noise so it shifts/waves over time */}
+              <animate
+                attributeName="baseFrequency"
+                dur="3s"
+                values="0.03;0.07;0.03"
+                repeatCount="indefinite"
+              />
+            </feTurbulence>
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="noise"
+              scale={4 * intensity}
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+            <feGaussianBlur stdDeviation={0.3 * intensity} result="blur" />
+            <feComposite operator="over" in="blur" />
+          </filter>
+          {/* =============== SMOKE AURA =============== */}
+          <filter id="smoke-aura">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency={0.0008 * intensity}
+              numOctaves={4}
+              seed={1}
+              // seed={Math.random() * 100}
+              result="noise"
+            >
+              <animate
+                attributeName="baseFrequency"
+                dur="6s"
+                values="0.008;0.015;0.008"
+                repeatCount="indefinite"
+              />
+            </feTurbulence>
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="noise"
+              scale={2.5 * intensity}
+            />
+            <feGaussianBlur stdDeviation={0.4 * intensity} result="blur" />
+            <feComposite operator="over" in="blur" />
+          </filter>
+
+          {/* =============== ENERGY AURA =============== */}
+          <filter id="energy-aura">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency={0.004 * intensity}
+              numOctaves={4}
+              seed={5}
+              result="noise"
+            >
+              <animate
+                attributeName="baseFrequency"
+                dur="4s"
+                values="0.04;0.08;0.04"
+                repeatCount="indefinite"
+              />
+            </feTurbulence>
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="noise"
+              scale={3.5 * intensity}
+            />
+            <feGaussianBlur stdDeviation={0.35 * intensity} result="blur" />
+            <feComposite operator="over" in="blur" />
+          </filter>
+
+          {/* =============== SHADOW AURA =============== */}
+          <filter id="shadow-aura">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency={0.0025 * intensity}
+              numOctaves={4}
+              seed={Math.random() * 100}
+              result="noise"
+            >
+              <animate
+                attributeName="baseFrequency"
+                dur="4s"
+                values="0.025;0.05;0.025"
+                repeatCount="indefinite"
+              />
+            </feTurbulence>
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="noise"
+              scale={3.5 * intensity}
+            />
+            <feGaussianBlur stdDeviation={0.5 * intensity} result="blur" />
+            <feComposite operator="over" in="blur" />
+          </filter>
+
+          {/* =============== SILVER AURA =============== */}
+          <filter id="silver-aura">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency={0.002 * intensity}
+              numOctaves={4}
+              seed={7}
+              result="noise"
+            >
               <animate
                 attributeName="baseFrequency"
                 dur="4s"
@@ -137,46 +231,19 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
             <feDisplacementMap
               in="SourceGraphic"
               in2="noise"
-              scale={30 * intensity}
-              xChannelSelector="R"
-              yChannelSelector="G"
+              scale={2.5 * intensity}
             />
-            <feGaussianBlur stdDeviation={2 * intensity} result="blur" />
+            <feGaussianBlur stdDeviation={0.3 * intensity} result="blur" />
             <feComposite operator="over" in="blur" />
           </filter>
 
-          {/* =============== SMOKE AURA =============== */}
-          <filter id="smoke-aura">
+          {/* =============== GREEN (NATURE) AURA =============== */}
+          <filter id="nature-aura">
             <feTurbulence
               type="fractalNoise"
-              baseFrequency={0.005 * intensity}
-              numOctaves={3}
-              seed={99}
-              result="noise"
-            >
-              <animate
-                attributeName="baseFrequency"
-                dur="8s"
-                values="0.005;0.01;0.005"
-                repeatCount="indefinite"
-              />
-            </feTurbulence>
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="noise"
-              scale={15 * intensity}
-            />
-            <feGaussianBlur stdDeviation={3 * intensity} result="blur" />
-            <feComposite operator="over" in="blur" />
-          </filter>
-
-          {/* =============== ENERGY AURA =============== */}
-          <filter id="energy-aura">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency={0.03 * intensity}
-              numOctaves={3}
-              seed={5}
+              baseFrequency={0.003 * intensity}
+              numOctaves={4}
+              seed={3}
               result="noise"
             >
               <animate
@@ -189,84 +256,9 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
             <feDisplacementMap
               in="SourceGraphic"
               in2="noise"
-              scale={25 * intensity}
+              scale={3 * intensity}
             />
-            <feGaussianBlur stdDeviation={2.5 * intensity} result="blur" />
-            <feComposite operator="over" in="blur" />
-          </filter>
-
-          {/* =============== SHADOW AURA =============== */}
-          <filter id="shadow-aura">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency={0.015 * intensity}
-              numOctaves={3}
-              seed={10}
-              result="noise"
-            >
-              <animate
-                attributeName="baseFrequency"
-                dur="6s"
-                values="0.015;0.03;0.015"
-                repeatCount="indefinite"
-              />
-            </feTurbulence>
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="noise"
-              scale={20 * intensity}
-            />
-            <feGaussianBlur stdDeviation={3 * intensity} result="blur" />
-            <feComposite operator="over" in="blur" />
-          </filter>
-
-          {/* =============== SILVER AURA =============== */}
-          <filter id="silver-aura">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency={0.01 * intensity}
-              numOctaves={3}
-              seed={7}
-              result="noise"
-            >
-              <animate
-                attributeName="baseFrequency"
-                dur="5s"
-                values="0.01;0.03;0.01"
-                repeatCount="indefinite"
-              />
-            </feTurbulence>
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="noise"
-              scale={15 * intensity}
-            />
-            <feGaussianBlur stdDeviation={2 * intensity} result="blur" />
-            <feComposite operator="over" in="blur" />
-          </filter>
-
-          {/* =============== GREEN (NATURE) AURA =============== */}
-          <filter id="nature-aura">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency={0.02 * intensity}
-              numOctaves={3}
-              seed={3}
-              result="noise"
-            >
-              <animate
-                attributeName="baseFrequency"
-                dur="6s"
-                values="0.02;0.04;0.02"
-                repeatCount="indefinite"
-              />
-            </feTurbulence>
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="noise"
-              scale={20 * intensity}
-            />
-            <feGaussianBlur stdDeviation={3 * intensity} result="blur" />
+            <feGaussianBlur stdDeviation={0.4 * intensity} result="blur" />
             <feComposite operator="over" in="blur" />
           </filter>
 
@@ -274,24 +266,24 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
           <filter id="gold-aura">
             <feTurbulence
               type="fractalNoise"
-              baseFrequency={0.015 * intensity}
-              numOctaves={3}
+              baseFrequency={0.0025 * intensity}
+              numOctaves={4}
               seed={6}
               result="noise"
             >
               <animate
                 attributeName="baseFrequency"
-                dur="4s"
-                values="0.015;0.035;0.015"
+                dur="3s"
+                values="0.025;0.05;0.025"
                 repeatCount="indefinite"
               />
             </feTurbulence>
             <feDisplacementMap
               in="SourceGraphic"
               in2="noise"
-              scale={25 * intensity}
+              scale={3.5 * intensity}
             />
-            <feGaussianBlur stdDeviation={3 * intensity} result="blur" />
+            <feGaussianBlur stdDeviation={0.4 * intensity} result="blur" />
             <feComposite operator="over" in="blur" />
           </filter>
 
@@ -299,24 +291,24 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
           <filter id="ice-aura">
             <feTurbulence
               type="fractalNoise"
-              baseFrequency={0.02 * intensity}
-              numOctaves={3}
+              baseFrequency={0.003 * intensity}
+              numOctaves={4}
               seed={4}
               result="noise"
             >
               <animate
                 attributeName="baseFrequency"
-                dur="4s"
-                values="0.02;0.04;0.02"
+                dur="3s"
+                values="0.03;0.06;0.03"
                 repeatCount="indefinite"
               />
             </feTurbulence>
             <feDisplacementMap
               in="SourceGraphic"
               in2="noise"
-              scale={18 * intensity}
+              scale={2.8 * intensity}
             />
-            <feGaussianBlur stdDeviation={2.5 * intensity} result="blur" />
+            <feGaussianBlur stdDeviation={0.35 * intensity} result="blur" />
             <feComposite operator="over" in="blur" />
           </filter>
 
@@ -324,24 +316,24 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
           <filter id="lightning-aura">
             <feTurbulence
               type="fractalNoise"
-              baseFrequency={0.025 * intensity}
-              numOctaves={2}
+              baseFrequency={0.004 * intensity}
+              numOctaves={3}
               seed={12}
               result="noise"
             >
               <animate
                 attributeName="baseFrequency"
-                dur="1.5s"
-                values="0.025;0.06;0.025"
+                dur="1s"
+                values="0.04;0.09;0.04"
                 repeatCount="indefinite"
               />
             </feTurbulence>
             <feDisplacementMap
               in="SourceGraphic"
               in2="noise"
-              scale={30 * intensity}
+              scale={4.5 * intensity}
             />
-            <feGaussianBlur stdDeviation={2 * intensity} result="blur" />
+            <feGaussianBlur stdDeviation={0.3 * intensity} result="blur" />
             <feComposite operator="over" in="blur" />
           </filter>
 
@@ -349,26 +341,26 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
           <filter id="demon-aura">
             <feTurbulence
               type="fractalNoise"
-              baseFrequency={0.02 * intensity}
-              numOctaves={4}
+              baseFrequency={0.003 * intensity}
+              numOctaves={5}
               seed={8}
               result="noise"
             >
               <animate
                 attributeName="baseFrequency"
-                dur="4s"
-                values="0.02;0.07;0.02"
+                dur="3s"
+                values="0.03;0.09;0.03"
                 repeatCount="indefinite"
               />
             </feTurbulence>
             <feDisplacementMap
               in="SourceGraphic"
               in2="noise"
-              scale={35 * intensity}
+              scale={4.5 * intensity}
               xChannelSelector="R"
               yChannelSelector="G"
             />
-            <feGaussianBlur stdDeviation={3.5 * intensity} result="blur" />
+            <feGaussianBlur stdDeviation={0.5 * intensity} result="blur" />
             <feComposite operator="over" in="blur" />
           </filter>
         </defs>
@@ -377,13 +369,21 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
       {/* Main container with aura effects */}
       <div className="relative">
         {/* Outer aura layer */}
-        <div className="absolute -inset-4 rounded-xl opacity-80">
+        <div
+          className={`absolute ${
+            intensity < 0.5
+              ? '-inset-2'
+              : intensity < 1
+              ? '-inset-3'
+              : '-inset-5'
+          } rounded-xl opacity-90`}
+        >
           <div
             className={`absolute inset-0 rounded-xl bg-gradient-to-r ${gradients[0]} blur-2xl transform-gpu`}
             style={{
               filter: `url(#${filter})`,
               animation: animations[0],
-              transform: 'scale(1.05)',
+              transform: `scale(${1 + 0.08 * intensity})`,
             }}
           />
           <div
@@ -391,7 +391,7 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
             style={{
               filter: `url(#${filter})`,
               animation: animations[1],
-              transform: 'scale(1.03)',
+              transform: `scale(${1 + 0.05 * intensity})`,
             }}
           />
         </div>
@@ -403,30 +403,35 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
       </div>
 
       <style>{`
-        /* Make the "flame", "smoke", etc. keyframes more subtle 
-           so the fractal noise animation is more visible. 
-           You can tweak these to taste. */
+        /* Make the "flame", "smoke", etc. keyframes more volatile 
+           for more dramatic animation effects */
 
         @keyframes flame {
           0% {
             transform: scale(1) rotate(0deg);
-            opacity: 1;
-          }
-          25% {
-            transform: scale(1.02) rotate(-1deg);
-            opacity: 0.95;
-          }
-          50% {
-            transform: scale(1.03) rotate(1deg);
             opacity: 0.9;
           }
-          75% {
-            transform: scale(1.02) rotate(0deg);
+          25% {
+            transform: scale(${1 + 0.05 * intensity}) rotate(${
+        -2 * intensity
+      }deg);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(${1 + 0.08 * intensity}) rotate(${
+        2 * intensity
+      }deg);
             opacity: 0.95;
           }
-          100% {
-            transform: scale(1) rotate(-1deg);
+          75% {
+            transform: scale(${1 + 0.05 * intensity}) rotate(${
+        -1 * intensity
+      }deg);
             opacity: 1;
+          }
+          100% {
+            transform: scale(1) rotate(0deg);
+            opacity: 0.9;
           }
         }
 
@@ -437,16 +442,22 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
             opacity: 0.7;
           }
           25% {
-            transform: scale(1.02) translate(2px, -2px);
-            opacity: 0.8;
+            transform: scale(${1 + 0.05 * intensity}) translate(${
+        4 * intensity
+      }px, ${-4 * intensity}px);
+            opacity: 0.9;
           }
           50% {
-            transform: scale(1.03) translate(0, -3px);
-            opacity: 0.85;
+            transform: scale(${1 + 0.08 * intensity}) translate(0, ${
+        -6 * intensity
+      }px);
+            opacity: 1;
           }
           75% {
-            transform: scale(1.02) translate(-2px, -2px);
-            opacity: 0.8;
+            transform: scale(${1 + 0.05 * intensity}) translate(${
+        -4 * intensity
+      }px, ${-4 * intensity}px);
+            opacity: 0.9;
           }
         }
 
@@ -456,9 +467,23 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
             transform: scale(1) rotate(0deg);
             opacity: 0.8;
           }
+          25% {
+            transform: scale(${1 + 0.03 * intensity}) rotate(${
+        -1 * intensity
+      }deg);
+            opacity: 0.9;
+          }
           50% {
-            transform: scale(1.02) rotate(1deg);
+            transform: scale(${1 + 0.06 * intensity}) rotate(${
+        2 * intensity
+      }deg);
             opacity: 1;
+          }
+          75% {
+            transform: scale(${1 + 0.03 * intensity}) rotate(${
+        -1 * intensity
+      }deg);
+            opacity: 0.9;
           }
         }
 
@@ -468,9 +493,23 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
             transform: scale(1);
             opacity: 0.8;
           }
+          25% {
+            transform: scale(${1 + 0.02 * intensity}) rotate(${
+        -1 * intensity
+      }deg);
+            opacity: 0.9;
+          }
           50% {
-            transform: scale(1.03);
+            transform: scale(${1 + 0.05 * intensity}) rotate(${
+        1 * intensity
+      }deg);
             opacity: 1;
+          }
+          75% {
+            transform: scale(${1 + 0.02 * intensity}) rotate(${
+        -1 * intensity
+      }deg);
+            opacity: 0.9;
           }
         }
 
@@ -482,18 +521,25 @@ const AuraEffect: React.FC<AuraEffectProps> = ({
           }
           10%,
           90% {
-            transform: scale(1.15);
+            transform: scale(${1 + 0.25 * intensity});
             opacity: 1;
           }
           15%,
           85% {
-            transform: scale(1.05);
+            transform: scale(${1 + 0.1 * intensity});
             opacity: 0.8;
+          }
+          40% {
+            transform: scale(${1 + 0.15 * intensity});
+            opacity: 0.9;
+          }
+          60% {
+            transform: scale(${1 + 0.2 * intensity});
+            opacity: 1;
           }
         }
       `}</style>
     </div>
   )
 }
-
 export default AuraEffect

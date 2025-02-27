@@ -7,6 +7,9 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/pc/drives/UI/UI_Components.v1'
+import { GameType, usePregenSession } from '@/components/pc/drives'
+import { useAccount } from 'wagmi'
+import { useGameScores } from '@/components/pc/drives'
 
 const BOARD_WIDTH = 12
 const BOARD_HEIGHT = 16
@@ -89,7 +92,15 @@ const TetrisOffChainGame = () => {
   const [gameOver, setGameOver] = useState<boolean>(false)
   const [score, setScore] = useState<number>(0)
   const [isPaused, setIsPaused] = useState<boolean>(true) // Start paused
+  const { submitScore } = useGameScores()
 
+  const { isLoginPregenSession, pregenActiveAddress } = usePregenSession()
+  const { isConnected, address: playerAddress } = useAccount()
+  const address = isConnected
+    ? playerAddress?.toLowerCase()
+    : isLoginPregenSession
+    ? pregenActiveAddress?.toLowerCase()
+    : undefined
   const gameStateRef = useRef<GameState>({
     board,
     currentPiece,
@@ -175,6 +186,9 @@ const TetrisOffChainGame = () => {
     }
 
     if (!isValidMove(nextPiece.shape, newPosition)) {
+      if (score > 0) {
+        submitScore(address, score, GameType.TETRIS)
+      }
       setGameOver(true)
       return
     }

@@ -40,7 +40,6 @@ const GameUI: React.FC = () => {
 }
 export default GameUI
 
-// Loading spinner component
 const LoadingSpinner: React.FC<{ size?: string; color?: string }> = ({
   size = 'w-8 h-8',
   color = 'text-blue-500',
@@ -55,7 +54,6 @@ const LoadingSpinner: React.FC<{ size?: string; color?: string }> = ({
   </div>
 )
 
-// Shimmer loading effect component
 const ShimmerEffect: React.FC<{ className?: string }> = ({
   className = 'h-6 w-full',
 }) => (
@@ -292,18 +290,15 @@ const GameHome: React.FC = () => {
     ],
   })
 
-  // Update loading state based on data fetching
   useEffect(() => {
     setIsLoading(isTokenIdsLoading || isChallengesLoading)
   }, [isTokenIdsLoading, isChallengesLoading])
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="min-h-full h-fit p-4">
         <div className="max-w-4xl mx-auto">
           <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg border border-gray-700/50 shadow-xl overflow-hidden">
-            {/* Header with shimmer effect */}
             <div
               className="p-6 border-b border-gray-700"
               style={{
@@ -432,8 +427,6 @@ const GameHome: React.FC = () => {
               </div>
             </div>
           </div>
-
-          {/* Game Stats Bar */}
           <div className="bg-gray-800/50 border-b border-gray-700/50 p-4">
             <GameStats
               activeGameDataArr={activeGameDataArr}
@@ -441,7 +434,6 @@ const GameHome: React.FC = () => {
             />
           </div>
 
-          {/* Tabs */}
           <div className="flex border-b border-gray-700 bg-gray-800/30 px-2 pt-2">
             <TabButton
               label="Active Games"

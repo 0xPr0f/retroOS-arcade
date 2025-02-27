@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react'
 interface ValueContextType {
   values: Record<string, any>
   setValue: (key: string, value: any) => void
-  getValue: (key: string) => any
+  getValue: (key: string, defaultValue?: any) => any
   removeValue: (key: string) => void
   clearAll: () => void
 }
@@ -28,8 +28,8 @@ export const ValueProvider: React.FC<ValueProviderProps> = ({
     }))
   }
 
-  const getValue = (key: string) => {
-    return values[key]
+  const getValue = (key: string, defaultValue?: any) => {
+    return values[key] !== undefined ? values[key] : defaultValue
   }
 
   const removeValue = (key: string) => {
@@ -64,10 +64,11 @@ export const useValue = () => {
 }
 
 export function useTypedValue<T>(
-  key: string
+  key: string,
+  defaultValue?: T
 ): [T | undefined, (value: T) => void] {
   const { getValue, setValue } = useValue()
-  const value = getValue(key) as T
+  const value = getValue(key, defaultValue) as T
   const setTypedValue = (newValue: T) => setValue(key, newValue)
   return [value, setTypedValue]
 }

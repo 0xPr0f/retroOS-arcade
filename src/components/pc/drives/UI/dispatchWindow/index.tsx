@@ -20,7 +20,7 @@ interface Styles {
   border?: string
 }
 interface WindowConfig {
-  title: string
+  title: string | React.ReactNode | (() => React.ReactNode)
   initialPosition?: WindowPosition
   initialSize?: { width: number; height: number }
   minWidth?: number
@@ -58,6 +58,25 @@ const WindowContent = memo(
         {typeof content === 'function' ? content() : content}
       </div>
     )
+  }
+)
+
+// Memoized window title component
+const WindowTitle = memo(
+  ({
+    title,
+  }: {
+    title: string | React.ReactNode | (() => React.ReactNode)
+  }) => {
+    if (typeof title === 'string') {
+      return <h3 className="font-medium text-gray-800">{title}</h3>
+    } else {
+      return (
+        <div className="flex-1">
+          {typeof title === 'function' ? title() : title}
+        </div>
+      )
+    }
   }
 )
 
@@ -230,7 +249,7 @@ export const DispatchWindowProvider: React.FC<{
             }`}
             onMouseDown={(e) => startDragging(e, window.id, window.position)}
           >
-            <h3 className="font-medium text-gray-800">{window.title}</h3>
+            <WindowTitle title={window.title} />
             <button
               onClick={() => closeDispatchWindow(window.id)}
               className="p-1 hover:bg-gray-200 rounded-full transition-colors"

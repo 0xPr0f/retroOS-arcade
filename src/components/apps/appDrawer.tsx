@@ -116,7 +116,7 @@ const apps: App[] = [
     startMenu: true,
     openingPosition: {
       x: 350,
-      y: 70,
+      y: 150,
     },
     greater: true,
     openingDimensions: {
@@ -207,7 +207,7 @@ const apps: App[] = [
     icon: ChainReactionIcon.src,
     openingPosition: {
       x: 450,
-      y: 150,
+      y: 120,
     },
     openingDimensions: {
       height: 620,

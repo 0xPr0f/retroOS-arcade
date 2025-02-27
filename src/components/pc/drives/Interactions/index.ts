@@ -379,24 +379,34 @@ export const SignMessageWithPregenWallet = async (
   return signature
 }
 
-export const UpdateAndClaimPregenWallet = async (
-  pregenIdentifier: string,
+export const UpdateAndClaimPregenWallet = async ({
+  pregenIdentifier,
+  walletId,
+  userShare,
+}: {
+  pregenIdentifier: string
   walletId: string
-) => {
+  userShare?: string
+}) => {
   const para = new ParaServer(
     Environment.BETA,
     process.env.NEXT_PUBLIC_PARA_API_KEY
   )
-
+  if (userShare) {
+    await para.setUserShare(userShare)
+  }
+  // It can only be email
   await para.updatePregenWalletIdentifier({
-    walletId,
+    walletId: walletId,
     newPregenIdentifier: pregenIdentifier,
-    newPregenIdentifierType: categorizeIdentifier(pregenIdentifier),
+    newPregenIdentifierType: 'EMAIL',
   })
 
   const recoverySecret = await para.claimPregenWallets({
     pregenIdentifier: pregenIdentifier,
-    pregenIdentifierType: categorizeIdentifier(pregenIdentifier),
+    pregenIdentifierType: 'EMAIL',
   })
+
+  console.log(recoverySecret)
   return recoverySecret
 }

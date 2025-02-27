@@ -1,6 +1,6 @@
 'use client'
-import { useState } from 'react'
-import { Home, Wallet, Clock, ChevronRight } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Home, Wallet, Clock, ChevronRight, Trophy, Lock } from 'lucide-react'
 import { NavItem } from './NavItem'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HomeContent } from './tabs/Portfolio'
@@ -8,26 +8,43 @@ import { ProfileContent } from './tabs/Transfer'
 import { parseAsInteger } from 'nuqs'
 import useExperimentalFeatures from '@/components/pc/drives/Experiment'
 import { ActivityContent } from './tabs/Activity'
-
-const navItems = [
-  { icon: Home, label: 'Portfolio', content: HomeContent },
-  { icon: Wallet, label: 'Transfer', content: ProfileContent },
-  { icon: Clock, label: 'Activity', content: ActivityContent },
-]
+import GameScoreContent from './tabs/Scores'
+import { useTypedValue } from '@/components/pc/drives'
+import PregenWalletContent from './tabs/PregenWallet'
+import { usePregenSession } from '@/components/pc/drives'
 
 interface NavigationProps {
   className?: string
 }
 
 function ModernTabbedInterface({ className = '' }: NavigationProps) {
+  const { isLoginPregenSession } = usePregenSession()
+  const navItems = [
+    { icon: Home, label: 'Portfolio', content: HomeContent },
+    { icon: Wallet, label: 'Transfer', content: ProfileContent },
+    { icon: Clock, label: 'Activity', content: ActivityContent },
+    { icon: Trophy, label: 'Scores', content: GameScoreContent },
+    ...(isLoginPregenSession
+      ? [{ icon: Lock, label: 'Pregen Wallet', content: PregenWalletContent }]
+      : []),
+  ]
+
   const { useSaveState } = useExperimentalFeatures()
 
   const [isExpanded, setIsExpanded] = useState(true)
-  const [activeItem, setActiveItem] = useSaveState(
+  const [activeValueItem, setActiveValueItem] = useTypedValue<number>(
     'wallet_active',
-    parseAsInteger.withDefault(0),
     0
   )
+  const [activeItem, setActiveItem] = useSaveState(
+    'wallet_active',
+    parseAsInteger.withDefault(activeValueItem!),
+    activeValueItem
+  )
+
+  useEffect(() => {
+    setActiveItem(activeValueItem!)
+  }, [activeValueItem])
 
   const ActiveContent = navItems[activeItem].content
 
@@ -58,7 +75,7 @@ function ModernTabbedInterface({ className = '' }: NavigationProps) {
               label={item.label}
               isActive={activeItem === index}
               isExpanded={isExpanded}
-              onClick={() => setActiveItem(index)}
+              onClick={() => setActiveValueItem(index)}
             />
           ))}
         </div>
