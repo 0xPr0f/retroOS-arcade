@@ -108,12 +108,12 @@ const EmailUpdateComponent = () => {
         verificationCode: verificationCode,
       })
       // console.log('isVerified', isVerified)
-      const authUrl = await paraClient.getSetUpBiometricsURL()
+      /* const authUrl = await paraClient.getSetUpBiometricsURL()
 
       window.open(authUrl, 'signUpPopup', 'popup=true')
 
       const passKeyResults = await paraClient.waitForPasskeyAndCreateWallet()
-      //  console.log('passKeyResults', passKeyResults)
+      //  console.log('passKeyResults', passKeyResults) */
 
       const serializedSession = paraClient.exportSession()
 
