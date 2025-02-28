@@ -775,7 +775,7 @@ const PcDesktop: React.FC = () => {
 
                     <div
                       id="start_menu_dock"
-                      className="min-h-7 flex-1 flex space-x-1 px-2 overflow-x-scroll"
+                      className="min-h-7 flex-1 flex space-x-1 px-2"
                     >
                       {windows.map((window: any) => (
                         <div
