@@ -191,6 +191,24 @@ export function ActivityContent() {
     isConnected ? accounts[0] : isLoginPregenSession ? accounts[1] : accounts[0]
   )
 
+  const [dropdownAddress, setDropdownAddress] =
+    useTypedValue('dropdown_address')
+
+  useEffect(() => {
+    if (dropdownAddress) {
+      const account = accounts.find((acc) => acc.address === dropdownAddress)
+      if (account) {
+        setSelectedAccount(account)
+      }
+    } else {
+      setDropdownAddress(selectedAccount.address)
+    }
+  }, [])
+
+  useEffect(() => {
+    setDropdownAddress(selectedAccount.address)
+  }, [selectedAccount])
+
   useEffect(() => {
     const currentAddress = isConnected
       ? UserAddress?.toLowerCase()
@@ -420,9 +438,7 @@ export function ActivityContent() {
                         <span className="font-medium">{acc.name}</span>
                         <span className="text-xs text-gray-400">
                           {acc.address.length > 10
-                            ? acc.address.substring(0, 6) +
-                              '...' +
-                              acc.address.substring(acc.address.length - 4)
+                            ? shortenText(acc.address, 8, 8)
                             : acc.address}
                         </span>
                       </div>

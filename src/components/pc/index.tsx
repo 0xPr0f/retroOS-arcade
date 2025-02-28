@@ -468,7 +468,7 @@ const PcDesktop: React.FC = () => {
     const popupId = 'claim_popup'
     // const delay10s = 10_000
     const remindLaterDelay = 24 * 60 * 60 * 1000 // 24 hours
-    const oneHourDelay = (60 * 60 * 1000) / 2 // 1 hour
+    const oneHourDelay = (60 * 60 * 1000) / 6 // 1 hour (10 minutes)
 
     const popupData = getPopupData()[popupId] || {}
     if (popupData.dontShowAgain) return

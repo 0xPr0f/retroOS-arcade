@@ -4,11 +4,12 @@ import {
   UpdateAndClaimPregenWallet,
 } from '@/components/pc/drives/Interactions'
 import type { NextApiRequest, NextApiResponse } from 'next'
-
+import { Para as ParaServer } from '@getpara/server-sdk'
 export interface UpdateAndClaimPregenWalletProps {
   newPregenIdentifier: string
   userShare: string
   walletId: string
+  paraClientSession: string
 }
 
 interface ApiResponse {
@@ -22,24 +23,21 @@ export default async function handler(
   res: NextApiResponse<ApiResponse>
 ) {
   try {
-    const { userShare, walletId, newPregenIdentifier } =
+    const { userShare, walletId, newPregenIdentifier, paraClientSession } =
       req.body as UpdateAndClaimPregenWalletProps
-    console.log(
-      'User share',
-      walletId,
-      newPregenIdentifier,
-      'This API was called'
-    )
+
     const [decryptedKeyShare, _] = await Promise.all([
       decrypt(userShare!),
       new Promise((resolve) => setTimeout(resolve, 100)),
     ])
 
     const recoverySecret = await UpdateAndClaimPregenWallet({
+      paraClientSession: paraClientSession,
       pregenIdentifier: newPregenIdentifier,
       walletId: walletId,
       userShare: decryptedKeyShare.data,
     })
+
     console.log(recoverySecret)
     return res.status(200).json({
       success: true,

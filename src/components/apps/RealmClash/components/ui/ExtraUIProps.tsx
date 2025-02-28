@@ -248,8 +248,8 @@ export const CharacterCreation: React.FC<{
           const imageIpfsUrl = await pinata.gateways.convert(upload.IpfsHash)
           console.log(imageIpfsUrl)
           const metadata = {
-            name: characterInfo.name,
-            description: characterInfo.description,
+            name: characterInfo.name.trim(),
+            description: characterInfo.description.trim(),
             image: imageIpfsUrl,
             raw_image_hash: upload.IpfsHash,
           }

@@ -381,29 +381,34 @@ export const SignMessageWithPregenWallet = async (
 }
 
 export const UpdateAndClaimPregenWallet = async ({
+  paraClientSession,
   pregenIdentifier,
   walletId,
   userShare,
 }: {
+  paraClientSession: string
   pregenIdentifier: string
   walletId: string
   userShare?: string
 }) => {
-  const para = new ParaServer(
+  const paraClient = new ParaServer(
     Environment.BETA,
     process.env.NEXT_PUBLIC_PARA_API_KEY
   )
+  paraClient.importSession(paraClientSession)
+  const isActive = await paraClient.isSessionActive()
+
   if (userShare) {
-    await para.setUserShare(userShare)
+    await paraClient.setUserShare(userShare)
   }
   // It can only be email
-  await para.updatePregenWalletIdentifier({
+  await paraClient.updatePregenWalletIdentifier({
     walletId: walletId,
     newPregenIdentifier: pregenIdentifier,
     newPregenIdentifierType: 'EMAIL',
   })
 
-  const recoverySecret = await para.claimPregenWallets({
+  const recoverySecret = await paraClient.claimPregenWallets({
     pregenIdentifier: pregenIdentifier,
     pregenIdentifierType: 'EMAIL',
   })

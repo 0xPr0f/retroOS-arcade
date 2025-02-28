@@ -62,7 +62,6 @@ const GameLeaderboard: React.FC = () => {
   })
 
   const leaderboardData = leaderboardRawData ? (leaderboardRawData as any) : []
-  console.log(leaderboardData)
 
   const gameDetails: Record<GameType, GameDetails> = {
     [GameType.SNAKE]: {

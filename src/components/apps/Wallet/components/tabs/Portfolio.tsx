@@ -150,7 +150,26 @@ export function HomeContent() {
     isConnected ? accounts[0] : isLoginPregenSession ? accounts[1] : accounts[0]
   )
 
-  const address = selectedAccount.address
+  const [dropdownAddress, setDropdownAddress] =
+    useTypedValue('dropdown_address')
+
+  useEffect(() => {
+    if (dropdownAddress) {
+      const account = accounts.find((acc) => acc.address === dropdownAddress)
+      if (account) {
+        setSelectedAccount(account)
+      }
+    } else {
+      setDropdownAddress(selectedAccount.address)
+    }
+  }, [])
+
+  useEffect(() => {
+    setDropdownAddress(selectedAccount.address)
+  }, [selectedAccount])
+
+  const address = dropdownAddress as any
+
   useEffect(() => {
     const currentAddress = isConnected
       ? UserAddress?.toLowerCase()

@@ -141,6 +141,7 @@ export const CharacterCardUI: React.FC<{ tokenId: string }> = ({ tokenId }) => {
   const ipfsOrigins = [
     'https://nftstorage.link',
     'https://gateway.pinata.cloud',
+    'https://alchemy.mypinata.cloud',
     'https://dweb.link',
     'https://flk-ipfs.xyz',
     'https://ipfs.io',

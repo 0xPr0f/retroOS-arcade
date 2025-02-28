@@ -580,6 +580,7 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
   const ipfsOrigins = [
     'https://nftstorage.link',
     'https://gateway.pinata.cloud',
+    'https://alchemy.mypinata.cloud',
     'https://dweb.link',
     'https://flk-ipfs.xyz',
     'https://ipfs.io',
