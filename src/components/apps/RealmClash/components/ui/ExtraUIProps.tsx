@@ -246,6 +246,7 @@ export const CharacterCreation: React.FC<{
             .key(keyData.JWT)
 
           const imageIpfsUrl = await pinata.gateways.convert(upload.IpfsHash)
+          console.log(imageIpfsUrl)
           const metadata = {
             name: characterInfo.name,
             description: characterInfo.description,
@@ -254,6 +255,7 @@ export const CharacterCreation: React.FC<{
           }
           const tokenUri = await pinata.upload.json(metadata).key(keyData.JWT)
           tokenUriIpfsUrl = await pinata.gateways.convert(tokenUri.IpfsHash)
+          console.log(tokenUriIpfsUrl)
           setCharacterInfo({
             ...characterInfo,
             url: tokenUriIpfsUrl,

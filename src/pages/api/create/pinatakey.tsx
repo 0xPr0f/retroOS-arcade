@@ -13,7 +13,6 @@ export default async function handler(
   }
 
   try {
-    console.log(process.env.PINATA_JWT)
     const uuid = crypto.randomUUID()
     const keyData = await pinata.keys.create({
       keyName: uuid.toString(),
@@ -27,7 +26,6 @@ export default async function handler(
       },
       maxUses: 2,
     })
-    console.log(keyData)
     return res.status(200).json({
       success: true,
       data: keyData,
