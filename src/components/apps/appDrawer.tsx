@@ -14,6 +14,7 @@ import {
   TetrisGameIcon,
   TicTacToeGameIcon,
   WalletIcon,
+  LeaderboardIcon,
 } from './appExports'
 
 // app configurations
@@ -227,6 +228,22 @@ const apps: App[] = [
     openingDimensions: {
       height: 600,
       width: 750,
+    },
+    greater: true,
+    fixed: false,
+    game: true,
+  },
+  {
+    id: 'leaderboard',
+    title: 'Leaderboard',
+    icon: LeaderboardIcon.src,
+    openingPosition: {
+      x: 320,
+      y: 130,
+    },
+    openingDimensions: {
+      height: 500,
+      width: 450,
     },
     greater: true,
     fixed: false,

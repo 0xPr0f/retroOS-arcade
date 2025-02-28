@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { privateKeyToAccount } from 'viem/accounts'
-import { keccak256 } from 'viem'
+import { keccak256, encodePacked } from 'viem'
 
 export default async function handler(
   req: NextApiRequest,
@@ -33,10 +33,11 @@ export default async function handler(
     const account = privateKeyToAccount(`0x${serverSigner}`)
 
     const messageHash = keccak256(
-      Buffer.from([player, score, gameType].join(''))
+      encodePacked(
+        ['address', 'uint256', 'uint8'],
+        [player, BigInt(score), gameType]
+      )
     )
-    console.log(messageHash)
-    console.log(Buffer.from([player, score, gameType].join('')))
 
     const signature = await account.signMessage({
       message: { raw: messageHash },

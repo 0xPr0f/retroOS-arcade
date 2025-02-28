@@ -34,17 +34,17 @@ export default async function createPregenWalletHandler(
     }
     const paraServer = new ParaServer(Environment.BETA, PARA_API_KEY)
     const walletExists = await paraServer.hasPregenWallet({
-      pregenIdentifier: identifier,
-      pregenIdentifierType: categorizeIdentifier(identifier),
+      pregenIdentifier: identifier.trim(),
+      pregenIdentifierType: categorizeIdentifier(identifier.trim()),
     })
     if (walletExists) {
       const host = req.headers.host
       const protocol = req.headers['x-forwarded-proto'] || 'http'
-      const dbStoreUrl = `${protocol}://${host}/api/apps/drivers/db/retrieve?identifier=${identifier}`
+      const dbStoreUrl = `${protocol}://${host}/api/apps/drivers/db/retrieve?identifier=${identifier.trim()}`
       const result = await axios.get(dbStoreUrl)
       res.status(200).json({
         success: true,
-        identifier: identifier,
+        identifier: identifier.trim(),
         wallet_address: result.data.data.wallet_address,
         pregen_wallet_id: result.data.data.pregen_wallet_id,
         smart_account_address: result.data.data.smart_account_address,
@@ -54,8 +54,8 @@ export default async function createPregenWalletHandler(
     }
     const wallet = await paraServer.createPregenWallet({
       type: WalletType.EVM,
-      pregenIdentifier: identifier,
-      pregenIdentifierType: categorizeIdentifier(identifier),
+      pregenIdentifier: identifier.trim(),
+      pregenIdentifierType: categorizeIdentifier(identifier.trim()),
     })
     if (!wallet) {
       res
@@ -86,7 +86,7 @@ export default async function createPregenWalletHandler(
       84532
     )
     await axios.post(dbStoreUrl, {
-      identifier,
+      identifier: identifier.trim(),
       wallet_address: wallet.address!,
       pregen_wallet_id: wallet.id,
       smart_account_address: smart_account_address,
@@ -95,7 +95,7 @@ export default async function createPregenWalletHandler(
 
     res.status(201).json({
       success: true,
-      identifier: identifier,
+      identifier: identifier.trim(),
       wallet_address: wallet.address!,
       pregen_wallet_id: wallet.id,
       smart_account_address: smart_account_address,

@@ -16,6 +16,7 @@ const Piano = lazy(() => import('./Piano'))
 const Feedback = lazy(() => import('./Feedback'))
 const ChainReaction = lazy(() => import('./ChainReaction'))
 const RealmClash = lazy(() => import('./RealmClash'))
+const Leaderboard = lazy(() => import('./GameLeaderboard'))
 
 // Icons Export
 import DesktopIcon from './MyComputer/icons/desktop.svg'
@@ -32,6 +33,8 @@ import PianoIcon from './Piano/icons/piano.svg'
 import FeedbackIcon from './Feedback/icons/feedback.svg'
 import ChainReactionIcon from './ChainReaction/icons/reaction.svg'
 import RealmClashIcon from './RealmClash/icons/realmclash.svg'
+import LeaderboardIcon from './GameLeaderboard/icons/leaderboard.svg'
+
 //export the apps and others from here to keep track of exported apps
 export {
   Document,
@@ -49,6 +52,7 @@ export {
   Feedback,
   ChainReaction,
   RealmClash,
+  Leaderboard,
   //////////////////////
   DesktopIcon,
   DocumentIcon,
@@ -64,4 +68,5 @@ export {
   FeedbackIcon,
   ChainReactionIcon,
   RealmClashIcon,
+  LeaderboardIcon,
 }

@@ -561,6 +561,7 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
       args: [characterId],
       query: {
         enabled: !!characterId,
+        refetchInterval: 5000,
       },
     })
 

@@ -15,6 +15,8 @@ import {
   Feedback,
   ChainReaction,
   RealmClash,
+  Leaderboard,
+
   /////////////////////
   DesktopIcon,
   DocumentIcon,
@@ -30,6 +32,7 @@ import {
   FeedbackIcon,
   ChainReactionIcon,
   RealmClashIcon,
+  LeaderboardIcon,
 } from './appExports'
 
 const appMap: {
@@ -53,7 +56,7 @@ const appMap: {
   minesweeper: MineSweeperGame,
   realmclash: RealmClash,
   chainreaction: ChainReaction,
-
+  leaderboard: Leaderboard,
   // Add new components here by adding new key-value pairs, the key has to match id in app drawer
 }
 export const iconMap: { [key: string]: Object } = {
@@ -72,6 +75,7 @@ export const iconMap: { [key: string]: Object } = {
   start: StartIcon,
   chainreaction: ChainReactionIcon,
   realmclash: RealmClashIcon,
+  leaderboard: LeaderboardIcon,
 
   // Add new icons here by adding new key-value pairs, the key has to match id in app drawer
 }
