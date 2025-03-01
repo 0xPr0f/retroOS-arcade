@@ -75,7 +75,7 @@ const WindowComponent: React.FC<WindowProps> = ({
 
   const handleClose = (e: React.MouseEvent, id: number) => {
     e.stopPropagation()
-    console.log(e)
+
     setIsClosing(true)
     setTimeout(() => {
       onClose(id)

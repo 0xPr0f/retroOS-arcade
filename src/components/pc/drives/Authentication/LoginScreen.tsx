@@ -17,10 +17,6 @@ import { useAccount } from 'wagmi'
 const LoginScreen: React.FC = () => {
   const [isParaModalOpen, setIsParaModalOpen] = useState(false)
 
-  useEffect(() => {
-    console.log('Modal state updated:', isParaModalOpen)
-  }, [isParaModalOpen])
-
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
     setIsParaModalOpen(true)
@@ -54,9 +50,6 @@ const LoginScreen: React.FC = () => {
     setImageBackground(settings?.theme.backgroundUrl)
     setUserName(settings?.name)
   }, [settings])
-  useEffect(() => {
-    console.log(isConnected)
-  }, [isConnected])
 
   const closeGuestLogin = () => {
     setGuestLogin(false)

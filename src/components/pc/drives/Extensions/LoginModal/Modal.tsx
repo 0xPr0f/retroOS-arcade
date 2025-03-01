@@ -140,7 +140,7 @@ const WalletModal = ({
         identifier: generatePregenIdentifier,
       })
       const result = response.data
-      console.log('result pregen wallet:', result)
+      // console.log('result pregen wallet:', result)
       if (!result.success) {
         setLoadingPregen(false)
         return
