@@ -47,7 +47,7 @@ pnpm i
 3. Set up environment variables:
 
 ```bash
-cp .env.example .env
+cp env.example .env
 ```
 
 4. Start the development server:
