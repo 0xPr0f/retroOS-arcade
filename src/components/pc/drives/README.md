@@ -9,6 +9,7 @@ This documentation provides an overview of the available hooks in the applicatio
 - **Dispatch Windows Hooks**
 - **Navbar API Hooks**
 - **Value Synchronization Hooks**
+- **App Routing Hooks**
 - **Contract Interactions**
   - **Pregen Contract Write Hooks (`usePregenTransaction`)**
 
@@ -303,6 +304,116 @@ const NavbarController = () => {
 };
 ```
 
+## App Routing Hooks
+
+The application provides a lightweight client-side routing system with the following interface:
+
+```typescript
+interface RouterContextType {
+  navigate: (path: string, params?: Record<string, string>) => void
+  back: () => void
+  currentRoute: Route | null
+  params: Record<string, string>
+}
+
+type Route = {
+  path: string
+  component: ReactComponent
+  params?: Record<string, string>
+  pattern?: RegExp
+}
+```
+
+### Core Components
+
+- **`AppRouterProvider`**: Provider component that sets up the routing context.
+- **`AppRouteRegistrar`**: Component for registering available routes.
+- **`AppRouteRenderer`**: Component that renders the current route.
+
+### Available Functions
+
+- **`navigate(path, params)`**: Navigates to the specified path with optional parameters.
+
+- **`back()`**: Navigates to the previous route in history.
+
+- **`currentRoute`**: The currently active route object.
+
+- **`params`**: An object containing the current route parameters.
+
+### Usage Example
+
+```tsx
+import { 
+  useAppRouter, 
+  AppRouterProvider, 
+  AppRouteRegistrar, 
+  AppRouteRenderer 
+} from '@/components/pc/drives';
+
+// Define your routes
+const routes = [
+  { path: '/dashboard', component: Dashboard },
+  { path: '/profile/:userId', component: UserProfile },
+  { path: '/settings', component: Settings }
+];
+
+// Set up the router in your app
+const App = () => {
+  return (
+    <AppRouterProvider>
+      <AppRouteRegistrar routes={routes} />
+      <Layout>
+        <AppRouteRenderer />
+      </Layout>
+    </AppRouterProvider>
+  );
+};
+
+// Use the router in a component
+const Navigation = () => {
+  const { navigate, back, params } = useAppRouter();
+
+  return (
+    <nav>
+      <button onClick={() => navigate('/dashboard')}>Dashboard</button>
+      <button onClick={() => navigate('/profile/123', { tab: 'posts' })}>
+        User Profile
+      </button>
+      <button onClick={() => navigate('/settings')}>Settings</button>
+      <button onClick={back}>Back</button>
+      
+      {params.userId && <p>Current user ID: {params.userId}</p>}
+    </nav>
+  );
+};
+```
+
+### Working with Route Parameters
+
+The router supports both URL parameters (like `:userId` in `/profile/:userId`) and additional parameters passed through the navigate function:
+
+```tsx
+// Navigate with URL parameters
+navigate('/profile/123');
+
+// Navigate with additional parameters
+navigate('/profile/123', { tab: 'posts', view: 'grid' });
+
+// Access parameters in your component
+const ProfilePage = () => {
+  const { params } = useAppRouter();
+  
+  // params would contain { userId: '123', tab: 'posts', view: 'grid' }
+  return (
+    <div>
+      <h1>User Profile: {params.userId}</h1>
+      <Tabs activeTab={params.tab} />
+      <ContentView mode={params.view} />
+    </div>
+  );
+};
+```
+
 ## Value Synchronization Hooks
 
 For easy synchronization of values between components:
@@ -390,6 +501,7 @@ const executePregenWrite = () => {
 ### Notifications Hooks:
 
 **Properties/Methods:**
+
 - `notifications`: Array of notifications.
 - `addNotification(notification)`: Adds a new notification.
 - `addSilentNotification(notification)`: Adds a notification without a toast.
@@ -404,6 +516,7 @@ const executePregenWrite = () => {
 ### Pregen Wallet Login Hooks:
 
 **Properties/Methods:**
+
 - `pregenWalletSession`: The current wallet session data.
 - `isLoginPregenSession`: Flag indicating if a session is active.
 - `setPregenWalletSession(value)`: Sets the wallet session.
@@ -417,6 +530,7 @@ const executePregenWrite = () => {
 ### Dispatch Windows Hooks:
 
 **Properties/Methods:**
+
 - `createDispatchWindow(config)`: Creates a new window.
 - `closeDispatchWindow(id)`: Closes a specific window.
 - `focusDispatchWindow(id)`: Focuses a specific window.
@@ -426,15 +540,32 @@ const executePregenWrite = () => {
 ### Navbar API Hooks:
 
 **Properties/Methods:**
+
 - `navbarContent`: Current navbar content.
 - `setNavbarContent(content)`: Sets navbar content.
 - `clearNavbarContent()`: Clears navbar content.
 - `activeWindowId`: ID of the active window.
 - `setActiveWindowId(windowId)`: Sets the active window.
 
+### App Routing Hooks:
+
+**Properties/Methods:**
+
+- `navigate(path, params)`: Navigates to specified path with optional parameters.
+- `back()`: Navigates to previous route.
+- `currentRoute`: The currently active route.
+- `params`: Parameters for current route.
+
+**Core Components:**
+
+- `AppRouterProvider`: Sets up routing context.
+- `AppRouteRegistrar`: Registers available routes.
+- `AppRouteRenderer`: Renders current route.
+
 ### Value Synchronization Hooks:
 
 **Properties/Methods:**
+
 - `getValue()`: Gets the current value.
 - `setValue(value)`: Sets a new value.
 

@@ -871,12 +871,12 @@ const WalletSettings = ({ isDarkMode }: { isDarkMode: boolean }) => {
             <li>
               Gasless transactions with{' '}
               <Link
-                href="https://www.alchemy.com"
+                href="https://docs.zerodev.app"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:underline"
               >
-                Alchemy
+                ZeroDev
               </Link>{' '}
               smart accounts
             </li>
