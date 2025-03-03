@@ -261,9 +261,9 @@ export const CharacterCreation: React.FC<{
             url: tokenUriIpfsUrl,
           })
         }
-        /*  await handleCreateCharacter(
+        await handleCreateCharacter(
           tokenUriIpfsUrl.length < 10 ? characterInfo.url : tokenUriIpfsUrl
-        ) */
+        )
       } catch (error) {
         console.error('Error creating character:', error)
         addNotification({
