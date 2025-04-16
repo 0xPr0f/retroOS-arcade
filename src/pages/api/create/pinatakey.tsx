@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { pinata } from '@/components/pc/drives/Interactions/pinata'
+import { pinata } from '@/app/components/pc/drives/Interactions/pinata'
 
 export default async function handler(
   req: NextApiRequest,

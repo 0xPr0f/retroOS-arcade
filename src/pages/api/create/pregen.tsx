@@ -1,5 +1,5 @@
-import { categorizeIdentifier } from '@/components/pc/drives/Extensions/utils'
-import { encrypt } from '@/components/library/utils/encryption-utils'
+import { categorizeIdentifier } from '@/app/components/pc/drives/Extensions/utils'
+import { encrypt } from '@/app/components/library/utils/encryption-utils'
 import {
   Para as ParaServer,
   Environment,
@@ -9,7 +9,7 @@ import {
 import axios from 'axios'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { PregenWalletData } from '../apps/drivers/db/create'
-import { smartAccountAddress } from '@/components/pc/drives/Interactions'
+import { smartAccountAddress } from '@/app/components/pc/drives/Interactions'
 
 export default async function createPregenWalletHandler(
   req: NextApiRequest,

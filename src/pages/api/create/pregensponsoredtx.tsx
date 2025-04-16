@@ -1,5 +1,5 @@
-import { decrypt } from '@/components/library/utils/encryption-utils'
-import { PrepareAndSignSponsoredTransactionWithPregenWalletServer } from '@/components/pc/drives/Interactions'
+import { decrypt } from '@/app/components/library/utils/encryption-utils'
+import { PrepareAndSignSponsoredTransactionWithPregenWalletServer } from '@/app/components/pc/drives/Interactions'
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 export interface PrepareAndSignTransactionWithPregenWalletServerProps {
