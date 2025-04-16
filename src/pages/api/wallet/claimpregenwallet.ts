@@ -1,8 +1,8 @@
-import { decrypt } from '@/app/components/library/utils/encryption-utils'
+import { decrypt } from '@/components/library/utils/encryption-utils'
 import {
   PrepareAndSignTransactionWithPregenWalletServer,
   UpdateAndClaimPregenWallet,
-} from '@/app/components/pc/drives/Interactions'
+} from '@/components/pc/drives/Interactions'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { Para as ParaServer } from '@getpara/server-sdk'
 export interface UpdateAndClaimPregenWalletProps {

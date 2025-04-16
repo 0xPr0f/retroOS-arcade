@@ -1,4 +1,4 @@
-import clientPromise from '@/app/components/library/mongoclient'
+import clientPromise from '@/components/library/mongoclient'
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 export interface PregenWalletData {
