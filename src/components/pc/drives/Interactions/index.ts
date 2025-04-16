@@ -395,8 +395,11 @@ export const UpdateAndClaimPregenWallet = async ({
     Environment.BETA,
     process.env.NEXT_PUBLIC_PARA_API_KEY
   )
-  paraClient.importSession(paraClientSession)
+  await paraClient.importSession(paraClientSession)
+
   const isActive = await paraClient.isSessionActive()
+
+  console.log('isActive', isActive)
 
   if (userShare) {
     await paraClient.setUserShare(userShare)

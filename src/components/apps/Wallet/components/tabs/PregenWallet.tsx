@@ -104,21 +104,24 @@ const EmailUpdateComponent = () => {
     const { recoverySecret } = await paraClient.waitForPasskeyAndCreateWallet(); */
     setIsVerifying(true)
     try {
-      const isVerified = await paraClient.verifyEmail({
+      const verifyurl = await paraClient.verifyEmail({
         verificationCode: verificationCode,
       })
-      // console.log('isVerified', isVerified)
-      /* const authUrl = await paraClient.getSetUpBiometricsURL()
+      console.log('isVerified', verifyurl)
+      const authUrl = await paraClient.getSetUpBiometricsURL()
 
-      window.open(authUrl, 'signUpPopup', 'popup=true')
+      const popupWindow = window.open(authUrl, 'signUpPopup', 'popup=true')
 
-      const passKeyResults = await paraClient.waitForPasskeyAndCreateWallet()
-      //  console.log('passKeyResults', passKeyResults) */
+      if (!popupWindow) {
+        throw new Error('Popup was blocked')
+      }
 
+      await paraClient.waitForPasskeyAndCreateWallet()
+      const wallets = Object.values(await paraClient.getWallets())
+      console.log('wallets', wallets)
       const serializedSession = paraClient.exportSession()
 
-      // console.log('serializedSession', serializedSession)
-      if (isVerified) {
+      if (verifyurl) {
         const recoverySecret = await axios.post(
           '/api/wallet/claimpregenwallet',
           {

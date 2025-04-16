@@ -649,7 +649,7 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
     e.stopPropagation()
     console.log('Edit character:', characterId)
     const centeredX = mouse.docX - 300 / 2
-    const centeredY = mouse.docY - 350 / 1.1
+    const centeredY = mouse.docY - 350 / 1.3
     const windowId = createDispatchWindow({
       title: 'Allocate Stats',
       content: () => {

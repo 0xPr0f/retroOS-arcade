@@ -80,6 +80,8 @@ RetroOS Arcade is an open platform where developers can deploy their own applica
 
 - [Para](https://www.getpara.com/) - Seamless Web3 onboarding with embedded and pre-generated wallets for a frictionless user experience
 
+- [ZeroDev](https://zerodev.app/) - Predetermined smart accounts for Para Pregen wallets and gasless transactions.
+
 ## 🤝 Contributing
 
 We welcome contributions! Please read our [contributing guidelines](/CONTRIBUTION.md) to get started.
