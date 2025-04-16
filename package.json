@@ -54,8 +54,8 @@
     "tailwind-merge": "^2.6.0",
     "three": "^0.173.0",
     "ua-parser-js": "1.0.40",
-    "viem": "~2.23.4",
-    "wagmi": "^2.14.11",
+    "viem": "2.23.4",
+    "wagmi": "2.14.11",
     "websocket": "^1.0.35"
   },
   "devDependencies": {
