@@ -361,7 +361,7 @@ export const AlchemyPrepareAndSignSponsoredTransactionWith7702 = async ({
   chainId?: number
   value?: string
 }) => {
-  const paraApiKey = process.env.PARA_API_KEY
+  /* const paraApiKey = process.env.PARA_API_KEY
   const alchemyApiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
   const alchemyGasPolicyId = process.env.NEXT_PUBLIC_ALCHEMY_GAS_POLICY_ID
   const interaction = PublicClientInteractionsList({
@@ -447,7 +447,7 @@ export const AlchemyPrepareAndSignSponsoredTransactionWith7702 = async ({
   const txHash = await alchemyClient.waitForUserOperationTransaction(
     userOperationResult
   )
-  console.log('   Transaction Hash:', txHash)
+  console.log('   Transaction Hash:', txHash) */
 }
 
 export const smartAccountAddress = async (
