@@ -47,11 +47,11 @@ const EmailUpdateComponent = () => {
       // console.log(recoverySecret)
       //  console.log(recoverySecret.data)
 
-      const isExistingUser = await paraClient.checkIfUserExists({
+      /* const isExistingUser = await paraClient.checkIfUserExists({
         email: email,
-      })
+      })*/
       // console.log(isExistingUser)
-      if (isExistingUser) {
+      /* if (isExistingUser) {
         const webAuthUrlForLogin = await paraClient.initiateUserLogin({
           email: email,
           useShortUrl: false,
@@ -66,15 +66,16 @@ const EmailUpdateComponent = () => {
         const details = await paraClient.waitForLoginAndSetup({
           popupWindow: popupWindow!,
         })
-        //console.log(details)
+*/
+      //console.log(details)
 
-        /*if (needsWallet) {
+      /*if (needsWallet) {
           //waitForLoginAndSetup usually creates a wallet but if it doesn't, you can create a wallet here
           // const [wallet, recoverySecret] = await capsuleClient.createWallet();
         }*/
-      } else {
-        await paraClient.createUser({ email: email })
-      }
+      // } else {
+      //   await paraClient.createUser({ email: email })
+      // }
       setShowVerification(true)
       setMessage('Success! Verification code sent to your email!')
       setShowMessage(true)
@@ -104,7 +105,7 @@ const EmailUpdateComponent = () => {
     const { recoverySecret } = await paraClient.waitForPasskeyAndCreateWallet(); */
     setIsVerifying(true)
     try {
-      const verifyurl = await paraClient.verifyEmail({
+      /*  const verifyurl = await paraClient.verifyEmail({
         verificationCode: verificationCode,
       })
       console.log('isVerified', verifyurl)
@@ -135,7 +136,7 @@ const EmailUpdateComponent = () => {
         setMessage('Success! Wallet claimed!')
         setShowMessage(true)
         setTimeout(() => setShowMessage(false), 3000)
-      }
+      }*/
     } catch (error) {
       setMessage('Verification failed. Please try again.')
       setShowMessage(true)

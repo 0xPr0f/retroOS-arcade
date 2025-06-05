@@ -11,11 +11,6 @@ interface Network {
   isConnected: boolean
 }
 
-const networks: Network[] = [
-  { id: 'blast-sepolia', name: 'Blast Sepolia', isConnected: true },
-  { id: 'blast', name: 'Blast', isConnected: false },
-  { id: 'sepolia', name: 'Sepolia', isConnected: false },
-]
 const ChainWidget = () => {
   const [time, setTime] = useState(new Date())
   const [isOpen, setIsOpen] = useState(false)

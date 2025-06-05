@@ -36,6 +36,7 @@ import {
 } from '@/components/pc/drives/Extensions/colors'
 import { useAccount, useDisconnect } from 'wagmi'
 import { usePregenSession, useTypedValue } from '@/components/pc/drives'
+import { useSmartAccount } from '@/components/pc/drives/Storage&Hooks/SmartAccountHook'
 
 const hideFirstP = '[&>p:first-child]:hidden'
 const DeviceInfo = ({ isDarkMode }: { isDarkMode: boolean }) => {
@@ -913,7 +914,8 @@ const WalletSettings = ({ isDarkMode }: { isDarkMode: boolean }) => {
 
 const SettingsPanel = () => {
   const { useSaveState } = useExperimentalFeatures()
-  const { isLoginPregenSession } = usePregenSession()
+  //const { isLoginPregenSession } = usePregenSession()
+  const { isGuestMode } = useSmartAccount()
 
   const [activeTab, setActiveTab] = useSaveState(
     'tab',
@@ -986,7 +988,7 @@ const SettingsPanel = () => {
     ),
     user: <UserInfoSettings isDarkMode={isDarkMode} />,
     experiments: <ExperimentalSettings isDarkMode={isDarkMode} />,
-    ...(isLoginPregenSession && {
+    ...(isGuestMode && {
       wallet: <WalletSettings isDarkMode={isDarkMode} />,
     }),
   }
@@ -999,7 +1001,7 @@ const SettingsPanel = () => {
     storage: <Database className="w-5 h-5" />,
     user: <User className="w-5 h-5" />,
     experiments: <FlaskConical className="w-5 h-5" />,
-    ...(isLoginPregenSession && { wallet: <Wallet className="w-5 h-5" /> }),
+    ...(isGuestMode && { wallet: <Wallet className="w-5 h-5" /> }),
   }
 
   return (
@@ -1020,7 +1022,7 @@ const SettingsPanel = () => {
             'font',
             'user',
             'storage',
-            ...(isLoginPregenSession ? ['wallet'] : []),
+            ...(isGuestMode ? ['wallet'] : []),
             'experiments',
           ] as const
         ).map((tab) => (

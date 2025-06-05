@@ -631,8 +631,6 @@ const PcDesktop: React.FC = () => {
                 )}
 
               <div className="h-screen relative overflow-hidden">
-                {/* **************  Desktop Icons ************** */}
-
                 <div
                   id="app_drawer_dock"
                   //This on it own caused quite some issues with re-render and resets
@@ -742,7 +740,6 @@ const PcDesktop: React.FC = () => {
                   </div>
                 )}
 
-                {/********************* Windows *********************/}
                 {windows.map((window) => (
                   <WindowComponent
                     key={window.id}

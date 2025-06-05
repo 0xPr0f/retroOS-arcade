@@ -16,23 +16,27 @@ import {
 } from '@/components/pc/drives/Extensions/utils'
 import { Check, Copy, X, Circle, Clock, Trophy, Loader2 } from 'lucide-react'
 import { cn } from '@/components/library/utils'
-import { usePregenTransaction } from '@/components/pc/drives/Storage&Hooks/PregenInteractions'
+import { useHookTransaction } from '@/components/pc/drives/Storage&Hooks/HookInteraction'
 import { usePregenSession } from '@/components/pc/drives/Storage&Hooks/PregenSession'
 import { useNotifications } from '@/components/pc/drives/Extensions/ToastNotifs'
 import { zeroAddress, zeroHash } from 'viem'
+import { routeTransaction } from '@/components/pc/drives/Storage&Hooks/routeTx'
+import para from '@/components/pc/drives/Authentication/para'
+import { smartAccountAddress } from '@/components/pc/drives/Interactions'
+import { useSmartAccount } from '@/components/pc/drives/Storage&Hooks/SmartAccountHook'
 
 const TicTacToeMP = () => {
   const { address: playerAddress, isConnected } = useAccount()
   const chainId = useChainId()
-  const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
-    usePregenSession()
+  /* const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
+    usePregenSession() */
 
   const [gameId, setGameId] = useState<string | null>(null)
   const [board, setBoard] = useState<number[]>(Array(9).fill(0))
   const [gameStatus, setGameStatus] = useState<GameStatus>(GameStatus.WAITING)
   const [queuePosition, setQueuePosition] = useState<number>(0)
   const [isOnChain, setIsOnChain] = useState<boolean>(false)
-  const availableChainIds = ['84532']
+  const availableChainIds = ['84532', '10143']
   const [copied, setCopied] = useState<{
     gameId: boolean
     opponent: boolean
@@ -44,11 +48,10 @@ const TicTacToeMP = () => {
     Record<string, TransactionState>
   >({})
   const [leftGame, setLeftGame] = useState<boolean>(false)
-  const [lastMove, setLastMove] = useState<number | null>(null) // Track last move for animation
+  const [lastMove, setLastMove] = useState<number | null>(null)
 
   const { addNotification } = useNotifications()
 
-  // Helper: update transaction state globally
   const updateTransactionState = (
     txType: string,
     update: Partial<TransactionState>
@@ -61,11 +64,16 @@ const TicTacToeMP = () => {
       },
     }))
   }
-  const address = isConnected
-    ? playerAddress?.toLowerCase()
-    : isLoginPregenSession
-    ? pregenActiveAddress?.toLowerCase()
-    : undefined
+  const {
+    baseAddress,
+    smartAddress,
+    isSmartAccountToggled,
+    activeAddress: ActiveAddress,
+    isGuestMode,
+  } = useSmartAccount()
+
+  const address = ActiveAddress?.toLowerCase()
+
   // Read queue position
   const { data: playerQueuePosition, refetch: refetchQueuePosition } =
     useReadContract({
@@ -115,7 +123,7 @@ const TicTacToeMP = () => {
     writeContract: writeJoinQueuePregen,
     data: joinQueueDataPregen,
     isPending: isJoiningQueuePregen,
-  } = usePregenTransaction({
+  } = useHookTransaction({
     mutation: {
       onError: (error: any) => {
         updateTransactionState('joinQueue', { status: 'error', error })
@@ -151,7 +159,7 @@ const TicTacToeMP = () => {
     writeContract: writeExitMatchPregen,
     data: exitMatchDataPregen,
     isPending: isExitingMatchPregen,
-  } = usePregenTransaction({
+  } = useHookTransaction({
     mutation: {
       onError: (error: any) => {
         updateTransactionState('leaveGame', { status: 'error', error })
@@ -166,10 +174,12 @@ const TicTacToeMP = () => {
 
   // Wait for exitMatch transaction
   const { isLoading: isWaitingForExitMatchT } = useWaitForTransactionReceipt({
-    hash: isConnected ? exitMatchData : exitMatchDataPregen,
+    hash: !isGuestMode ? exitMatchData : exitMatchDataPregen,
   })
 
-  const isWaitingForExitMatch = isSmartAccount ? false : isWaitingForExitMatchT
+  const isWaitingForExitMatch = isSmartAccountToggled
+    ? false
+    : isWaitingForExitMatchT
   const {
     writeContract: writeLeaveQueue,
     data: leaveQueueData,
@@ -192,7 +202,7 @@ const TicTacToeMP = () => {
     writeContract: writeLeaveQueuePregen,
     data: leaveQueueDataPregen,
     isPending: isLeavingQueuePregen,
-  } = usePregenTransaction({
+  } = useHookTransaction({
     mutation: {
       onError: (error: any) => {
         updateTransactionState('leaveQueue', { status: 'error', error })
@@ -207,16 +217,18 @@ const TicTacToeMP = () => {
 
   // Wait for joinQueue transaction
   const { isLoading: isWaitingForJoinQueueT } = useWaitForTransactionReceipt({
-    hash: isConnected ? joinQueueData : joinQueueDataPregen,
+    hash: !isGuestMode ? joinQueueData : joinQueueDataPregen,
   })
 
-  const isWaitingForJoinQueue = isSmartAccount ? false : isWaitingForJoinQueueT
+  const isWaitingForJoinQueue = isSmartAccountToggled
+    ? false
+    : isWaitingForJoinQueueT
 
   // Wait for leaveQueue transaction
   const { isLoading: isWaitingForLeaveQueueT } = useWaitForTransactionReceipt({
-    hash: isConnected ? leaveQueueData : leaveQueueDataPregen,
+    hash: !isGuestMode ? leaveQueueData : leaveQueueDataPregen,
   })
-  const isWaitingForLeaveQueue = isSmartAccount
+  const isWaitingForLeaveQueue = isSmartAccountToggled
     ? false
     : isWaitingForLeaveQueueT
 
@@ -254,7 +266,7 @@ const TicTacToeMP = () => {
     writeContract: writeMakeMovePregen,
     data: moveDataPregen,
     isPending: isMakingMovePregen,
-  } = usePregenTransaction({
+  } = useHookTransaction({
     mutation: {
       onError: (error: any) => {
         updateTransactionState('makeMove', { status: 'error', error })
@@ -267,10 +279,12 @@ const TicTacToeMP = () => {
   })
 
   const { isLoading } = useWaitForTransactionReceipt({
-    hash: isConnected ? moveData : moveDataPregen,
+    hash: !isGuestMode ? moveData : moveDataPregen,
   })
-  const isWaitingForMove = isSmartAccount ? false : isLoading
-
+  const isWaitingForMove = isSmartAccountToggled ? false : isLoading
+  useEffect(() => {
+    console.log('Move Ing', isWaitingForMove, moveDataPregen)
+  }, [isWaitingForMove, moveDataPregen])
   // Only watch PlayersMatched event since it's needed for game initialization
   useWatchContractEvent({
     address: CONTRACT_ADDRESS,
@@ -310,12 +324,13 @@ const TicTacToeMP = () => {
         setGameStatus(GameStatus.PLAYING)
       }
     }
+    console.log(gameState)
   }, [gameState])
 
   useEffect(() => {
     if (playerQueuePosition !== undefined) {
       setQueuePosition(Number(playerQueuePosition))
-      // If queue position is 1, we should actively check for game updates
+
       if (Number(playerQueuePosition) === 1) {
         refetchCurrentGame()
       }
@@ -328,21 +343,23 @@ const TicTacToeMP = () => {
     }
     if (!gameId || !gameState?.[1]) return
     updateTransactionState('makeMove', { status: 'loading' })
-    setLastMove(position) // Track the last move for animation
+    setLastMove(position)
     try {
-      if (isConnected) {
+      if (!isGuestMode) {
         await writeMakeMove({
           address: CONTRACT_ADDRESS,
           abi: CONTRACT_ABI,
           functionName: 'makeMove',
           args: [gameId.toString(), position],
         })
-      } else if (isLoginPregenSession) {
+      } else {
+        const session = para.exportSession()
         await writeMakeMovePregen({
           address: CONTRACT_ADDRESS,
           abi: CONTRACT_ABI,
           functionName: 'makeMove',
           args: [gameId.toString(), position],
+          session: session,
         })
       }
     } catch (error) {
@@ -373,19 +390,21 @@ const TicTacToeMP = () => {
       })
       return
     }
-    if (isConnected) {
+    if (!isGuestMode) {
       await writeJoinQueue({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'joinQueue',
         args: [],
       })
-    } else if (isLoginPregenSession) {
+    } else {
+      const session = para.exportSession()
       await writeJoinQueuePregen({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'joinQueue',
         args: [],
+        session: session,
       })
     }
   }
@@ -394,19 +413,21 @@ const TicTacToeMP = () => {
     if (!isOnChain) {
       return
     }
-    if (isConnected) {
+    if (!isGuestMode) {
       await writeLeaveQueue({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'leaveQueue',
         args: [],
       })
-    } else if (isLoginPregenSession) {
+    } else {
+      const session = para.exportSession()
       await writeLeaveQueuePregen({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'leaveQueue',
         args: [],
+        session: session,
       })
     }
   }
@@ -420,19 +441,21 @@ const TicTacToeMP = () => {
       })
       return
     }
-    if (isConnected) {
+    if (!isGuestMode) {
       await writeExitMatch({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'leaveGame',
         args: [],
       })
-    } else if (isLoginPregenSession) {
+    } else {
+      const session = para.exportSession()
       await writeExitMatchPregen({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'leaveGame',
         args: [],
+        session: session,
       })
     }
   }
@@ -489,7 +512,7 @@ const TicTacToeMP = () => {
             gameStatus === GameStatus.PLAYING &&
             value === 0 &&
             !(
-              (isConnected ? isMakingMove : isMakingMovePregen) ||
+              (!isGuestMode ? isMakingMove : isMakingMovePregen) ||
               isWaitingForMove
             ) &&
             (gameState?.[5] // isXNext
@@ -514,7 +537,7 @@ const TicTacToeMP = () => {
                   w-full h-full flex items-center justify-center rounded-lg 
                   ${canPlay ? 'hover:bg-gray-700/50' : ''}
                   ${
-                    (isConnected ? isMakingMove : isMakingMovePregen) ||
+                    (!isGuestMode ? isMakingMove : isMakingMovePregen) ||
                     isWaitingForMove
                       ? 'cursor-wait'
                       : ''
@@ -545,7 +568,7 @@ const TicTacToeMP = () => {
                     </div>
                   )}
                 </div>
-                {(isConnected ? isMakingMove : isMakingMovePregen) &&
+                {(!isGuestMode ? isMakingMove : isMakingMovePregen) &&
                   lastMove === index && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-lg">
                       <Loader2 className="h-6 w-6 text-blue-400 animate-spin" />
@@ -664,7 +687,7 @@ const TicTacToeMP = () => {
                   : 'bg-red-500/20 border border-red-500/50'
               }
               ${
-                (isConnected ? isMakingMove : isMakingMovePregen) ||
+                (!isGuestMode ? isMakingMove : isMakingMovePregen) ||
                 isWaitingForMove
                   ? 'animate-pulse'
                   : ''
@@ -680,7 +703,7 @@ const TicTacToeMP = () => {
                 {gameState?.[5] ? <X size={14} /> : <Circle size={12} />}
               </div>
               <span className="font-medium text-sm">
-                {(isConnected ? isMakingMove : isMakingMovePregen) ||
+                {(!isGuestMode ? isMakingMove : isMakingMovePregen) ||
                 isWaitingForMove
                   ? 'Processing move...'
                   : `${gameState?.[5] ? 'X' : 'O'}'s turn`}
@@ -761,7 +784,7 @@ const TicTacToeMP = () => {
           <button
             onClick={handleJoinQueue}
             disabled={
-              (isConnected ? isJoiningQueue : isJoiningQueuePregen) ||
+              (!isGuestMode ? isJoiningQueue : isJoiningQueuePregen) ||
               isWaitingForJoinQueue ||
               queuePosition > 0
             }
@@ -775,14 +798,14 @@ const TicTacToeMP = () => {
               } 
               text-white font-medium
               ${
-                (isConnected ? isJoiningQueue : isJoiningQueuePregen) ||
+                (!isGuestMode ? isJoiningQueue : isJoiningQueuePregen) ||
                 isWaitingForJoinQueue
                   ? 'opacity-70 cursor-wait'
                   : ''
               }
             `}
           >
-            {(isConnected ? isJoiningQueue : isJoiningQueuePregen) ||
+            {(!isGuestMode ? isJoiningQueue : isJoiningQueuePregen) ||
             isWaitingForJoinQueue ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -802,7 +825,7 @@ const TicTacToeMP = () => {
             <button
               onClick={handleLeaveQueue}
               disabled={
-                (isConnected ? isLeavingQueue : isLeavingQueuePregen) ||
+                (!isGuestMode ? isLeavingQueue : isLeavingQueuePregen) ||
                 isWaitingForLeaveQueue
               }
               className={`
@@ -810,14 +833,14 @@ const TicTacToeMP = () => {
                 py-2 px-4 rounded-lg transition-colors
                 bg-red-600 hover:bg-red-700 text-white font-medium
                 ${
-                  (isConnected ? isLeavingQueue : isLeavingQueuePregen) ||
+                  (!isGuestMode ? isLeavingQueue : isLeavingQueuePregen) ||
                   isWaitingForLeaveQueue
                     ? 'opacity-70 cursor-wait'
                     : ''
                 }
               `}
             >
-              {(isConnected ? isLeavingQueue : isLeavingQueuePregen) ||
+              {(!isGuestMode ? isLeavingQueue : isLeavingQueuePregen) ||
               isWaitingForLeaveQueue ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -832,7 +855,7 @@ const TicTacToeMP = () => {
       ) : gameStatus === GameStatus.PLAYING ? (
         <button
           disabled={
-            (isConnected ? isExitingMatch : isExitingMatchPregen) ||
+            (!isGuestMode ? isExitingMatch : isExitingMatchPregen) ||
             isWaitingForExitMatch
           }
           onClick={handleExitMatch}
@@ -841,14 +864,14 @@ const TicTacToeMP = () => {
             py-2 px-4 rounded-lg transition-colors
             bg-red-600 hover:bg-red-700 text-white font-medium mt-4
             ${
-              (isConnected ? isExitingMatch : isExitingMatchPregen) ||
+              (!isGuestMode ? isExitingMatch : isExitingMatchPregen) ||
               isWaitingForExitMatch
                 ? 'opacity-70 cursor-wait'
                 : ''
             }
           `}
         >
-          {(isConnected ? isExitingMatch : isExitingMatchPregen) ||
+          {(!isGuestMode ? isExitingMatch : isExitingMatchPregen) ||
           isWaitingForExitMatch ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />

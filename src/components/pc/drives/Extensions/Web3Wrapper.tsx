@@ -11,7 +11,7 @@ import {
   WagmiProvider,
   webSocket,
 } from 'wagmi'
-import { baseSepolia, mainnet, sepolia } from 'wagmi/chains'
+import { baseSepolia, mainnet, sepolia, monadTestnet } from 'wagmi/chains'
 import { injected } from 'wagmi/connectors'
 import PcDesktop from '../..'
 import para from '../Authentication/para'
@@ -24,32 +24,10 @@ import {
   DispatchWindowProvider,
 } from '@/components/pc/drives'
 
-const connector = paraConnector({
-  para: para,
-  chains: [sepolia],
-  appName: 'RetroOS Arcade',
-  options: {},
-  nameOverride: 'Para',
-  idOverride: 'para',
-  oAuthMethods: [OAuthMethod.GOOGLE, OAuthMethod.TWITTER],
-  disableEmailLogin: false,
-  disablePhoneLogin: false,
-  onRampTestMode: true,
-})
+import { Environment, ParaProvider } from '@getpara/react-sdk'
 
-export const config: CreateConfigParameters = {
-  chains: [baseSepolia, sepolia, mainnet],
-  connectors: [connector, injected()],
-  transports: {
-    [baseSepolia.id]: webSocket(
-      `wss://base-sepolia.blastapi.io/${process.env.NEXT_PUBLIC_BLAST_API_KEY}`
-    ),
-    [sepolia.id]: http(
-      `https://sepolia.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_KEY}`
-    ),
-    [mainnet.id]: http(),
-  },
-}
+import '@getpara/react-sdk/styles.css'
+import { SmartAccountProvider } from '../Storage&Hooks/SmartAccountHook'
 
 export const RPC_URL = {
   infura: {
@@ -61,15 +39,83 @@ export const RPC_URL = {
   },
 }
 
-export const wagmiConfig = createConfig(config)
+//export const wagmiConfig = createConfig(config)
 export const queryClient = new QueryClient()
+
+/*
+const connector = paraConnector({
+  para: para,
+  chains: [sepolia, monadTestnet, baseSepolia],
+  appName: 'RetroOS Arcade',
+  options: {},
+  queryClient: queryClient,
+  nameOverride: 'Para',
+  idOverride: 'para',
+  oAuthMethods: [OAuthMethod.GOOGLE, OAuthMethod.TWITTER],
+  disableEmailLogin: false,
+  disablePhoneLogin: false,
+  onRampTestMode: true,
+})
+*/
+
+/*
+export const config: CreateConfigParameters = {
+  chains: [baseSepolia, sepolia, monadTestnet, mainnet],
+  connectors: [connector injected()],
+  transports: {
+    [baseSepolia.id]: webSocket(
+      `wss://base-sepolia.blastapi.io/${process.env.NEXT_PUBLIC_BLAST_API_KEY}`
+    ),
+    [sepolia.id]: http(
+      `https://sepolia.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_KEY}`
+    ),
+    [monadTestnet.id]: http(`wss://monad-testnet.drpc.org`), //Not seeing a personal one
+    [mainnet.id]: http(),
+  },
+}
+*/
+
+export function Providers({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ParaProvider
+        paraClientConfig={{
+          apiKey: process.env.NEXT_PUBLIC_PARA_API_KEY || '',
+          env: Environment.BETA,
+        }}
+        paraModalConfig={{
+          isGuestModeEnabled: true,
+        }}
+        config={{
+          appName: 'Retro Arcade',
+        }}
+        externalWalletConfig={{
+          evmConnector: {
+            config: {
+              chains: [baseSepolia, monadTestnet, sepolia, mainnet],
+            },
+          },
+          wallets: ['METAMASK', 'RABBY', 'PHANTOM', 'WALLETCONNECT'],
+        }}
+      >
+        {children}
+      </ParaProvider>
+    </QueryClientProvider>
+  )
+}
 
 const Web3Wrapper: React.FC = () => {
   return (
     <div>
-      <WagmiProvider config={wagmiConfig}>
-        <QueryClientProvider client={queryClient}>
-          <ValueProvider>
+      {/*} <WagmiProvider config={wagmiConfig}>
+        <QueryClientProvider client={queryClient}> */}
+      <Providers>
+        <ValueProvider>
+          <SmartAccountProvider>
             <PregenProvider>
               <NotificationProvider>
                 <DispatchWindowProvider>
@@ -81,9 +127,11 @@ const Web3Wrapper: React.FC = () => {
                 </DispatchWindowProvider>
               </NotificationProvider>
             </PregenProvider>
-          </ValueProvider>
-        </QueryClientProvider>
-      </WagmiProvider>
+          </SmartAccountProvider>
+        </ValueProvider>
+      </Providers>
+      {/*}  </QueryClientProvider>
+      </WagmiProvider> */}
     </div>
   )
 }

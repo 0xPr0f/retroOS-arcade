@@ -102,11 +102,10 @@ const WalletModal = ({
     } catch (e) {
       console.log('error', e)
     }
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    await new Promise((resolve) => setTimeout(resolve, 2000))
     sessionStorage.setItem('recentWallet', wallet.id)
     setRecentWallet(wallet.id)
   }
+
   const handleBack = () => {
     setLearnMoreView(false)
     setSelectedWallet(null)
@@ -136,6 +135,7 @@ const WalletModal = ({
     if (generatePregenIdentifier.length < 5 || loadingPregen) return
     try {
       setLoadingPregen(true)
+      console.log('sent')
       const response = await axios.post(`/api/create/pregen`, {
         identifier: generatePregenIdentifier,
       })
@@ -265,7 +265,7 @@ const WalletModal = ({
                         className="font-semibold text-sm"
                         style={{ color: finalTheme.accentColor }}
                       >
-                        Social Login [Email | Phone | X]
+                        Login [Social | Wallet]
                       </h3>
                       {connectors
                         .filter((connector) =>

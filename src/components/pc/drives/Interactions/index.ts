@@ -8,6 +8,14 @@ import {
 } from '@getpara/server-sdk'
 import { categorizeIdentifier } from '../Extensions/utils'
 import { http } from '@wagmi/core'
+import {
+  alchemy,
+  mainnet,
+  sepolia,
+  baseSepolia,
+  monadTestnet,
+} from '@account-kit/infra'
+import { createModularAccountV2Client } from '@account-kit/smart-contracts'
 
 import {
   createParaAccount,
@@ -21,7 +29,7 @@ import {
   SignableMessage,
 } from 'viem'
 
-import { mainnet, sepolia, baseSepolia } from 'viem/chains'
+import {} from 'viem/chains'
 import { KERNEL_V3_1, getEntryPoint } from '@zerodev/sdk/constants'
 import { createKernelAccountClient } from '@zerodev/sdk'
 import { createKernelAccount } from '@zerodev/sdk'
@@ -33,6 +41,17 @@ import {
   getKernelAddressFromECDSA,
   signerToEcdsaValidator,
 } from '@zerodev/ecdsa-validator'
+import { BatchUserOperationCallData, WalletClientSigner } from '@aa-sdk/core'
+import type { Para } from '@getpara/server-sdk'
+import type {
+  AuthorizationRequest,
+  LocalAccount,
+  SignAuthorizationReturnType,
+} from 'viem'
+import { hashAuthorization } from 'viem/utils'
+
+const SIGNATURE_LENGTH = 130
+const V_OFFSET_FOR_ETHEREUM = 27
 
 const PublicClientInteractionsList = ({
   chainId,
@@ -63,6 +82,12 @@ const PublicClientInteractionsList = ({
         account: account,
         chain: baseSepolia,
         transport: http(`https://base-sepolia.blastapi.io/${blastAPIKey}`),
+      }
+    case 10143:
+      return {
+        account: account,
+        chain: monadTestnet,
+        transport: http(`https://testnet-rpc.monad.xyz`),
       }
     default: {
       return {
@@ -205,13 +230,14 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
     if (!userShare || !chainId || !toAddress) {
       throw new Error('User share, chain ID, and to address are required')
     }
+    console.log(userShare)
     const [paraClient, data, ZERO_DEV_PROJECT_ID] = await Promise.all([
       (async () => {
         const client = new ParaServer(
           Environment.BETA,
           process.env.NEXT_PUBLIC_PARA_API_KEY
         )
-        await client.setUserShare(userShare)
+        await client.importSession(userShare)
         return client
       })(),
       (async () => {
@@ -224,20 +250,19 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
       })(),
       process.env.NEXT_PUBLIC_ZERODEV_PROJECT_ID,
     ])
-
     const viemParaAccount = createParaAccount(paraClient)
     const interaction = PublicClientInteractionsList({
       account: viemParaAccount as any,
       chainId,
     })
-    const viemClient = createParaViemClient(paraClient, interaction)
+    const viemClient = createParaViemClient(paraClient, interaction) as any
 
     viemClient.account!.signMessage = async ({
       message,
     }: {
       message: SignableMessage
     }): Promise<Hash> => {
-      return customSignMessage(paraClient, message, walletId!)
+      return customSignMessageN(paraClient, message)
     }
 
     const activeChain = interaction.chain
@@ -315,6 +340,114 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
       throw new Error('An unknown error occurred during sponsored transaction')
     }
   }
+}
+
+export const AlchemyPrepareAndSignSponsoredTransactionWith7702 = async ({
+  session,
+  walletId,
+  abi,
+  toAddress,
+  functionName,
+  args,
+  chainId,
+  value,
+}: {
+  session?: string
+  walletId?: string
+  abi?: any[]
+  toAddress?: `0x${string}`
+  functionName?: string
+  args?: any[]
+  chainId?: number
+  value?: string
+}) => {
+  const paraApiKey = process.env.PARA_API_KEY
+  const alchemyApiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+  const alchemyGasPolicyId = process.env.NEXT_PUBLIC_ALCHEMY_GAS_POLICY_ID
+  const interaction = PublicClientInteractionsList({
+    chainId: chainId!,
+  })
+  const rpcUrl = interaction.chain.rpcUrls.alchemy.http[0]
+  const env = (process.env.PARA_ENVIRONMENT as Environment) || Environment.BETA
+
+  if (!paraApiKey || !alchemyApiKey || !alchemyGasPolicyId || !rpcUrl) {
+    console.log({
+      error: 'Missing environment variables',
+      message:
+        'Missing required environment variables (PARA_API_KEY, ALCHEMY_API_KEY, ALCHEMY_GAS_POLICY_ID, ALCHEMY_ARBITRUM_SEPOLIA_RPC).',
+    })
+    return
+  }
+  console.log('1. Initializing Para Server...')
+  const para = new ParaServer(env, paraApiKey)
+
+  console.log('2. Importing session...')
+  await para.importSession(session!)
+  console.log('   Session imported successfully')
+
+  console.log('3. Creating Para Viem Account...')
+  const viemParaAccount: LocalAccount = createParaAccount(para)
+  console.log('   Account address:', viemParaAccount.address)
+
+  viemParaAccount.signMessage = async ({ message }) =>
+    customSignMessageN(para, message)
+  viemParaAccount.signAuthorization = async (authorization) => {
+    console.log('   Signing authorization:', authorization)
+    return customSignAuthorization(para, authorization)
+  }
+  const viemClient = createParaViemClient(para, {
+    account: viemParaAccount,
+    chain: interaction.chain,
+    transport: http(rpcUrl),
+  })
+
+  const walletClientSigner = new WalletClientSigner(viemClient, 'para')
+  console.log('4')
+
+  const alchemyClient = await createModularAccountV2Client({
+    mode: '7702',
+    transport: alchemy({
+      apiKey: alchemyApiKey,
+    }),
+    chain: interaction.chain,
+    signer: walletClientSigner,
+    policyId: alchemyGasPolicyId,
+  })
+  console.log('   Alchemy client created')
+  console.log('   Account address:', alchemyClient.account.address)
+  console.log(
+    '   Is same as EOA?',
+    alchemyClient.account.address === viemParaAccount.address,
+    viemParaAccount.address
+  )
+
+  console.log('5.')
+  const data = (() => {
+    if (!abi || !functionName || !args) return '0x'
+    return encodeFunctionData({
+      abi,
+      functionName,
+      args,
+    })
+  })()
+
+  const userOperations: BatchUserOperationCallData = {
+    target: toAddress,
+    data: data,
+  }
+  console.log('6.', data)
+  console.log(alchemyClient)
+  const userOperationResult = await alchemyClient.sendUserOperation({
+    uo: userOperations,
+    value: value ? BigInt(value) : BigInt('0'),
+    data: data,
+  })
+
+  console.log('7.')
+  const txHash = await alchemyClient.waitForUserOperationTransaction(
+    userOperationResult
+  )
+  console.log('   Transaction Hash:', txHash)
 }
 
 export const smartAccountAddress = async (
@@ -405,6 +538,7 @@ export const UpdateAndClaimPregenWallet = async ({
     await paraClient.setUserShare(userShare)
   }
   // It can only be email
+  /*
   await paraClient.updatePregenWalletIdentifier({
     walletId: walletId,
     newPregenIdentifier: pregenIdentifier,
@@ -418,4 +552,108 @@ export const UpdateAndClaimPregenWallet = async ({
 
   console.log(recoverySecret)
   return recoverySecret
+*/
+  return ''
+}
+
+function parseSignature(signature: string): {
+  r: string
+  s: string
+  v: number
+} {
+  const cleanSig = signature.startsWith('0x') ? signature.slice(2) : signature
+
+  if (cleanSig.length !== SIGNATURE_LENGTH) {
+    throw new Error(
+      `Invalid signature length: expected ${SIGNATURE_LENGTH} hex chars, got ${cleanSig.length}`
+    )
+  }
+
+  const r = cleanSig.slice(0, 64)
+  const s = cleanSig.slice(64, 128)
+  const vHex = cleanSig.slice(128, 130)
+  const v = parseInt(vHex, 16)
+
+  if (isNaN(v)) {
+    throw new Error(`Invalid v value in signature: ${vHex}`)
+  }
+
+  return { r, s, v }
+}
+
+async function signWithPara(
+  para: Para,
+  hash: Hash,
+  adjustV: boolean = true
+): Promise<Hash> {
+  const wallet = para.getWalletsByType('EVM')[0]
+  if (!wallet) {
+    throw new Error('Para wallet not available for signing')
+  }
+
+  const messagePayload = hash.startsWith('0x') ? hash.substring(2) : hash
+  const messageBase64 = hexStringToBase64(messagePayload)
+
+  const response = await para.signMessage({
+    walletId: wallet.id,
+    messageBase64,
+  })
+
+  if (!('signature' in response)) {
+    throw new Error(`Signature failed: ${JSON.stringify(response)}`)
+  }
+
+  let signature = (response as SuccessfulSignatureRes).signature
+
+  const { v } = parseSignature(signature)
+
+  if (adjustV && v < 27) {
+    const adjustedV = (v + V_OFFSET_FOR_ETHEREUM).toString(16).padStart(2, '0')
+    signature = signature.slice(0, -2) + adjustedV
+  }
+
+  return `0x${signature}`
+}
+
+export async function customSignMessageN(
+  para: Para,
+  message: SignableMessage
+): Promise<Hash> {
+  const hashedMessage = hashMessage(message)
+  return signWithPara(para, hashedMessage, true)
+}
+
+export async function customSignAuthorization(
+  para: Para,
+  authorization: AuthorizationRequest
+): Promise<SignAuthorizationReturnType> {
+  const address = (authorization.address ||
+    authorization.contractAddress) as `0x${string}`
+  if (!address) {
+    throw new Error('Authorization must include address or contractAddress')
+  }
+
+  const authorizationHash = hashAuthorization({
+    address,
+    chainId: authorization.chainId,
+    nonce: authorization.nonce,
+  })
+
+  const fullSignature = await signWithPara(para, authorizationHash, false)
+
+  const { r, s, v } = parseSignature(fullSignature)
+
+  if (v !== 0 && v !== 1) {
+    throw new Error(`Invalid v value for EIP-7702: ${v}. Expected 0 or 1`)
+  }
+
+  return {
+    address,
+    chainId: Number(authorization.chainId),
+    nonce: Number(authorization.nonce),
+    r: `0x${r}`,
+    s: `0x${s}`,
+    yParity: v as 0 | 1,
+    v: BigInt(v),
+  }
 }

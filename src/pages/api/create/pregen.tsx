@@ -15,6 +15,7 @@ export default async function createPregenWalletHandler(
   req: NextApiRequest,
   res: NextApiResponse
 ): Promise<void> {
+  /*
   try {
     const { identifier } = req.body as { identifier?: string }
     if (!identifier) {
@@ -32,11 +33,14 @@ export default async function createPregenWalletHandler(
         .send('Set PARA_API_KEY in the environment before using this handler.')
       return
     }
+
     const paraServer = new ParaServer(Environment.BETA, PARA_API_KEY)
+
     const walletExists = await paraServer.hasPregenWallet({
       pregenIdentifier: identifier.trim(),
       pregenIdentifierType: categorizeIdentifier(identifier.trim()),
     })
+
     if (walletExists) {
       const host = req.headers.host
       const protocol = req.headers['x-forwarded-proto'] || 'http'
@@ -52,11 +56,13 @@ export default async function createPregenWalletHandler(
       } satisfies PregenWalletData & { success: boolean })
       return
     }
+    console.log('3')
     const wallet = await paraServer.createPregenWallet({
       type: WalletType.EVM,
       pregenIdentifier: identifier.trim(),
       pregenIdentifierType: categorizeIdentifier(identifier.trim()),
     })
+    console.log('4')
     if (!wallet) {
       res
         .status(500)
@@ -104,5 +110,5 @@ export default async function createPregenWalletHandler(
   } catch (error) {
     console.error('Error creating pre-generated wallet:', error)
     res.status(500).send('Error creating pre-generated wallet')
-  }
+  }*/
 }

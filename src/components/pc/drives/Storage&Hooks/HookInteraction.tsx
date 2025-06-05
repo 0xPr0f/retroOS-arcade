@@ -31,7 +31,7 @@ interface TransactionState {
   data: `0x${string}` | undefined
 }
 
-export function usePregenTransaction({
+export function useHookTransaction({
   mutation,
 }: UsePregenTransactionProps = {}) {
   const { pregenEncryptedKeyShare, pregenWalletId, isLoginPregenSession } =
@@ -56,14 +56,6 @@ export function usePregenTransaction({
     toAddress,
     session,
   }: PregenTransactionParams) => {
-    if (!isLoginPregenSession) {
-      throw new Error('Pregen session not initialized')
-    }
-
-    if (!pregenEncryptedKeyShare || !pregenWalletId) {
-      throw new Error('Missing required Pregen credentials')
-    }
-
     setState((prev) => ({ ...prev, isPending: true, data: undefined }))
 
     try {
@@ -92,7 +84,7 @@ export function usePregenTransaction({
       if (!txHash || !txHash.startsWith('0x')) {
         throw new Error('Invalid transaction hash received')
       }
-
+      console.log(txHash)
       setState((prev) => ({
         ...prev,
         isPending: false,
@@ -123,8 +115,6 @@ export function usePregenTransaction({
     data: state.data,
     error: state.error,
     isPending: state.isPending,
-    isReady:
-      isLoginPregenSession && !!pregenEncryptedKeyShare && !!pregenWalletId,
   }
 }
 /*

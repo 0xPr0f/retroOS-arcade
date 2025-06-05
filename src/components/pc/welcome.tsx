@@ -63,7 +63,6 @@ const RetroWelcome = ({ closeWindow }: { closeWindow: () => void }) => {
   return (
     <div className="bg-gray-100 p-6">
       <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
-        {/* Header Section */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-white">
           <h1 className="text-4xl font-bold mb-4">Welcome to RetroOS</h1>
           <p className="text-lg opacity-90">
@@ -72,7 +71,6 @@ const RetroWelcome = ({ closeWindow }: { closeWindow: () => void }) => {
           </p>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="border-b border-gray-200">
           <nav className="flex space-x-4 px-6">
             {['welcome', 'apps', 'web3', 'about'].map((tab) => (
@@ -91,7 +89,6 @@ const RetroWelcome = ({ closeWindow }: { closeWindow: () => void }) => {
           </nav>
         </div>
 
-        {/* Content Section */}
         <div className="p-6">
           {activeTab === 'welcome' && (
             <div className="space-y-6">
@@ -269,7 +266,6 @@ const RetroWelcome = ({ closeWindow }: { closeWindow: () => void }) => {
           )}
         </div>
 
-        {/* Footer */}
         <div className="bg-gray-50 px-6 py-4 border-t">
           <div className="flex justify-between items-center">
             <p className="text-sm text-gray-500">

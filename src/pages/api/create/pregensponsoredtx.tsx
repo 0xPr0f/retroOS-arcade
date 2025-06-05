@@ -35,14 +35,9 @@ export default async function handler(
       value,
     } = req.body as PrepareAndSignTransactionWithPregenWalletServerProps
 
-    const [decryptedKeyShare, _] = await Promise.all([
-      decrypt(userShare!),
-      new Promise((resolve) => setTimeout(resolve, 100)),
-    ])
-
     const txHash =
       await PrepareAndSignSponsoredTransactionWithPregenWalletServer({
-        userShare: decryptedKeyShare.data,
+        userShare: userShare,
         walletId: walletId,
         abi: abi,
         toAddress: toAddress,

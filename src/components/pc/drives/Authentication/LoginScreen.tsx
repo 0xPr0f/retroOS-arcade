@@ -10,13 +10,17 @@ import { User, Users } from 'lucide-react'
 import { useLocalStorage } from 'react-use'
 import { UserSettings } from '@/components/apps/ControlPanel/components/Setting&Metrics'
 import { lightRed, lightBlue } from '../Extensions/colors'
-
+import { ParaModal, useModal } from '@getpara/react-sdk'
 import Authentication from '.'
-import { useAccount } from 'wagmi'
+import { useAccount, useConnect, useDisconnect } from 'wagmi'
 
 const LoginScreen: React.FC = () => {
   const [isParaModalOpen, setIsParaModalOpen] = useState(false)
 
+  const { openModal } = useModal()
+  const { connect, connectors } = useConnect()
+
+  const { disconnect } = useDisconnect()
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
     setIsParaModalOpen(true)
@@ -25,11 +29,8 @@ const LoginScreen: React.FC = () => {
   interface GuestLoginEvent extends React.MouseEvent<HTMLButtonElement> {}
 
   const handleGuestLogin = (e: GuestLoginEvent) => {
-    // Handle guest login logic here
-
     setGuestLogin(true)
     setIsParaModalOpen(true)
-    //login()
   }
   const [settings, setSettings] = useLocalStorage<UserSettings>(
     'userControlSettings'
@@ -101,7 +102,8 @@ const LoginScreen: React.FC = () => {
 
           <Button
             type="submit"
-            onClick={handleLogin}
+            // onClick={handleLogin}
+            onClick={openModal}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md transition duration-200"
           >
             Sign in
@@ -116,9 +118,10 @@ const LoginScreen: React.FC = () => {
           closeGuestLogin={closeGuestLogin}
         />
 
-        <>
+        {/*} <>
           <div className="flex flex-col items-center  space-y-4">
             <div className="w-full border-t border-gray-300"></div>
+
             <Button
               onClick={handleGuestLogin}
               variant="outline"
@@ -128,7 +131,7 @@ const LoginScreen: React.FC = () => {
               <span>Enter as guest</span>
             </Button>
           </div>
-        </>
+        </> */}
       </div>
     </div>
   )
