@@ -5,11 +5,12 @@ import { StatBar, ValueStat, InventoryItem } from './ui_components'
 import { BooleanStat } from './ui_components'
 import { usePregenSession } from '@/components/pc/drives'
 import { CHARACTER_CARD_ABI } from '../deployments/abi'
-import { CHARACTER_CARD_ADDRESS } from '../deployments/address'
+import { X_CHARACTER_CARD_ADDRESS } from '../deployments/address'
 import { useEffect, useState } from 'react'
 import { useReadContracts } from 'wagmi'
 import { getCharacterClassLabel } from './Character'
 import { config } from '../deployments/config'
+import { useSmartAccount } from '@/components/pc/drives/Storage&Hooks/SmartAccountHook'
 
 interface StatsPanelProps {
   strength?: number
@@ -65,22 +66,21 @@ const InventoryPanel = () => (
 )
 
 export const CharacterCardUI: React.FC<{ tokenId: string }> = ({ tokenId }) => {
+  const chainId = useChainId()
+  const CHARACTER_CARD_ADDRESS = X_CHARACTER_CARD_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
   const characterCardContract = {
     address: CHARACTER_CARD_ADDRESS,
     abi: CHARACTER_CARD_ABI,
   } as const
 
   const { isConnected, address: playerAddress } = useAccount()
-  const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
-    usePregenSession()
+  const { activeAddress } = useSmartAccount()
   const [searchTokenId, setSearchTokenId] = useState<number>(Number(tokenId))
 
   const [_tokenId, setTokenId] = useState<number>(Number(tokenId))
-  const address = isConnected
-    ? playerAddress?.toLowerCase()
-    : isLoginPregenSession
-    ? pregenActiveAddress?.toLowerCase()
-    : undefined
+  const address = isConnected ? activeAddress?.toLowerCase() : undefined
 
   const { data: statsResult, isLoading } = useReadContracts({
     config: config,

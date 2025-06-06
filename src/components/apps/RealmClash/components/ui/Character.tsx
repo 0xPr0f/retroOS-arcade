@@ -5,7 +5,7 @@ import {
   useDispatchWindows,
   useNotifications,
   usePregenSession,
-  usePregenTransaction,
+  useHookTransaction,
 } from '@/components/pc/drives'
 import { useEffect, useRef, useState } from 'react'
 import { CharacterCreation } from './ExtraUIProps'
@@ -16,11 +16,12 @@ import {
   useWatchContractEvent,
   useWriteContract,
 } from 'wagmi'
-import { CHARACTER_CARD_ADDRESS } from '../deployments/address'
+import { X_CHARACTER_CARD_ADDRESS } from '../deployments/address'
 import { CHARACTER_CARD_ABI } from '../deployments/abi'
 import { cn } from '@/components/library/utils'
 import { Slider } from './ui_components'
 import { useMouse } from 'react-use'
+import { useSmartAccount } from '@/components/pc/drives/Storage&Hooks/SmartAccountHook'
 
 interface CharacterCard {
   id: string
@@ -37,12 +38,11 @@ const CharacterGrid: React.FC = () => {
   const chainId = useChainId()
 
   const { isConnected, address: playerAddress } = useAccount()
-  const address = isConnected
-    ? playerAddress?.toLowerCase()
-    : isLoginPregenSession
-    ? pregenActiveAddress?.toLowerCase()
-    : undefined
-
+  const { activeAddress } = useSmartAccount()
+  const address = activeAddress?.toLowerCase()
+  const CHARACTER_CARD_ADDRESS = X_CHARACTER_CARD_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
   const { data: addressTokenIds, refetch: refetchAddressTokenIds } =
     useReadContract({
       address: CHARACTER_CARD_ADDRESS,
@@ -260,11 +260,12 @@ const CharacterEdit: React.FC<{
   }
   const chainId = useChainId()
   const { addNotification } = useNotifications()
-  const availableChainIds = ['84532']
+  const availableChainIds = ['84532', '10143']
   const isChainUnavailable = !availableChainIds.some(
     (chain) => Number(chain) === chainId
   )
   const { isConnected, address: playerAddress } = useAccount()
+  const { activeAddress, isGuestMode } = useSmartAccount()
   const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
     usePregenSession()
   const {
@@ -284,12 +285,15 @@ const CharacterEdit: React.FC<{
     writeContract: writeIncreaseStatsPregen,
     data: increaseStatsDataPregen,
     isPending: isIncreasingStatsPregen,
-  } = usePregenTransaction({
+  } = useHookTransaction({
     mutation: {
       onError: (error: any) => {},
       onSuccess: (txHash: any) => {},
     },
   })
+  const CHARACTER_CARD_ADDRESS = X_CHARACTER_CARD_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
 
   const handleAllocateStatsPoints = async () => {
     if (isChainUnavailable) {
@@ -309,7 +313,7 @@ const CharacterEdit: React.FC<{
         uint8 _intelligenceIncrease,
         uint8 _magicPowerIncrease
 */
-    if (isConnected) {
+    if (!isGuestMode) {
       await writeIncreaseStats({
         address: CHARACTER_CARD_ADDRESS,
         abi: CHARACTER_CARD_ABI,
@@ -324,7 +328,7 @@ const CharacterEdit: React.FC<{
           statIncreases.magicPower,
         ],
       })
-    } else if (isLoginPregenSession) {
+    } else {
       await writeIncreaseStatsPregen({
         address: CHARACTER_CARD_ADDRESS,
         abi: CHARACTER_CARD_ABI,
@@ -479,20 +483,13 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
   }
 
   const { createDispatchWindow } = useDispatchWindows()
-
-  const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
-    usePregenSession()
-
+  const { activeAddress, isGuestMode } = useSmartAccount()
   const { isConnected, address: playerAddress } = useAccount()
-  const address = isConnected
-    ? playerAddress?.toLowerCase()
-    : isLoginPregenSession
-    ? pregenActiveAddress?.toLowerCase()
-    : undefined
+  const address = activeAddress?.toLowerCase()
 
   const chainId = useChainId()
   const { addNotification } = useNotifications()
-  const availableChainIds = ['84532']
+  const availableChainIds = ['84532', '10143']
   const isChainUnavailable = !availableChainIds.some(
     (chain) => Number(chain) === chainId
   )
@@ -511,12 +508,16 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
     },
   })
 
+  const CHARACTER_CARD_ADDRESS = X_CHARACTER_CARD_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
+
   // Pregen Join Queue Contract Write
   const {
     writeContract: writeBurnCharacterPregen,
     data: burnCharacterDataPregen,
     isPending: isBurningCharacterPregen,
-  } = usePregenTransaction({
+  } = useHookTransaction({
     mutation: {
       onError: (error: any) => {},
       onSuccess: (txHash: any) => {
@@ -536,14 +537,14 @@ const CharacterCard: React.FC<{ characterId: number }> = ({ characterId }) => {
       })
       return
     }
-    if (isConnected) {
+    if (!isGuestMode) {
       await writeBurnCharacter({
         address: CHARACTER_CARD_ADDRESS,
         abi: CHARACTER_CARD_ABI,
         functionName: 'burn',
         args: [characterId],
       })
-    } else if (isLoginPregenSession) {
+    } else {
       await writeBurnCharacterPregen({
         address: CHARACTER_CARD_ADDRESS,
         abi: CHARACTER_CARD_ABI,

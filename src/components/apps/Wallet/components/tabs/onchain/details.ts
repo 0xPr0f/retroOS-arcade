@@ -1,5 +1,8 @@
-export const SCORE_VERIFIER_ADDRESS =
-  '0x43f16d2be0C6DC3bf7821aa7513e35ab9466508d'
+export const X_SCORE_VERIFIER_ADDRESS: Record<string, string> = {
+  '84532': '0x43f16d2be0C6DC3bf7821aa7513e35ab9466508d',
+  '10143': '0xeDD500645Fe3638157C7d01A7eFC45966c4c77D1',
+}
+
 export const SCORE_VERIFIER_ABI = [
   {
     type: 'constructor',

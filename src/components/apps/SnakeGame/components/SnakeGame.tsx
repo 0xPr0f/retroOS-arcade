@@ -5,6 +5,7 @@ import {
   usePregenSession,
 } from '@/components/pc/drives'
 import { useAccount } from 'wagmi'
+import { useSmartAccount } from '@/components/pc/drives/Storage&Hooks/SmartAccountHook'
 const GRID_SIZE = 20
 const CELL_SIZE = 20
 const BASE_SPEED = 200
@@ -63,13 +64,9 @@ const SnakeGame = () => {
   })
   const { submitScore } = useGameScores()
   const directionRef = useRef(INITIAL_DIRECTION)
-  const { isLoginPregenSession, pregenActiveAddress } = usePregenSession()
+  const { activeAddress } = useSmartAccount()
   const { isConnected, address: playerAddress } = useAccount()
-  const address = isConnected
-    ? playerAddress?.toLowerCase()
-    : isLoginPregenSession
-    ? pregenActiveAddress?.toLowerCase()
-    : undefined
+  const address = isConnected ? activeAddress?.toLowerCase() : undefined
 
   // Track game stats
   const [gameStats, setGameStats] = useState({

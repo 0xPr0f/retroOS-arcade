@@ -92,6 +92,9 @@ importers:
       nuqs:
         specifier: ^2.4.3
         version: 2.4.3(next@15.1.5(@babel/core@7.27.4)(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+      pinata:
+        specifier: ^2.4.4
+        version: 2.4.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       pinata-web3:
         specifier: ^0.5.4
         version: 0.5.4
@@ -6202,6 +6205,18 @@ packages:
   pinata-web3@0.5.4:
     resolution: {integrity: sha512-w98wheqt+2LRzNgU5+xZaPP3JZA8Cp33O647zU6AF0zYk15py9ti8g2Bl/7rwXyua3CN+EzHgzcu1wgKnhSZ8w==}
     deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+
+  pinata@2.4.4:
+    resolution: {integrity: sha512-vqwqe6Lj5RZF4dwFgtgKHCOWEJdF4BPfoXUxD5VrlpvNoCYUkD76iQmuMvlOP5PTJnLcSTrDRhzFWcnJ/MIl8Q==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
 
   pino-abstract-transport@0.5.0:
     resolution: {integrity: sha512-+KAgmVeqXYbTtU2FScx1XS3kNyfZ5TrXY07V96QnUSFqo2gAqlvmaxH67Lj7SWazqsMabf+58ctdTcBgnOLUOQ==}
@@ -16744,6 +16759,11 @@ snapshots:
       node-fetch: 3.3.2
     transitivePeerDependencies:
       - debug
+
+  pinata@2.4.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+    optionalDependencies:
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
 
   pino-abstract-transport@0.5.0:
     dependencies:

@@ -1,20 +1,26 @@
 import { http, injected, webSocket } from 'wagmi'
 import { createConfig } from 'wagmi'
-import { baseSepolia, mainnet, sepolia } from 'wagmi/chains'
+import { baseSepolia, mainnet, sepolia, monadTestnet } from 'wagmi/chains'
 
-export const CONTRACT_ADDRESS = '0x307dceC841c00733810cC159A399c5c0C0C3E1f6'
+export const X_CONTRACT_ADDRESS: Record<string, string> = {
+  '84532': '0x307dceC841c00733810cC159A399c5c0C0C3E1f6',
+  '10143': '0x4b26bFd2682540ffC332BDD843397099399ae65b',
+}
+
+export const availableChainIds = ['84532', '10143']
+
 export const TicTacToeConfig = createConfig({
-  chains: [baseSepolia, sepolia, mainnet],
+  chains: [baseSepolia, monadTestnet],
   transports: {
     [baseSepolia.id]: webSocket(
-      'wss://base-sepolia.blastapi.io/ad59226d-7bf0-4950-8679-6b399d842227'
+      'wss://base-mainnet.g.alchemy.com/v2/ciapmrXJjS296dSkAKWAdz__y7mSLKdP'
     ),
-    [sepolia.id]: http(
-      `https://sepolia.infura.io/v3/ad59226d-7bf0-4950-8679-6b399d842227`
+    [monadTestnet.id]: http(
+      'wss://monad-testnet.g.alchemy.com/v2/ciapmrXJjS296dSkAKWAdz__y7mSLKdP'
     ),
-    [mainnet.id]: http(),
   },
 })
+
 export const CONTRACT_ABI: any[] = [
   {
     type: 'function',

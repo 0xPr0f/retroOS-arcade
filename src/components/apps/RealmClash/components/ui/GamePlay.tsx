@@ -1,5 +1,5 @@
 import { CHARACTER_CARD_ABI } from '../deployments/abi'
-import { CHARACTER_CARD_ADDRESS } from '../deployments/address'
+import { X_CHARACTER_CARD_ADDRESS } from '../deployments/address'
 import {
   useAccount,
   useReadContracts,
@@ -11,19 +11,21 @@ import { useWatchContractEvent } from 'wagmi'
 import AuraEffect from './AuraEffect'
 import { StatCard } from './ui_components'
 import React, { useRef, useEffect, useMemo, useState } from 'react'
-import { CLASH_BATTLE_SYSTEM_ADDRESS } from '../deployments/address'
+import { X_CLASH_BATTLE_SYSTEM_ADDRESS } from '../deployments/address'
 import { CLASH_BATTLE_SYSTEM_ABI } from '../deployments/abi'
 import {
   shortenText,
   useAppRouter,
+  useHookTransaction,
   useNotifications,
   usePregenSession,
-  usePregenTransaction,
+  // usePregenTransaction,
 } from '@/components/pc/drives'
 import { config } from '../deployments/config'
 import { formatTimeAgoUnix } from './Game'
 import { getCharacterClassLabel, truncateDescription } from './Character'
 import { parseGwei, zeroAddress } from 'viem'
+import { useSmartAccount } from '@/components/pc/drives/Storage&Hooks/SmartAccountHook'
 
 const lightBlue = '#2563eb'
 const weirdBlue = '#3a6ea5'
@@ -260,6 +262,10 @@ const BattleCard: React.FC<BattleCardProps> = ({
       setCurrentOriginIndex((prev) => prev + 1)
     }
   }
+  const chainId = useChainId()
+  const CHARACTER_CARD_ADDRESS = X_CHARACTER_CARD_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
 
   const { data: characterStats, refetch: refetchCharacterStats } =
     useReadContract({
@@ -761,16 +767,14 @@ const styles = `
 `
 
 const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
-  const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
-    usePregenSession()
   const chainId = useChainId()
 
   const { isConnected, address: playerAddress } = useAccount()
-  const address = isConnected
-    ? playerAddress?.toLowerCase()
-    : isLoginPregenSession
-    ? pregenActiveAddress?.toLowerCase()
-    : undefined
+  const { activeAddress, isGuestMode } = useSmartAccount()
+  const address = isConnected ? activeAddress?.toLowerCase() : undefined
+  const CLASH_BATTLE_SYSTEM_ADDRESS = X_CLASH_BATTLE_SYSTEM_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
 
   const { data: battleDetails, refetch: refetchBattleDetails } =
     useReadContract({
@@ -849,7 +853,7 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
   const { addNotification } = useNotifications()
   const { navigate } = useAppRouter()
 
-  const availableChainIds = ['84532']
+  const availableChainIds = ['84532', '10143']
   const isChainUnavailable = !availableChainIds.some(
     (chain) => Number(chain) === chainId
   )
@@ -872,7 +876,7 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
     writeContract: writeBattlePregen,
     data: battleDataPregen,
     isPending: isBattlePregen,
-  } = usePregenTransaction({
+  } = useHookTransaction({
     mutation: {
       onError: (error: any) => {
         console.log(error)
@@ -891,14 +895,14 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
       })
       return
     }
-    if (isConnected) {
+    if (!isGuestMode) {
       await writeBattle({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
         functionName: 'forfeitBattle',
         args: [gameId],
       })
-    } else if (isLoginPregenSession) {
+    } else {
       await writeBattlePregen({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
@@ -911,7 +915,7 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
     useWaitForTransactionReceipt({
       hash: isConnected ? battleData : battleDataPregen,
     })
-  const isWaitingForForfeitBattle = isSmartAccount
+  const isWaitingForForfeitBattle = isGuestMode
     ? false
     : isWaitingForForfeitBattleT
 
@@ -938,7 +942,7 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
     writeContract: writeBattlePerformAttackPregen,
     data: battleDataPerformAttackPregen,
     isPending: isBattlePerformAttackPregen,
-  } = usePregenTransaction({
+  } = useHookTransaction({
     mutation: {
       onError: (error: any) => {
         console.log(error)
@@ -957,14 +961,14 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
       })
       return
     }
-    if (isConnected) {
+    if (!isGuestMode) {
       await writeBattlePerformAttack({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
         functionName: 'performAttack',
         args: [gameId, attackType],
       })
-    } else if (isLoginPregenSession) {
+    } else {
       await writeBattlePerformAttackPregen({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
@@ -974,9 +978,11 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
     }
   }
   const { isLoading: isWaitingForAttackT } = useWaitForTransactionReceipt({
-    hash: isConnected ? battleDataPerformAttack : battleDataPerformAttackPregen,
+    hash: !isGuestMode
+      ? battleDataPerformAttack
+      : battleDataPerformAttackPregen,
   })
-  const isWaitingForAttack = isSmartAccount ? false : isWaitingForAttackT
+  const isWaitingForAttack = !isGuestMode ? false : isWaitingForAttackT
 
   const handleAttack = async (
     type: 'quick' | 'power' | 'ultimate',
@@ -998,14 +1004,14 @@ const BattleGame: React.FC<{ gameId: string }> = ({ gameId }) => {
       })
       return
     }
-    if (isConnected) {
+    if (!isGuestMode) {
       writeBattle({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
         functionName: 'endTurn',
         args: [gameId],
       })
-    } else if (isLoginPregenSession) {
+    } else {
       await writeBattlePregen({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,

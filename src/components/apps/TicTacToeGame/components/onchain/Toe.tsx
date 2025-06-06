@@ -9,7 +9,7 @@ import {
 } from 'wagmi'
 import { Button, Button2 } from '@/components/pc/drives/UI/UI_Components.v1'
 import { GameStatus, TransactionState } from './types'
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from './abidetails'
+import { X_CONTRACT_ADDRESS, CONTRACT_ABI } from './abidetails'
 import {
   copyToClipboard,
   shortenText,
@@ -72,8 +72,10 @@ const TicTacToeMP = () => {
     isGuestMode,
   } = useSmartAccount()
 
-  const address = ActiveAddress?.toLowerCase()
-
+  const address = isConnected ? ActiveAddress?.toLowerCase() : undefined
+  const CONTRACT_ADDRESS = X_CONTRACT_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
   // Read queue position
   const { data: playerQueuePosition, refetch: refetchQueuePosition } =
     useReadContract({
@@ -153,7 +155,9 @@ const TicTacToeMP = () => {
       },
     },
   })
-
+  useEffect(() => {
+    console.log(CONTRACT_ADDRESS)
+  }, [chainId])
   // Pregen Exit match Contract Write
   const {
     writeContract: writeExitMatchPregen,

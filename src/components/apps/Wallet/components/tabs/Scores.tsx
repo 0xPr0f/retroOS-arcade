@@ -3,11 +3,12 @@ import {
   useGameScores,
   GameType,
   usePregenSession,
-  usePregenTransaction,
+  useHookTransaction,
   useNotifications,
 } from '@/components/pc/drives'
 import { useAccount, useChainId, useWriteContract } from 'wagmi'
-import { SCORE_VERIFIER_ABI, SCORE_VERIFIER_ADDRESS } from './onchain/details'
+import { SCORE_VERIFIER_ABI, X_SCORE_VERIFIER_ADDRESS } from './onchain/details'
+import { useSmartAccount } from '@/components/pc/drives/Storage&Hooks/SmartAccountHook'
 
 interface GameScore {
   id: string
@@ -32,16 +33,15 @@ const GameScoreContent = () => {
   const [scoreToRemove, setScoreToRemove] = useState<GameScore | null>(null)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [syncSuccess, setSyncSuccess] = useState(false)
-  const { isLoginPregenSession, pregenActiveAddress } = usePregenSession()
   const { address: UserAddress, isConnected } = useAccount()
-
-  const currentAddress = isConnected
-    ? UserAddress?.toLowerCase()
-    : isLoginPregenSession
-    ? pregenActiveAddress?.toLowerCase()
-    : undefined
+  const { isGuestMode, activeAddress } = useSmartAccount()
+  const currentAddress = isConnected ? activeAddress?.toLowerCase() : undefined
 
   const chainId = useChainId()
+  const SCORE_VERIFIER_ADDRESS = X_SCORE_VERIFIER_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
+
   const [viewAddress, setViewAddress] = useState(currentAddress)
   const { addNotification } = useNotifications()
   // Get scores for the current address
@@ -106,7 +106,7 @@ const GameScoreContent = () => {
     return date.toLocaleString()
   }
 
-  const availableChainIds = ['84532']
+  const availableChainIds = ['84532', '10143']
   const isChainUnavailable = !availableChainIds.some(
     (chain) => Number(chain) === chainId
   )
@@ -132,7 +132,7 @@ const GameScoreContent = () => {
     writeContract: writeSyncScorePregen,
     data: syncScoreDataPregen,
     isPending: isSyncScorePregen,
-  } = usePregenTransaction({
+  } = useHookTransaction({
     mutation: {
       onError: (error: any) => {
         console.log(error)
@@ -153,7 +153,7 @@ const GameScoreContent = () => {
       })
       return
     }
-    if (isConnected) {
+    if (!isGuestMode) {
       await writeSyncScore({
         address: SCORE_VERIFIER_ADDRESS,
         abi: SCORE_VERIFIER_ABI,
@@ -165,7 +165,7 @@ const GameScoreContent = () => {
           scoreData.signatures,
         ],
       })
-    } else if (isLoginPregenSession) {
+    } else {
       await writeSyncScorePregen({
         address: SCORE_VERIFIER_ADDRESS,
         abi: SCORE_VERIFIER_ABI,

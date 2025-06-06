@@ -4,6 +4,7 @@ import { useChainId, usePublicClient } from 'wagmi'
 import { usePregenSession } from './PregenSession'
 import { useTypedValue } from '..'
 import { UserSettings } from '@/components/apps/ControlPanel/components/Setting&Metrics'
+import para from '../Authentication/para'
 
 interface PregenTransactionParams {
   abi?: any
@@ -57,7 +58,7 @@ export function useHookTransaction({
     session,
   }: PregenTransactionParams) => {
     setState((prev) => ({ ...prev, isPending: true, data: undefined }))
-
+    const sessionmain = para.exportSession()
     try {
       const response = await axios.post(
         'api/create/pregensponsoredtx',
@@ -67,7 +68,7 @@ export function useHookTransaction({
           functionName,
           args,
           chainId,
-          userShare: session,
+          userShare: sessionmain ?? session,
           walletId: pregenWalletId,
           value,
         },

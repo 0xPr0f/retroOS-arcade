@@ -3,15 +3,15 @@ import {
   darkBlue,
   useAppRouter,
   useDispatchWindows,
+  useHookTransaction,
   useNotifications,
   usePregenSession,
-  usePregenTransaction,
   useTypedValue,
   weirdBlue,
 } from '@/components/pc/drives'
 import {
-  CHARACTER_CARD_ADDRESS,
-  CLASH_BATTLE_SYSTEM_ADDRESS,
+  X_CHARACTER_CARD_ADDRESS,
+  X_CLASH_BATTLE_SYSTEM_ADDRESS,
 } from '../deployments/address'
 import { CHARACTER_CARD_ABI, CLASH_BATTLE_SYSTEM_ABI } from '../deployments/abi'
 import {
@@ -28,6 +28,7 @@ import { config } from '../deployments/config'
 import { shortenText } from '@/components/pc/drives'
 import { useMouse } from 'react-use'
 import { useWindowState } from '@/components/pc/drives/UI/dispatchWindow'
+import { useSmartAccount } from '@/components/pc/drives/Storage&Hooks/SmartAccountHook'
 
 const GameUI: React.FC = () => {
   return (
@@ -67,7 +68,10 @@ const GameStats: React.FC<{
   activeGameDataArr: number[]
 }> = ({ characterIds, activeGameDataArr }) => {
   if (!characterIds?.length) return null
-
+  const chainId = useChainId()
+  const CHARACTER_CARD_ADDRESS = X_CHARACTER_CARD_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
   const characterMaps = characterIds.map((id) => ({
     address: CHARACTER_CARD_ADDRESS as `0x${string}`,
     abi: CHARACTER_CARD_ABI as any,
@@ -188,20 +192,18 @@ const GameHome: React.FC = () => {
     navigate(`/gameplay/${gameId}`)
   }
   const { isConnected, address: playerAddress } = useAccount()
-  const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
-    usePregenSession()
+  const { activeAddress, isGuestMode } = useSmartAccount()
   const chainId = useChainId()
-  const address = isConnected
-    ? playerAddress?.toLowerCase()
-    : isLoginPregenSession
-    ? pregenActiveAddress?.toLowerCase()
-    : undefined
+  const address = isConnected ? activeAddress?.toLowerCase() : undefined
 
   const { addNotification } = useNotifications()
-  const availableChainIds = ['84532']
+  const availableChainIds = ['84532', '10143']
   const isChainUnavailable = !availableChainIds.some(
     (chain) => Number(chain) === chainId
   )
+  const CLASH_BATTLE_SYSTEM_ADDRESS = X_CLASH_BATTLE_SYSTEM_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
 
   useWatchContractEvent({
     address: CLASH_BATTLE_SYSTEM_ADDRESS,
@@ -248,6 +250,10 @@ const GameHome: React.FC = () => {
       }
     },
   })
+
+  const CHARACTER_CARD_ADDRESS = X_CHARACTER_CARD_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
 
   const { data: allTokenIds, isLoading: isTokenIdsLoading } = useReadContract({
     config: config,
@@ -316,7 +322,6 @@ const GameHome: React.FC = () => {
               </div>
             </div>
 
-            {/* Game Stats Bar with shimmer */}
             <div className="bg-gray-800/50 border-b border-gray-700/50 p-4">
               <div className="grid grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
@@ -336,13 +341,11 @@ const GameHome: React.FC = () => {
               </div>
             </div>
 
-            {/* Tabs with shimmer */}
             <div className="flex border-b border-gray-700 bg-gray-800/30 px-2 pt-2">
               <ShimmerEffect className="h-12 w-36 rounded-t-lg mr-2" />
               <ShimmerEffect className="h-12 w-36 rounded-t-lg" />
             </div>
 
-            {/* Content area with loading spinner */}
             <div className="p-6 flex justify-center items-center min-h-[300px]">
               <div className="text-center">
                 <LoadingSpinner size="w-16 h-16" />
@@ -378,9 +381,7 @@ const GameHome: React.FC = () => {
   return (
     <div className="min-h-full h-fit p-4">
       <div className="max-w-4xl mx-auto">
-        {/* Main Content Card */}
         <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg border border-gray-700/50 shadow-xl overflow-hidden">
-          {/* Header */}
           <div
             className="p-6 border-b border-gray-700"
             style={{
@@ -502,11 +503,15 @@ const GameHome: React.FC = () => {
   )
 }
 
-// Component for clickable game cards
 const GameCard: React.FC<{ gameId?: string; onClick: () => void }> = ({
   gameId,
   onClick,
 }) => {
+  const chainId = useChainId()
+  const CLASH_BATTLE_SYSTEM_ADDRESS = X_CLASH_BATTLE_SYSTEM_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
+
   const { data: gameData, isLoading } = useReadContract({
     config: config,
     address: CLASH_BATTLE_SYSTEM_ADDRESS,
@@ -515,14 +520,9 @@ const GameCard: React.FC<{ gameId?: string; onClick: () => void }> = ({
     args: [gameId],
   })
 
-  const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
-    usePregenSession()
+  const { activeAddress } = useSmartAccount()
   const { isConnected, address: playerAddress } = useAccount()
-  const address = isConnected
-    ? playerAddress?.toLowerCase()
-    : isLoginPregenSession
-    ? pregenActiveAddress?.toLowerCase()
-    : undefined
+  const address = isConnected ? activeAddress?.toLowerCase() : undefined
 
   if (isLoading) {
     return (
@@ -606,6 +606,10 @@ const GameCard: React.FC<{ gameId?: string; onClick: () => void }> = ({
   )
 }
 export const CharacterOption = ({ characterId }: { characterId: bigint }) => {
+  const chainId = useChainId()
+  const CHARACTER_CARD_ADDRESS = X_CHARACTER_CARD_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
   const loadCharacterDetails = (_characterId: string) => {
     const {
       data: characterStats,
@@ -642,20 +646,14 @@ export const CharacterOption = ({ characterId }: { characterId: bigint }) => {
 
 // Challenge Modal Component
 const ChallengeModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
-    usePregenSession()
-
+  const { activeAddress, isGuestMode } = useSmartAccount()
   const chainId = useChainId()
 
   const { isConnected, address: playerAddress } = useAccount()
-  const address = isConnected
-    ? playerAddress?.toLowerCase()
-    : isLoginPregenSession
-    ? pregenActiveAddress?.toLowerCase()
-    : undefined
+  const address = isConnected ? activeAddress?.toLowerCase() : undefined
 
   const { addNotification } = useNotifications()
-  const availableChainIds = ['84532']
+  const availableChainIds = ['84532', '10143']
   const isChainUnavailable = !availableChainIds.some(
     (chain) => Number(chain) === chainId
   )
@@ -687,12 +685,16 @@ const ChallengeModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     writeContract: writeGameChallengePregen,
     data: gameChallengeDataPregen,
     isPending: isGameChallengePendingPregen,
-  } = usePregenTransaction({
+  } = useHookTransaction({
     mutation: {
       onError: (error: any) => {},
       onSuccess: (txHash: any) => {},
     },
   })
+
+  const CLASH_BATTLE_SYSTEM_ADDRESS = X_CLASH_BATTLE_SYSTEM_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
 
   const handleChallengeOpponent = async () => {
     if (isChainUnavailable) {
@@ -704,14 +706,14 @@ const ChallengeModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       })
       return
     }
-    if (isConnected) {
+    if (!isGuestMode) {
       await writeGameChallenge({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
         functionName: 'challengePlayer',
         args: [challengeDetails.opponent, challengeDetails.characterId],
       })
-    } else if (isLoginPregenSession) {
+    } else {
       await writeGameChallengePregen({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
@@ -736,7 +738,11 @@ const ChallengeModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { isLoading } = useWaitForTransactionReceipt({
     hash: isConnected ? gameChallengeData : gameChallengeDataPregen,
   })
-  const isWaitingForGameChallengeTx = isSmartAccount ? false : isLoading
+  const isWaitingForGameChallengeTx = isGuestMode ? false : isLoading
+
+  const CHARACTER_CARD_ADDRESS = X_CHARACTER_CARD_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
 
   const { data: addressTokenIds, isLoading: isTokenIdsLoading } =
     useReadContract({
@@ -1058,18 +1064,15 @@ const ChallengeCard: React.FC<{ challenge: string; challenger?: boolean }> = ({
   challenge,
   challenger = false,
 }) => {
-  const { isConnected, address: playerAddress } = useAccount()
-  const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
-    usePregenSession()
+  const { address: playerAddress } = useAccount()
+  const { activeAddress, isGuestMode, baseAddress } = useSmartAccount()
   const chainId = useChainId()
-  const address = isConnected
-    ? playerAddress?.toLowerCase()
-    : isLoginPregenSession
-    ? pregenActiveAddress?.toLowerCase()
-    : undefined
+  const address = isGuestMode
+    ? activeAddress?.toLowerCase()
+    : baseAddress?.toLowerCase()
 
   const { addNotification } = useNotifications()
-  const availableChainIds = ['84532']
+  const availableChainIds = ['84532', '10143']
   const isChainUnavailable = !availableChainIds.some(
     (chain) => Number(chain) === chainId
   )
@@ -1093,7 +1096,7 @@ const ChallengeCard: React.FC<{ challenge: string; challenger?: boolean }> = ({
     writeContract: writeGameChallengePregen,
     data: gameChallengeDataPregen,
     isPending: isGameChallengePendingPregen,
-  } = usePregenTransaction({
+  } = useHookTransaction({
     mutation: {
       onError: (error: any) => {
         console.log(error)
@@ -1101,6 +1104,9 @@ const ChallengeCard: React.FC<{ challenge: string; challenger?: boolean }> = ({
       onSuccess: (txHash: any) => {},
     },
   })
+  const CLASH_BATTLE_SYSTEM_ADDRESS = X_CLASH_BATTLE_SYSTEM_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
 
   const handleRejectChallenge = async () => {
     if (isChainUnavailable) {
@@ -1112,14 +1118,14 @@ const ChallengeCard: React.FC<{ challenge: string; challenger?: boolean }> = ({
       })
       return
     }
-    if (isConnected) {
+    if (!isGuestMode) {
       await writeGameChallenge({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
         functionName: 'rejectChallenge',
         args: [challenge],
       })
-    } else if (isLoginPregenSession) {
+    } else {
       await writeGameChallengePregen({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
@@ -1143,14 +1149,14 @@ const ChallengeCard: React.FC<{ challenge: string; challenger?: boolean }> = ({
       })
       return
     }
-    if (isConnected) {
+    if (!isGuestMode) {
       await writeGameChallenge({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
         functionName: 'acceptChallenge',
         args: [challenge, characterId],
       })
-    } else if (isLoginPregenSession) {
+    } else {
       await writeGameChallengePregen({
         address: CLASH_BATTLE_SYSTEM_ADDRESS,
         abi: CLASH_BATTLE_SYSTEM_ABI,
@@ -1164,7 +1170,9 @@ const ChallengeCard: React.FC<{ challenge: string; challenger?: boolean }> = ({
   const containerRef = useRef<HTMLDivElement>(null)
 
   const mouse = useMouse(containerRef as React.RefObject<Element>)
-
+  const CHARACTER_CARD_ADDRESS = X_CHARACTER_CARD_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
   const { data: addressTokenIds, refetch: refetchAddressTokenIds } =
     useReadContract({
       config: config,

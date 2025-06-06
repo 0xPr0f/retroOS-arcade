@@ -1,4 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
+/*import type { NextApiRequest, NextApiResponse } from 'next'
 import { pinata } from '@/components/pc/drives/Interactions/pinata'
 
 export default async function handler(
@@ -20,7 +20,7 @@ export default async function handler(
         admin: true,
         endpoints: {
           pinning: {
-            //pinFileToIPFS: true,
+            pinFileToIPFS: true,
           },
         },
       },
@@ -37,5 +37,25 @@ export default async function handler(
       message: 'Error creating API Key',
       error: error instanceof Error ? error.message : String(error),
     })
+  }
+}
+*/
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { pinata } from '@/components/pc/drives/Interactions/pinata'
+
+export const dynamic = 'force-dynamic'
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  try {
+    const url = await pinata.upload.public.createSignedURL({
+      expires: 60,
+    })
+    return res.json({ url: url, status: 200 })
+  } catch (error) {
+    console.log(error)
+    return res.json({ text: 'Error creating API Key:', status: 500 })
   }
 }

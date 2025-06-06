@@ -1,11 +1,14 @@
 import { http, createConfig, webSocket } from 'wagmi'
-import { baseSepolia } from 'wagmi/chains'
+import { baseSepolia, monadTestnet } from 'wagmi/chains'
 
 export const config = createConfig({
-  chains: [baseSepolia],
+  chains: [baseSepolia, monadTestnet],
   transports: {
     [baseSepolia.id]: webSocket(
-      'wss://base-sepolia.blastapi.io/ad59226d-7bf0-4950-8679-6b399d842227'
+      'wss://base-mainnet.g.alchemy.com/v2/ciapmrXJjS296dSkAKWAdz__y7mSLKdP'
+    ),
+    [monadTestnet.id]: http(
+      'wss://monad-testnet.g.alchemy.com/v2/ciapmrXJjS296dSkAKWAdz__y7mSLKdP'
     ),
   },
 })

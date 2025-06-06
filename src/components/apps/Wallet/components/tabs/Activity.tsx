@@ -23,6 +23,7 @@ import {
   useTypedValue,
 } from '@/components/pc/drives'
 import { zeroAddress } from 'viem'
+import { useSmartAccount } from '@/components/pc/drives/Storage&Hooks/SmartAccountHook'
 
 // Network Configuration
 const NETWORK_CONFIG: Record<
@@ -36,6 +37,11 @@ const NETWORK_CONFIG: Record<
     icon: '',
   },
   [Network.ETH_SEPOLIA]: { name: 'Sepolia', color: '#627EEA', icon: '' },
+  [Network.MONAD_TESTNET]: {
+    name: 'Monad Testnet',
+    color: '#627EEA',
+    icon: '',
+  },
 }
 
 // Transaction category mapping
@@ -147,35 +153,34 @@ export function ActivityContent() {
   const { address: UserAddress, isConnected } = useAccount()
   const chainId = useChainId()
   const {
-    isLoginPregenSession,
-    pregenActiveAddress,
-    isSmartAccount,
-    pregenAddress,
-    pregenSmartAccountAddress,
-  } = usePregenSession()
-
-  const accounts = isConnected
+    isGuestMode,
+    smartAddress,
+    baseAddress,
+    activeAddress,
+    isSmartAccountToggled,
+  } = useSmartAccount()
+  const accounts = !isGuestMode
     ? [
         {
-          address: UserAddress?.toLowerCase() || zeroAddress,
+          address: baseAddress?.toLowerCase() || zeroAddress,
           name: 'Main Wallet',
           icon: <Wallet className="h-4 w-4" />,
           isActive: true,
         },
       ]
-    : isLoginPregenSession
+    : isGuestMode
     ? [
         {
-          address: pregenAddress?.toLowerCase() || zeroAddress,
+          address: baseAddress?.toLowerCase() || zeroAddress,
           name: 'Main Wallet',
           icon: <Wallet className="h-4 w-4" />,
           isActive: true,
         },
         {
-          address: pregenSmartAccountAddress?.toLowerCase() || zeroAddress,
+          address: smartAddress?.toLowerCase() || zeroAddress,
           name: 'Smart Account',
           icon: <Shield className="h-4 w-4" />,
-          isActive: isLoginPregenSession,
+          isActive: isGuestMode,
         },
       ]
     : [
@@ -188,7 +193,7 @@ export function ActivityContent() {
       ]
 
   const [selectedAccount, setSelectedAccount] = useState<Account>(
-    isConnected ? accounts[0] : isLoginPregenSession ? accounts[1] : accounts[0]
+    !isGuestMode ? accounts[0] : isGuestMode ? accounts[1] : accounts[0]
   )
 
   const [dropdownAddress, setDropdownAddress] =
@@ -211,9 +216,7 @@ export function ActivityContent() {
 
   useEffect(() => {
     const currentAddress = isConnected
-      ? UserAddress?.toLowerCase()
-      : isLoginPregenSession
-      ? pregenActiveAddress?.toLowerCase()
+      ? activeAddress?.toLowerCase()
       : undefined
 
     if (currentAddress && !addressToSearch) {
@@ -223,7 +226,7 @@ export function ActivityContent() {
     }
     setSearchAddress(addressToSearch!)
     setAddressToSearch(addressToSearch!)
-  }, [UserAddress, pregenActiveAddress, isConnected, isLoginPregenSession])
+  }, [baseAddress, activeAddress, isConnected, isGuestMode])
 
   useEffect(() => {
     const newSettings = {
@@ -410,7 +413,7 @@ export function ActivityContent() {
             </div>
 
             <div className="relative" ref={accountsDropdownRef}>
-              <AuraEffect type={isSmartAccount ? 'purple' : 'blue'}>
+              <AuraEffect type={isSmartAccountToggled ? 'purple' : 'blue'}>
                 <button
                   className="px-3 py-1.5 bg-gray-800 rounded-lg flex items-center gap-2 hover:bg-gray-700 transition-colors text-sm"
                   onClick={() => setShowAccountsDropdown(!showAccountsDropdown)}

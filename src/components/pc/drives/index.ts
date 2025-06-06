@@ -7,6 +7,7 @@ export {
 export { usePregenSession, PregenProvider } from './Storage&Hooks/PregenSession'
 // Pregen Interactions for interactions with the Pregen wallet
 export { usePregenTransaction } from './Storage&Hooks/PregenInteractions'
+export { useHookTransaction } from './Storage&Hooks/HookInteraction'
 // Dispatch Windows for dynamic windows
 export { useDispatchWindows, DispatchWindowProvider } from './UI/dispatchWindow'
 // Navbar API for dynamic navbar content

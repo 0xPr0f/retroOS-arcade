@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { CHARACTER_CARD_ABI, CLASH_BATTLE_SYSTEM_ABI } from '../deployments/abi'
 import {
-  CHARACTER_CARD_ADDRESS,
-  CLASH_BATTLE_SYSTEM_ADDRESS,
+  X_CHARACTER_CARD_ADDRESS,
+  X_CLASH_BATTLE_SYSTEM_ADDRESS,
 } from '../deployments/address'
 import { StatCard } from './ui_components'
 import {
@@ -13,19 +13,21 @@ import {
 } from 'wagmi'
 import { useAppRouter, usePregenSession } from '@/components/pc/drives'
 import { config } from '../deployments/config'
+import { useSmartAccount } from '@/components/pc/drives/Storage&Hooks/SmartAccountHook'
 
 const HomeUI: React.FC = () => {
   const { isConnected, address: playerAddress } = useAccount()
-  const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
-    usePregenSession()
+  const { activeAddress, isGuestMode } = useSmartAccount()
   const chainId = useChainId()
-  const address = isConnected
-    ? playerAddress?.toLowerCase()
-    : isLoginPregenSession
-    ? pregenActiveAddress?.toLowerCase()
-    : undefined
+  const address = isConnected ? activeAddress?.toLowerCase() : undefined
 
-  const availableChainIds = ['84532']
+  const availableChainIds = ['84532', '10143']
+  const CHARACTER_CARD_ADDRESS = X_CHARACTER_CARD_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
+  const CLASH_BATTLE_SYSTEM_ADDRESS = X_CLASH_BATTLE_SYSTEM_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
 
   const { data: allTokenIds } = useReadContract({
     address: CHARACTER_CARD_ADDRESS,

@@ -1,9 +1,9 @@
 import {
   useNotifications,
   usePregenSession,
-  usePregenTransaction,
   weirdBlue,
   darkBlue,
+  useHookTransaction,
 } from '@/components/pc/drives'
 import { useEffect, useState } from 'react'
 import { Slider } from './ui_components'
@@ -14,11 +14,12 @@ import {
   useWatchContractEvent,
   useWriteContract,
 } from 'wagmi'
-import { CHARACTER_CARD_ADDRESS } from '../deployments/address'
+import { X_CHARACTER_CARD_ADDRESS } from '../deployments/address'
 import { CHARACTER_CARD_ABI } from '../deployments/abi'
 import { getCharacterClassLabel } from './Character'
 import axios from 'axios'
 import { pinata } from '@/components/pc/drives'
+import { useSmartAccount } from '@/components/pc/drives/Storage&Hooks/SmartAccountHook'
 
 interface CharacterStats {
   strength: 0
@@ -78,13 +79,12 @@ export const CharacterCreation: React.FC<{
 
   const chainId = useChainId()
   const { addNotification } = useNotifications()
-  const availableChainIds = ['84532']
+  const availableChainIds = ['84532', '10143']
   const isChainUnavailable = !availableChainIds.some(
     (chain) => Number(chain) === chainId
   )
   const { isConnected, address: playerAddress } = useAccount()
-  const { isLoginPregenSession, pregenActiveAddress, isSmartAccount } =
-    usePregenSession()
+  const { isGuestMode, activeAddress } = useSmartAccount()
 
   const {
     writeContract: writeCreateCharacter,
@@ -103,12 +103,15 @@ export const CharacterCreation: React.FC<{
     writeContract: writeCreateCharacterPregen,
     data: createCharacterDataPregen,
     isPending: isCreatingCharacterPregen,
-  } = usePregenTransaction({
+  } = useHookTransaction({
     mutation: {
       onError: (error: any) => {},
       onSuccess: (txHash: any) => {},
     },
   })
+  const CHARACTER_CARD_ADDRESS = X_CHARACTER_CARD_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
 
   const handleCreateCharacter = async (tokenUri: string) => {
     if (!tokenUri) return
@@ -121,7 +124,7 @@ export const CharacterCreation: React.FC<{
       })
       return
     }
-    if (isConnected) {
+    if (!isGuestMode) {
       await writeCreateCharacter({
         address: CHARACTER_CARD_ADDRESS,
         abi: CHARACTER_CARD_ABI,
@@ -138,7 +141,7 @@ export const CharacterCreation: React.FC<{
           Number(selectedClass),
         ],
       })
-    } else if (isLoginPregenSession) {
+    } else {
       await writeCreateCharacterPregen({
         address: CHARACTER_CARD_ADDRESS,
         abi: CHARACTER_CARD_ABI,
@@ -168,9 +171,9 @@ export const CharacterCreation: React.FC<{
   })
 
   const { isLoading } = useWaitForTransactionReceipt({
-    hash: isConnected ? createCharacterData : createCharacterDataPregen,
+    hash: isGuestMode ? createCharacterData : createCharacterDataPregen,
   })
-  const isWaitingForCreate = isSmartAccount ? false : isLoading
+  const isWaitingForCreate = isGuestMode ? false : isLoading
 
   const handleStatChange = (stat: keyof CharacterStats, newValue: number) => {
     const totalPoints = Object.entries(stats).reduce((sum, [key, value]) => {
@@ -239,23 +242,40 @@ export const CharacterCreation: React.FC<{
       try {
         let tokenUriIpfsUrl = ''
         if (characterInfo.url.length < 26) {
-          const keyRequest = await axios.get('/api/create/pinatakey')
-          const keyData = keyRequest.data.data
-          const upload = await pinata.upload
+          /*
+          const urlRequest = await axios.get('/api/create/pinatakey')
+
+          const urlResponseData = urlRequest.data
+          console.log(urlResponseData.url)
+          const upload = await pinata.upload.public
             .file(characterInfo.image!)
-            .key(keyData.JWT)
+            .url(urlResponseData.url)
+*/
+          const urlRequest = await axios.get('/api/create/pinatakey')
+          const signedUploadUrl: string = urlRequest.data.url
 
-          const imageIpfsUrl = await pinata.gateways.convert(upload.IpfsHash)
+          const fileToUpload: File = characterInfo.image!
 
+          const uploadResult = await pinata.upload.public
+            .file(fileToUpload)
+            .url(signedUploadUrl)
+
+          console.log(uploadResult)
+
+          const imageIpfsUrl = await pinata.gateways.public.convert(
+            uploadResult.cid
+          )
           const metadata = {
             name: characterInfo.name.trim(),
             description: characterInfo.description.trim(),
             image: imageIpfsUrl,
-            raw_image_hash: upload.IpfsHash,
+            raw_image_hash: uploadResult.cid,
           }
-          const tokenUri = await pinata.upload.json(metadata).key(keyData.JWT)
+          const tokenUri = await pinata.upload.public
+            .json(metadata)
+            .url(signedUploadUrl)
 
-          tokenUriIpfsUrl = await pinata.gateways.convert(tokenUri.IpfsHash)
+          tokenUriIpfsUrl = await pinata.gateways.public.convert(tokenUri.cid)
           setCharacterInfo({
             ...characterInfo,
             url: tokenUriIpfsUrl,

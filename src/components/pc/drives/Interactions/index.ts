@@ -87,7 +87,9 @@ const PublicClientInteractionsList = ({
       return {
         account: account,
         chain: monadTestnet,
-        transport: http(`https://testnet-rpc.monad.xyz`),
+        transport: http(
+          `https://monad-testnet.g.alchemy.com/v2/ciapmrXJjS296dSkAKWAdz__y7mSLKdP`
+        ),
       }
     default: {
       return {
@@ -230,7 +232,6 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
     if (!userShare || !chainId || !toAddress) {
       throw new Error('User share, chain ID, and to address are required')
     }
-    console.log(userShare)
     const [paraClient, data, ZERO_DEV_PROJECT_ID] = await Promise.all([
       (async () => {
         const client = new ParaServer(
@@ -268,9 +269,8 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
     const activeChain = interaction.chain
     const kernelVersion = KERNEL_V3_1
     const entryPoint = getEntryPoint('0.7')
-
-    const ZERO_DEV_BUNDLER_RPC = `https://rpc.zerodev.app/api/v2/bundler/${ZERO_DEV_PROJECT_ID}`
-    const ZERO_DEV_PAYMASTER_RPC = `https://rpc.zerodev.app/api/v2/paymaster/${ZERO_DEV_PROJECT_ID}`
+    const ZERO_DEV_BUNDLER_RPC = `https://rpc.zerodev.app/api/v3/${ZERO_DEV_PROJECT_ID}/chain/${activeChain.id.toString()}`
+    const ZERO_DEV_PAYMASTER_RPC = `https://rpc.zerodev.app/api/v3/${ZERO_DEV_PROJECT_ID}/chain/${activeChain.id.toString()}`
 
     const publicClient = createPublicClient({
       transport: interaction.transport,

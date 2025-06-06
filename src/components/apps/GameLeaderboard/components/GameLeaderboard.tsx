@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useAccount, useReadContract } from 'wagmi'
+import { useAccount, useChainId, useReadContract } from 'wagmi'
 import { Button } from '@/components/pc/drives/UI/UI_Components.v1'
 import {
   Trophy,
@@ -14,7 +14,8 @@ import { shortenText } from '@/components/pc/drives/Extensions/utils'
 import { usePregenSession } from '@/components/pc/drives/Storage&Hooks/PregenSession'
 import { keccak256, encodePacked } from 'viem'
 import { LEADERBOARD_CONTRACT_ABI } from './onchain'
-import { LEADERBOARD_CONTRACT_ADDRESS } from './onchain'
+import { X_LEADERBOARD_CONTRACT_ADDRESS } from './onchain'
+import { useSmartAccount } from '@/components/pc/drives/Storage&Hooks/SmartAccountHook'
 
 // Types
 enum GameType {
@@ -39,12 +40,13 @@ const GameLeaderboard: React.FC = () => {
   const { isLoginPregenSession, pregenActiveAddress } = usePregenSession()
   const [activeGame, setActiveGame] = useState<GameType>(GameType.SNAKE)
   const [leaderboardLimit, setLeaderboardLimit] = useState<number>(20)
+  const chainId = useChainId()
+  const { isGuestMode, activeAddress } = useSmartAccount()
+  const LEADERBOARD_CONTRACT_ADDRESS = X_LEADERBOARD_CONTRACT_ADDRESS[
+    chainId.toString()
+  ] as `0x${string}`
 
-  const address = isConnected
-    ? playerAddress?.toLowerCase()
-    : isLoginPregenSession
-    ? pregenActiveAddress?.toLowerCase()
-    : undefined
+  const address = isConnected ? activeAddress?.toLowerCase() : undefined
 
   const {
     data: leaderboardRawData = [],

@@ -100,6 +100,9 @@ export function Providers({
             },
           },
           wallets: ['METAMASK', 'RABBY', 'PHANTOM', 'WALLETCONNECT'],
+          walletConnect: {
+            projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID!,
+          },
         }}
       >
         {children}
