@@ -59,23 +59,45 @@ export function useHookTransaction({
   }: PregenTransactionParams) => {
     setState((prev) => ({ ...prev, isPending: true, data: undefined }))
     const sessionmain = para.exportSession()
+
     try {
-      const response = await axios.post(
-        'api/create/pregensponsoredtx',
-        {
-          abi,
-          toAddress: toAddress || address,
-          functionName,
-          args,
-          chainId,
-          userShare: sessionmain ?? session,
-          walletId: pregenWalletId,
-          value,
-        },
-        {
-          timeout: 60000,
-        }
-      )
+      let response
+      console.log(userControlSettingsValue)
+      if (userControlSettingsValue?.use_smart_account) {
+        response = await axios.post(
+          'api/create/pregensponsoredtx',
+          {
+            abi,
+            toAddress: toAddress || address,
+            functionName,
+            args,
+            chainId,
+            userShare: sessionmain ?? session,
+            walletId: pregenWalletId,
+            value,
+          },
+          {
+            timeout: 60000,
+          }
+        )
+      } else {
+        response = await axios.post(
+          'api/create/pregentransaction',
+          {
+            abi,
+            toAddress: toAddress || address,
+            functionName,
+            args,
+            chainId,
+            userShare: sessionmain ?? session,
+            walletId: pregenWalletId,
+            value,
+          },
+          {
+            timeout: 60000,
+          }
+        )
+      }
 
       if (!response.data.success) {
         throw new Error(response.data.error || 'Transaction failed')

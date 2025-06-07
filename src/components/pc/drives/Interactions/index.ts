@@ -140,7 +140,7 @@ export const PrepareAndSignTransactionWithPregenWalletServer = async ({
           Environment.BETA,
           process.env.NEXT_PUBLIC_PARA_API_KEY
         )
-        await client.setUserShare(userShare!)
+        await client.importSession(userShare!)
         return client
       })(),
       (async () => {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Alchemy, AssetTransfersCategory, Network } from 'alchemy-sdk'
 import { useAccount, useChainId } from 'wagmi'
-import { formatEther, zeroAddress } from 'viem'
+import { formatEther, formatUnits, zeroAddress } from 'viem'
 import {
   copyToClipboard,
   shortenText,
@@ -25,19 +25,31 @@ import { useSmartAccount } from '@/components/pc/drives/Storage&Hooks/SmartAccou
 
 const NETWORK_CONFIG: Record<
   string,
-  { name: string; color: string; icon: string }
+  { name: string; color: string; icon: string; symbol: string }
 > = {
-  [Network.ETH_MAINNET]: { name: 'Ethereum', color: '#627EEA', icon: '' },
+  [Network.ETH_MAINNET]: {
+    name: 'Ethereum',
+    color: '#627EEA',
+    icon: '',
+    symbol: 'ETH',
+  },
   [Network.BASE_SEPOLIA]: {
     name: 'Base Sepolia',
     color: '#0052FF',
     icon: '',
+    symbol: 'ETH',
   },
-  [Network.ETH_SEPOLIA]: { name: 'Sepolia', color: '#627EEA', icon: '' },
+  [Network.ETH_SEPOLIA]: {
+    name: 'Sepolia',
+    color: '#627EEA',
+    icon: '',
+    symbol: 'ETH',
+  },
   [Network.MONAD_TESTNET]: {
     name: 'Monad Testnet',
     color: '#627EEA',
     icon: '',
+    symbol: 'MON',
   },
 }
 
@@ -78,7 +90,10 @@ const AuraEffect = ({
 
 export function HomeContent() {
   const [account, setAccount] = useState<string | null>(null)
-  const [balance, setBalance] = useState<string | null>(null)
+  const [balance, setBalance] = useState<{
+    balance: string | null
+    usdcbalance: string | null
+  }>({ balance: null, usdcbalance: null })
   const [copied, setCopied] = useState(false)
   const [tLoading, setTLoading] = useState(false)
   const [nLoading, setNLoading] = useState(false)
@@ -103,7 +118,7 @@ export function HomeContent() {
 
   const [network, setNetwork] = useTypedValue('wallet_network')
   const [settings, setSettings] = useState({
-    apiKey: 'y_eQkk-xNUDYHBLvXhoipyEWcrq04D3D',
+    apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY,
     network: network as Network,
   })
   const [alchemy, setAlchemy] = useState(new Alchemy(settings))
@@ -213,8 +228,30 @@ export function HomeContent() {
     async function fetchAccount() {
       if (!addressToSearch) return
       try {
-        const balance = await alchemy.core.getBalance(addressToSearch, 'latest')
-        setBalance(formatEther(BigInt(balance.toString())))
+        const response = await alchemy.portfolio.getTokensByWallet([
+          { address, networks: [alchemy.config.network] },
+        ])
+
+        const nonZeroBalances = response.data.tokens.filter((token) => {
+          return BigInt(token.tokenBalance?.toString()!) > 0
+        })
+
+        const nativeCurrency = (nonZeroBalances as any).filter(
+          (token: any) => token['tokenAddress'] == null
+        )
+        console.log('Feahtch Reponse', nativeCurrency, alchemy.config.network)
+        const nativeBalance = BigInt(nativeCurrency[0].tokenBalance?.toString())
+        const nativeBalanceUSDPrice = parseFloat(
+          nativeCurrency[0]?.tokenPrices[0]?.value?.toString() ?? null
+        )
+        const usdcNativeBalance =
+          Number(formatUnits(BigInt(nativeBalance), 18)) * nativeBalanceUSDPrice
+
+        setBalance({
+          balance: formatUnits(BigInt(nativeBalance), 18).toString(),
+          usdcbalance: usdcNativeBalance.toString(),
+        })
+
         setAccount(addressToSearch)
         fetchTokens(addressToSearch)
         fetchNFTs(addressToSearch)
@@ -229,40 +266,36 @@ export function HomeContent() {
       let tokenData = []
       let totalValue = 0
       try {
-        const response = await alchemy.core.getTokenBalances(address)
+        const response = await alchemy.portfolio.getTokensByWallet([
+          { address, networks: [alchemy.config.network] },
+        ])
 
-        const nonZeroBalances = response.tokenBalances.filter((token) => {
-          return token.tokenBalance !== '0'
+        const nonZeroBalances = response.data.tokens.filter((token) => {
+          return BigInt(token.tokenBalance?.toString()!) > 0
         })
 
         for (let token of nonZeroBalances) {
-          const balance = token.tokenBalance
-          const metadata = await alchemy.core.getTokenMetadata(
-            token.contractAddress
+          if (!token.tokenMetadata!.name || !token.tokenMetadata!.symbol)
+            continue
+          const tokenValue = Number(BigInt(token.tokenBalance?.toString()))
+          const tokenPrice = parseFloat(
+            (
+              BigInt(token.tokenBalance?.toString()) *
+              BigInt(Number(token.tokenPrices ?? 1))!
+            ).toString()
           )
-
-          // Mock price between $0.01 and $2000
-          const mockPrice = Math.random() * 2000 + 0.01
-
-          const fbalance = balance
-            ? (Number(balance) / Math.pow(10, metadata.decimals ?? 18)).toFixed(
-                2
-              )
-            : '0'
-
-          if (!metadata.name || !metadata.symbol) continue
-
-          const tokenValue = parseFloat(fbalance) * mockPrice
           totalValue += tokenValue
 
           const data = {
-            name: metadata.name,
-            balance: fbalance,
-            symbol: metadata.symbol,
-            logo: metadata.logo || null,
+            name:
+              token.tokenMetadata!.name ??
+              NETWORK_CONFIG[network as keyof typeof NETWORK_CONFIG]?.symbol,
+            balance: token.tokenBalance,
+            symbol: token.tokenMetadata!.symbol,
+            logo: token.tokenMetadata!.logo || null,
             value: tokenValue.toFixed(2),
-            price: mockPrice.toFixed(2),
-            change: (Math.random() * 20 - 10).toFixed(2), // Random change between -10% and +10%
+            price: tokenPrice.toFixed(2),
+            change: (Math.random() * 20 - 10).toFixed(2),
           }
 
           tokenData.push(data)
@@ -293,7 +326,6 @@ export function HomeContent() {
     async function fetchTransactionHistory(address: string) {
       setTHistoryLoading(true)
       try {
-        // Get the last 10 transactions
         const txs = await alchemy.core.getAssetTransfers({
           fromBlock: '0x0',
           fromAddress: address,
@@ -315,7 +347,7 @@ export function HomeContent() {
     }
 
     fetchAccount()
-  }, [addressToSearch, alchemy, chainId])
+  }, [addressToSearch, alchemy])
 
   const handleNetworkChange = (newNetwork: Network) => {
     setNetwork(newNetwork)
@@ -578,12 +610,15 @@ export function HomeContent() {
                   </div>
                   <div className="text-xl font-bold">
                     {balance
-                      ? `${parseFloat(balance).toFixed(4)} ETH`
+                      ? `${parseFloat(balance.balance!).toFixed(4)} ${
+                          NETWORK_CONFIG[network as keyof typeof NETWORK_CONFIG]
+                            ?.symbol || 'ETH'
+                        }`
                       : 'Loading...'}
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
                     {balance
-                      ? `$${(parseFloat(balance) * 3500).toFixed(2)} USD`
+                      ? `$${parseFloat(balance.usdcbalance!).toFixed(2)} USD`
                       : ''}
                   </div>
                 </div>
