@@ -62,6 +62,8 @@ const PublicClientInteractionsList = ({
 }) => {
   const infuraKey = process.env.NEXT_PUBLIC_INFURA_KEY
   const blastAPIKey = process.env.NEXT_PUBLIC_BLAST_API_KEY
+  const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+
   switch (chainId) {
     case 1: {
       return {
@@ -87,9 +89,7 @@ const PublicClientInteractionsList = ({
       return {
         account: account,
         chain: monadTestnet,
-        transport: http(
-          `https://monad-testnet.g.alchemy.com/v2/ciapmrXJjS296dSkAKWAdz__y7mSLKdP`
-        ),
+        transport: http(`https://monad-testnet.g.alchemy.com/v2/${alchemyKey}`),
       }
     default: {
       return {
@@ -159,6 +159,17 @@ export const PrepareAndSignTransactionWithPregenWalletServer = async ({
       chainId: chainId!,
     })
     const viemClient = createParaViemClient(paraClient, interaction)
+
+    const testclient = createPublicClient({
+      chain: interaction.chain,
+      transport: interaction.transport,
+    })
+    const onChainBal = await testclient.getBalance({
+      address: viemCapsuleAccount.address as `0x${string}`,
+      blockTag: 'latest',
+    })
+
+    console.log(`Sender balance: ${Number(onChainBal) / 1e18} MON`, onChainBal)
 
     const [request, activeChain] = await Promise.all([
       viemClient.prepareTransactionRequest({

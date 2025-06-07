@@ -232,17 +232,17 @@ export function HomeContent() {
           { address, networks: [alchemy.config.network] },
         ])
 
-        const nonZeroBalances = response.data.tokens.filter((token) => {
-          return BigInt(token.tokenBalance?.toString()!) > 0
-        })
-
-        const nativeCurrency = (nonZeroBalances as any).filter(
+        const nativeCurrency = (response.data.tokens as any).filter(
           (token: any) => token['tokenAddress'] == null
         )
-        console.log('Feahtch Reponse', nativeCurrency, alchemy.config.network)
+        console.log(
+          'Feahtch Reponse',
+          response.data.tokens,
+          alchemy.config.network
+        )
         const nativeBalance = BigInt(nativeCurrency[0].tokenBalance?.toString())
         const nativeBalanceUSDPrice = parseFloat(
-          nativeCurrency[0]?.tokenPrices[0]?.value?.toString() ?? null
+          nativeCurrency[0]?.tokenPrices[0]?.value?.toString() ?? 1
         )
         const usdcNativeBalance =
           Number(formatUnits(BigInt(nativeBalance), 18)) * nativeBalanceUSDPrice
@@ -290,14 +290,16 @@ export function HomeContent() {
             name:
               token.tokenMetadata!.name ??
               NETWORK_CONFIG[network as keyof typeof NETWORK_CONFIG]?.symbol,
-            balance: token.tokenBalance,
+            balance: Number(formatUnits(BigInt(token.tokenBalance), 18))
+              .toFixed(3)
+              .toString(),
             symbol: token.tokenMetadata!.symbol,
             logo: token.tokenMetadata!.logo || null,
             value: tokenValue.toFixed(2),
             price: tokenPrice.toFixed(2),
             change: (Math.random() * 20 - 10).toFixed(2),
           }
-
+          console.log(data)
           tokenData.push(data)
         }
         setTokenMetrics({
@@ -338,7 +340,7 @@ export function HomeContent() {
           ],
           maxCount: 10,
         })
-
+        console.log(txs)
         setTransactionHistory(txs.transfers)
       } catch (error) {
         console.error('Error fetching transaction history:', error)
@@ -347,7 +349,7 @@ export function HomeContent() {
     }
 
     fetchAccount()
-  }, [addressToSearch, alchemy])
+  }, [addressToSearch, network])
 
   const handleNetworkChange = (newNetwork: Network) => {
     setNetwork(newNetwork)

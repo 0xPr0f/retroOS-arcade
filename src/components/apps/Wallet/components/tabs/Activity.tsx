@@ -76,9 +76,8 @@ const TX_CATEGORY_CONFIG: Record<
   },
 }
 
-// Initial settings
 const settings = {
-  apiKey: 'y_eQkk-xNUDYHBLvXhoipyEWcrq04D3D',
+  apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY,
   network: Network.BASE_SEPOLIA as Network,
 }
 
@@ -242,43 +241,35 @@ export function ActivityContent() {
     async function fetchTransactions(userAddress: string) {
       setLoading(true)
       try {
-        const sentTxns = await alchemyClient.core.getAssetTransfers({
-          fromBlock: '0x0',
-          fromAddress: userAddress,
-          category: [
-            AssetTransfersCategory.EXTERNAL,
-            AssetTransfersCategory.INTERNAL,
-            AssetTransfersCategory.ERC20,
-            AssetTransfersCategory.ERC721,
-            AssetTransfersCategory.ERC1155,
-          ],
-        })
+        const Txns = await alchemyClient.portfolio.getTransactionsByWallet([
+          { address: userAddress, networks: [alchemyClient.config.network] },
+        ])
 
-        const receivedTxns = await alchemyClient.core.getAssetTransfers({
-          fromBlock: '0x0',
-          toAddress: userAddress,
-          category: [
-            AssetTransfersCategory.EXTERNAL,
-            AssetTransfersCategory.INTERNAL,
-            AssetTransfersCategory.ERC20,
-            AssetTransfersCategory.ERC721,
-            AssetTransfersCategory.ERC1155,
-          ],
-        })
+        const sentTxns = (Txns as any).transactions.filter(
+          (txs: any) =>
+            txs?.toAddress.toLowerCase() !== userAddress.toLowerCase()
+        )
 
-        const sentWithDirection = sentTxns.transfers.map((tx) => ({
+        const receivedTxns = (Txns as any).transactions.filter(
+          (txs: any) =>
+            txs?.toAddress.toLowerCase() === userAddress.toLowerCase()
+        )
+        console.log('Transactions', Txns, sentTxns, receivedTxns)
+        const sentWithDirection = sentTxns.map((tx: any) => ({
           ...tx,
           direction: 'out',
         }))
 
-        const receivedWithDirection = receivedTxns.transfers.map((tx) => ({
+        const receivedWithDirection = receivedTxns.map((tx: any) => ({
           ...tx,
           direction: 'in',
         }))
 
         // Combine, sort by block number, and take latest 50
         const allTxns = [...sentWithDirection, ...receivedWithDirection]
-          .sort((a, b) => Number(b.blockNum || 0) - Number(a.blockNum || 0))
+          .sort(
+            (a, b) => Number(b.blockNumber || 0) - Number(a.blockNumber || 0)
+          )
           .slice(0, 50)
 
         setTransactions(
@@ -358,6 +349,8 @@ export function ActivityContent() {
         return `https://sepolia.etherscan.io/tx/${hash}`
       case Network.BASE_MAINNET:
         return `https://basescan.org/tx/${hash}`
+      case Network.MONAD_TESTNET:
+        return `https://testnet.monadexplorer.com/tx/${hash}`
       default:
         return `https://etherscan.io/tx/${hash}`
     }
