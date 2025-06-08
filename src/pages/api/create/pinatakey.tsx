@@ -51,7 +51,7 @@ export default async function handler(
 ) {
   try {
     const url = await pinata.upload.public.createSignedURL({
-      expires: 60,
+      expires: 30,
     })
     return res.json({ url: url, status: 200 })
   } catch (error) {

@@ -171,6 +171,16 @@ export const PrepareAndSignTransactionWithPregenWalletServer = async ({
 
     console.log(`Sender balance: ${Number(onChainBal) / 1e18} MON`, onChainBal)
 
+    const gasEstination = await testclient.estimateGas({
+      account: viemCapsuleAccount.address as `0x${string}`,
+      to: toAddress,
+      value: value ? BigInt(value) : BigInt('0'),
+      data: data,
+      blockTag: 'latest',
+    })
+
+    console.log('Gas Estimation', BigInt(gasEstination))
+
     const [request, activeChain] = await Promise.all([
       viemClient.prepareTransactionRequest({
         account: viemCapsuleAccount,
@@ -178,6 +188,7 @@ export const PrepareAndSignTransactionWithPregenWalletServer = async ({
         value: value ? BigInt(value) : BigInt('0'),
         data,
         chain: interaction.chain,
+        gas: BigInt(gasEstination),
       }),
       interaction.chain,
     ])
