@@ -363,14 +363,14 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
         data: data || '0x',
       },
     ])
-    console.log('Error Here 1')
+    console.log('Pass Here 1')
     const txHash = await kernelClient.sendUserOperation({
       callData: encodedCalls,
     })
-    console.log('Error Here 2')
-    await kernelClient.waitForUserOperationReceipt({
+    console.log('Pass Here 2')
+    /* await kernelClient.waitForUserOperationReceipt({
       hash: txHash,
-    })
+    }) */
     return txHash
   } catch (e: any) {
     console.log(
