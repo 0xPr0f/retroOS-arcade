@@ -6,7 +6,7 @@ import {
   AvatarImage,
   Button,
 } from '../UI/UI_Components.v1'
-import { User, Users } from 'lucide-react'
+import { Loader2, User, Users } from 'lucide-react'
 import { useLocalStorage } from 'react-use'
 import { UserSettings } from '@/components/apps/ControlPanel/components/Setting&Metrics'
 import { lightRed, lightBlue } from '../Extensions/colors'
@@ -109,10 +109,16 @@ const LoginScreen: React.FC = () => {
             type="submit"
             // onClick={handleLogin}
             onClick={openModal}
-            disabled={isGuestWalletCreating}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md transition duration-200"
           >
-            Sign in {isGuestWalletCreating ? '...' : ''}
+            Sign in
+            {isGuestWalletCreating ? (
+              <div>
+                <Loader2 className="animate-spin" />
+              </div>
+            ) : (
+              ''
+            )}
           </Button>
         </>
 
