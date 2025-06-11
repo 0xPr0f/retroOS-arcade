@@ -368,9 +368,9 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
       callData: encodedCalls,
     })
     console.log('Pass Here 2')
-    /* await kernelClient.waitForUserOperationReceipt({
+    await kernelClient.waitForUserOperationReceipt({
       hash: txHash,
-    }) */
+    })
     return txHash
   } catch (e: any) {
     console.log(
