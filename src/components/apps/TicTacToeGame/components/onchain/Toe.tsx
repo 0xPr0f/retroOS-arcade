@@ -403,6 +403,7 @@ const TicTacToeMP = () => {
       })
     } else {
       const session = para.exportSession()
+      console.log('client session', session)
       await writeJoinQueuePregen({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
