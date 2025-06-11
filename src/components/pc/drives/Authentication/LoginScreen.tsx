@@ -10,7 +10,11 @@ import { User, Users } from 'lucide-react'
 import { useLocalStorage } from 'react-use'
 import { UserSettings } from '@/components/apps/ControlPanel/components/Setting&Metrics'
 import { lightRed, lightBlue } from '../Extensions/colors'
-import { ParaModal, useModal } from '@getpara/react-sdk'
+import {
+  ParaModal,
+  useCreateGuestWalletsState,
+  useModal,
+} from '@getpara/react-sdk'
 import Authentication from '.'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
 
@@ -44,7 +48,8 @@ const LoginScreen: React.FC = () => {
   const [userName, setUserName] = useState<string | undefined>(undefined)
 
   const [guestLogin, setGuestLogin] = useState<boolean>(false)
-
+  const { isPending: isGuestWalletCreating, isSuccess } =
+    useCreateGuestWalletsState()
   const { address, isConnected } = useAccount()
   useEffect(() => {
     setImagePreview(settings?.profileImage)
@@ -104,9 +109,10 @@ const LoginScreen: React.FC = () => {
             type="submit"
             // onClick={handleLogin}
             onClick={openModal}
+            disabled={isGuestWalletCreating}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md transition duration-200"
           >
-            Sign in
+            Sign in {isGuestWalletCreating ? '...' : ''}
           </Button>
         </>
 

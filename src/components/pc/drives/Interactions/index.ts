@@ -30,7 +30,7 @@ import {
 } from 'viem'
 
 import {} from 'viem/chains'
-import { KERNEL_V3_1, getEntryPoint } from '@zerodev/sdk/constants'
+import { KERNEL_V3_1, KERNEL_V3_2, getEntryPoint } from '@zerodev/sdk/constants'
 import { createKernelAccountClient } from '@zerodev/sdk'
 import { createKernelAccount } from '@zerodev/sdk'
 import {
@@ -38,6 +38,7 @@ import {
   getUserOperationGasPrice,
 } from '@zerodev/sdk'
 import {
+  createEcdsaKernelMigrationAccount,
   getKernelAddressFromECDSA,
   signerToEcdsaValidator,
 } from '@zerodev/ecdsa-validator'
@@ -289,8 +290,12 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
     }
 
     const activeChain = interaction.chain
-    const kernelVersion = KERNEL_V3_1
+    // const kernelVersion = KERNEL_V3_1
+    const originalKernelVersion = KERNEL_V3_1
+    const migrationVersion = KERNEL_V3_2
+
     const entryPoint = getEntryPoint('0.7')
+
     const ZERO_DEV_BUNDLER_RPC = `https://rpc.zerodev.app/api/v3/${ZERO_DEV_PROJECT_ID}/chain/${activeChain.id.toString()}`
     const ZERO_DEV_PAYMASTER_RPC = `https://rpc.zerodev.app/api/v3/${ZERO_DEV_PROJECT_ID}/chain/${activeChain.id.toString()}`
 
@@ -299,7 +304,20 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
       chain: interaction.chain,
     })
 
-    const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
+    const kernalAccount = await createEcdsaKernelMigrationAccount(
+      publicClient,
+      {
+        entryPoint,
+        signer: viemClient.account as any,
+
+        migrationVersion: {
+          from: originalKernelVersion,
+          to: migrationVersion,
+        },
+      }
+    )
+
+    /* const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
       signer: viemClient.account as any,
       entryPoint,
       kernelVersion,
@@ -312,6 +330,7 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
       entryPoint,
       kernelVersion,
     })
+*/
 
     const kernelClient = createKernelAccountClient({
       account: kernalAccount,
@@ -329,6 +348,7 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
           })
         },
       },
+
       userOperation: {
         estimateFeesPerGas: async ({ bundlerClient }) => {
           return getUserOperationGasPrice(bundlerClient)
@@ -343,10 +363,11 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
         data: data || '0x',
       },
     ])
-
+    console.log('Error Here 1')
     const txHash = await kernelClient.sendUserOperation({
       callData: encodedCalls,
     })
+    console.log('Error Here 2')
     await kernelClient.waitForUserOperationReceipt({
       hash: txHash,
     })
