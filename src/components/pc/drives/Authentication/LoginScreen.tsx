@@ -20,7 +20,6 @@ import { useAccount, useConnect, useDisconnect } from 'wagmi'
 
 const LoginScreen: React.FC = () => {
   const [isParaModalOpen, setIsParaModalOpen] = useState(false)
-
   const { openModal } = useModal()
   const { connect, connectors } = useConnect()
 
@@ -48,7 +47,7 @@ const LoginScreen: React.FC = () => {
   const [userName, setUserName] = useState<string | undefined>(undefined)
 
   const [guestLogin, setGuestLogin] = useState<boolean>(false)
-  const { isPending: isGuestWalletCreating, isSuccess } =
+  const { isPending: isGuestWalletCreating, isSuccess: isGuestWalletCreated } =
     useCreateGuestWalletsState()
   const { address, isConnected } = useAccount()
   useEffect(() => {
@@ -60,6 +59,9 @@ const LoginScreen: React.FC = () => {
   const closeGuestLogin = () => {
     setGuestLogin(false)
   }
+  useEffect(() => {
+    console.log('Created Guest wallet')
+  }, [isGuestWalletCreated])
   return (
     <div
       style={{
@@ -122,13 +124,13 @@ const LoginScreen: React.FC = () => {
           </Button>
         </>
 
-        <Authentication
+        {/*} <Authentication
           setGuestLogin={setGuestLogin}
           setParaModalOpen={setIsParaModalOpen}
           ParaModalOpen={isParaModalOpen}
           pregenModal={guestLogin}
           closeGuestLogin={closeGuestLogin}
-        />
+        /> */}
 
         {/*} <>
           <div className="flex flex-col items-center  space-y-4">

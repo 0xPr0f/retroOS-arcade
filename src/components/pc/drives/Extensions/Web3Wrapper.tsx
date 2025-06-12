@@ -83,10 +83,7 @@ export function Providers({
   return (
     <QueryClientProvider client={queryClient}>
       <ParaProvider
-        paraClientConfig={{
-          apiKey: process.env.NEXT_PUBLIC_PARA_API_KEY || '',
-          env: Environment.BETA,
-        }}
+        paraClientConfig={para}
         paraModalConfig={{
           isGuestModeEnabled: true,
         }}

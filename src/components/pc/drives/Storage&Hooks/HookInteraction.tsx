@@ -59,7 +59,6 @@ export function useHookTransaction({
   }: PregenTransactionParams) => {
     setState((prev) => ({ ...prev, isPending: true, data: undefined }))
     const sessionmain = para.exportSession()
-
     try {
       let response
       console.log(userControlSettingsValue)
