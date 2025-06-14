@@ -317,21 +317,6 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
       }
     )
 
-    /* const ecdsaValidator = await signerToEcdsaValidator(publicClient, {
-      signer: viemClient.account as any,
-      entryPoint,
-      kernelVersion,
-    })
-
-    const kernalAccount = await createKernelAccount(viemClient, {
-      plugins: {
-        sudo: ecdsaValidator,
-      },
-      entryPoint,
-      kernelVersion,
-    })
-*/
-
     const kernelClient = createKernelAccountClient({
       account: kernalAccount,
       chain: activeChain,
@@ -363,7 +348,9 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
         data: data || '0x',
       },
     ])
-    console.log('Pass Here 1')
+
+    console.log('Pass Here 1 Gas:')
+
     const txHash = await kernelClient.sendUserOperation({
       callData: encodedCalls,
     })
@@ -371,6 +358,7 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
     await kernelClient.waitForUserOperationReceipt({
       hash: txHash,
     })
+    console.log('Pass Here 3')
     return txHash
   } catch (e: any) {
     console.log(

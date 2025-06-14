@@ -424,7 +424,7 @@ export const CharacterCardUI: React.FC<{ tokenId: string }> = ({ tokenId }) => {
                   <h4 className="text-sm font-medium text-gray-400 mb-1">
                     Description
                   </h4>
-                  <p className="text-sm text-gray-300">
+                  <p className="select-text text-sm text-gray-300">
                     {metadata.description}
                   </p>
                 </div>

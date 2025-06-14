@@ -40,10 +40,11 @@ export default async function handler(
   }
 }
 */
+
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { pinata } from '@/components/pc/drives/Interactions/pinata'
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic' // Ensures no static caching at route level
 
 export default async function handler(
   req: NextApiRequest,
@@ -51,11 +52,20 @@ export default async function handler(
 ) {
   try {
     const url = await pinata.upload.public.createSignedURL({
-      expires: 30,
+      expires: 60,
     })
-    return res.json({ url: url, status: 200 })
+
+    res.setHeader(
+      'Cache-Control',
+      'no-store, no-cache, must-revalidate, proxy-revalidate'
+    )
+    res.setHeader('Pragma', 'no-cache')
+    res.setHeader('Expires', '0')
+    return res.status(200).json({ url: url, status: 200 })
   } catch (error) {
-    console.log(error)
-    return res.json({ text: 'Error creating API Key:', status: 500 })
+    console.error('Error creating signed URL:', error)
+    return res
+      .status(500)
+      .json({ text: 'Error creating signed URL', status: 500 })
   }
 }

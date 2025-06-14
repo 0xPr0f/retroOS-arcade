@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 
-// This is currently not working as expected.
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse

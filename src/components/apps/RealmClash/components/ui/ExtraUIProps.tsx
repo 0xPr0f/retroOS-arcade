@@ -242,15 +242,6 @@ export const CharacterCreation: React.FC<{
       try {
         let tokenUriIpfsUrl = ''
         if (characterInfo.url.length < 26) {
-          /*
-          const urlRequest = await axios.get('/api/create/pinatakey')
-
-          const urlResponseData = urlRequest.data
-          console.log(urlResponseData.url)
-          const upload = await pinata.upload.public
-            .file(characterInfo.image!)
-            .url(urlResponseData.url)
-*/
           const urlRequest = await axios.get('/api/create/pinatakey')
           const signedUploadUrl: string = urlRequest.data.url
 
@@ -271,9 +262,12 @@ export const CharacterCreation: React.FC<{
             image: imageIpfsUrl,
             raw_image_hash: uploadResult.cid,
           }
+          const urlTokenUploadRequest = await axios.get('/api/create/pinatakey')
+          const signedUrlTokenUploadRequest: string =
+            urlTokenUploadRequest.data.url
           const tokenUri = await pinata.upload.public
             .json(metadata)
-            .url(signedUploadUrl)
+            .url(signedUrlTokenUploadRequest)
 
           tokenUriIpfsUrl = await pinata.gateways.public.convert(tokenUri.cid)
           setCharacterInfo({
