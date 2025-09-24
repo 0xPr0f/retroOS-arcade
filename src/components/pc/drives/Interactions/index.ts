@@ -139,7 +139,7 @@ export const PrepareAndSignTransactionWithPregenWalletServer = async ({
       (async () => {
         const client = new ParaServer(
           Environment.BETA,
-          process.env.NEXT_PUBLIC_PARA_API_KEY
+          process.env.NEXT_PUBLIC_PARA_API_KEY!
         )
         await client.importSession(userShare!)
         return client
@@ -259,7 +259,7 @@ export const PrepareAndSignSponsoredTransactionWithPregenWalletServer = async ({
       (async () => {
         const client = new ParaServer(
           Environment.BETA,
-          process.env.NEXT_PUBLIC_PARA_API_KEY
+          process.env.NEXT_PUBLIC_PARA_API_KEY!
         )
         await client.importSession(userShare)
         return client
@@ -532,7 +532,7 @@ export const SignMessageWithPregenWallet = async (
 ) => {
   const para = new ParaServer(
     Environment.BETA,
-    process.env.NEXT_PUBLIC_PARA_API_KEY
+    process.env.NEXT_PUBLIC_PARA_API_KEY!
   )
 
   await para.setUserShare(userShare)
@@ -557,7 +557,7 @@ export const UpdateAndClaimPregenWallet = async ({
 }) => {
   const paraClient = new ParaServer(
     Environment.BETA,
-    process.env.NEXT_PUBLIC_PARA_API_KEY
+    process.env.NEXT_PUBLIC_PARA_API_KEY!
   )
   await paraClient.importSession(paraClientSession)
 

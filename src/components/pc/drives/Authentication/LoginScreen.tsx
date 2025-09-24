@@ -110,7 +110,7 @@ const LoginScreen: React.FC = () => {
           <Button
             type="submit"
             // onClick={handleLogin}
-            onClick={openModal}
+            onClick={() => openModal()}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md transition duration-200"
           >
             Sign in

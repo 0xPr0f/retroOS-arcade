@@ -28,7 +28,7 @@ const SmartAccountContext = createContext<SmartAccountContextType | undefined>(
 export function SmartAccountProvider({ children }: { children: ReactNode }) {
   const { address: baseAddress } = useAccount()
   const chainId = useChainId()
-  const { data: paraAccountData } = useParaAccount()
+  const { embedded: paraAccountData } = useParaAccount()
 
   const [smartAddress, setSmartAddress] = useState<string | undefined>(
     undefined

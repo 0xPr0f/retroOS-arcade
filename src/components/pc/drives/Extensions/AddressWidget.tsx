@@ -193,7 +193,7 @@ const AddressWidget = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2 w-full">
                   <button
-                    onClick={openModal}
+                    onClick={() => openModal()}
                     className={`bg-white/10 hover:bg-white/20 text-white py-2 px-3 rounded-md flex items-center justify-center gap-1 text-xs transition-colors duration-200  ${
                       copied ? 'bg-green-500/20 hover:bg-green-500/30' : ''
                     }`}
